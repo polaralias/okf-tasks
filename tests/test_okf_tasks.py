@@ -49,9 +49,15 @@ class ConformanceFixtureTests(unittest.TestCase):
         self.assertTrue(any("closed time-entry sum (60)" in error for error in errors))
 
     def test_all_examples_are_valid(self) -> None:
-        for name in ("standalone", "knowledge-linked", "tracker-synchronised"):
+        examples = {
+            "standalone": "tasks",
+            "knowledge-linked": "tasks",
+            "tracker-synchronised": "tasks",
+            "project-docs": "docs/tasks",
+        }
+        for name, bundle_path in examples.items():
             with self.subTest(name=name):
-                bundle = REPOSITORY / "examples" / name / "tasks"
+                bundle = REPOSITORY / "examples" / name / bundle_path
                 self.assertEqual([], okf_tasks.validate_bundle(bundle))
 
     def test_every_manifest_case_has_the_expected_result(self) -> None:
@@ -134,6 +140,42 @@ class LifecycleTests(unittest.TestCase):
             )
         )
         self.assertEqual(0, result)
+
+    def test_standard_bundle_placements(self) -> None:
+        for placement, expected in (("root", "tasks"), ("docs", "docs/tasks")):
+            with self.subTest(placement=placement):
+                okf_tasks.init_bundle(
+                    arguments(
+                        root=str(self.root),
+                        bundle=None,
+                        placement=placement,
+                        force=False,
+                    )
+                )
+                self.assertTrue((self.root / expected / "index.md").is_file())
+
+        okf_tasks.create_task(
+            arguments(
+                root=str(self.root),
+                bundle="docs/tasks",
+                slug="project-delivery",
+                title="Deliver the project",
+                description="Complete the observable project outcome.",
+                owner="project-team",
+            )
+        )
+        self.assertEqual([], okf_tasks.validate_bundle(self.root / "docs" / "tasks"))
+
+    def test_docs_placement_and_custom_bundle_are_mutually_exclusive(self) -> None:
+        with self.assertRaisesRegex(SystemExit, "either --placement docs or --bundle"):
+            okf_tasks.init_bundle(
+                arguments(
+                    root=str(self.root),
+                    bundle="project/tasks",
+                    placement="docs",
+                    force=False,
+                )
+            )
 
     def test_create_transition_and_validate(self) -> None:
         self.create_task()

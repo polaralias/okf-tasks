@@ -173,6 +173,11 @@ def build(root: Path) -> None:
     other = task("second-task", title="Second task", external=[{"system": "github", "id": "2", "url": "https://github.com/example/repo/issues/2"}])
     write_document(bundle / "second-task" / "task.md", other, TASK_BODY.format(title="Second task")); finalize(bundle)
 
+    bundle = root / "valid" / "docs-placement" / "docs" / "tasks"
+    project_task = task("deliver-project", title="Deliver project")
+    write_document(bundle / "deliver-project" / "task.md", project_task, TASK_BODY.format(title="Deliver project"))
+    finalize(bundle)
+
     # Negative: one focused mutation per machine-testable requirement family.
     negatives: dict[str, tuple[dict[str, Any], str | None]] = {
         "missing-task-field": ({k: v for k, v in task().items() if k != "description"}, None),

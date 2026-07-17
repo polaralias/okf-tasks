@@ -1,6 +1,6 @@
 # Conformance fixtures
 
-Fixtures exercise OKF Tasks v0.2. `manifest.json` covers bundle conformance and `export-manifest.json` covers external-artifact preparation; both are consumed independently by the Python and TypeScript implementations.
+Fixtures exercise OKF Tasks v0.3. `manifest.json` covers bundle conformance and both standard placements; `export-manifest.json` covers external-artifact preparation. Both are consumed independently by the Python and TypeScript implementations.
 
 Hand-authored fixtures cover the minimal document, base OKF failure, and bad time rollup. Deterministic fixtures under `generated/` cover task fields and headings, workstreams, time methods, estimates, points, sync authority, external uniqueness, reopening history, unknown concepts, broken-link warnings, and generated indexes.
 

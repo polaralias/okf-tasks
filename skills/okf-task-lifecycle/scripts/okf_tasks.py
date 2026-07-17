@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reference CLI for OKF Tasks v0.2 bundles."""
+"""Reference CLI for OKF Tasks v0.3 bundles."""
 
 from __future__ import annotations
 
@@ -50,8 +50,9 @@ TIME_METHODS = {"tracked", "tracked-adjusted", "manual", "estimated-commit-revie
 ESTIMATE_CONFIDENCE = {"low", "medium", "high"}
 ESTIMATE_METHODS = {"agent", "manual", "historical"}
 LIVE_TIME_STATUSES = {"ready", "in-progress", "blocked", "validation"}
-PROFILE_VERSION = "0.2"
-PROFILE_URL = "https://github.com/polaralias/okf-tasks/blob/v0.2.0/SPEC.md"
+PROFILE_VERSION = "0.3"
+PROFILE_URL = "https://github.com/polaralias/okf-tasks/blob/v0.3.0/SPEC.md"
+BUNDLE_PLACEMENTS = {"root": "tasks", "docs": "docs/tasks"}
 MARKDOWN_LINK_PATTERN = re.compile(r"(?P<image>!)?(?P<label>\[[^\]\n]*\])\((?P<target>[^)\s]+)(?P<suffix>[^)]*)\)")
 SECRET_PATTERNS = {
     "private key": re.compile(r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----"),
@@ -452,7 +453,10 @@ def build_index(bundle: Path) -> None:
 
 def init_bundle(args: argparse.Namespace) -> int:
     root = repository_root(args.root)
-    bundle = bundle_root(root, args.bundle)
+    if args.placement == "docs" and args.bundle:
+        fail("Use either --placement docs or --bundle, not both.")
+    selected_bundle = args.bundle or BUNDLE_PLACEMENTS[args.placement]
+    bundle = bundle_root(root, selected_bundle)
     bundle.mkdir(parents=True, exist_ok=True)
     index = bundle / "index.md"
     if index.exists() and not args.force:
@@ -1386,11 +1390,18 @@ def add_commit_review_arguments(parser: argparse.ArgumentParser) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Maintain OKF Tasks v0.2 bundles.")
+    parser = argparse.ArgumentParser(description="Maintain OKF Tasks v0.3 bundles.")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     initialize = subparsers.add_parser("init-bundle", help="Initialize a generated task index")
-    add_location_arguments(initialize)
+    initialize.add_argument("--root", required=True, help="Repository root")
+    initialize.add_argument("--bundle", help="Custom repository-relative bundle path")
+    initialize.add_argument(
+        "--placement",
+        choices=tuple(BUNDLE_PLACEMENTS),
+        default="root",
+        help="Standard placement: root creates tasks/; docs creates docs/tasks/ (default: root)",
+    )
     initialize.add_argument("--force", action="store_true", help="Rebuild an existing index")
     initialize.set_defaults(func=init_bundle)
 

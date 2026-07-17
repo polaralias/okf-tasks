@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/polaralias/okf-tasks/v0.2.0/schemas/task.schema.json",
-  "title": "OKF Tasks v0.2 Task frontmatter",
+  "$id": "https://raw.githubusercontent.com/polaralias/okf-tasks/v0.3.0/schemas/task.schema.json",
+  "title": "OKF Tasks v0.3 Task frontmatter",
   "type": "object",
   "required": ["type", "task", "title", "description", "status", "created", "timestamp"],
   "properties": {

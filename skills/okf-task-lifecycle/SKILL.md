@@ -27,11 +27,19 @@ Read repository guidance, existing task conventions, canonical documentation, an
 
 ### 2. Establish the bundle
 
-Use `tasks/` by default or follow the repository's configured bundle location.
+Use the top-level `tasks/` operational placement by default:
 
 ```text
 python scripts/okf_tasks.py init-bundle --root <repo>
 ```
+
+Use `docs/tasks/` only when the repository's `docs/` tree already owns an actual project's context and delivery material:
+
+```text
+python scripts/okf_tasks.py init-bundle --root <repo> --placement docs
+```
+
+For every later command in that mode, pass `--bundle docs/tasks`. Keep durable requirements, architecture, decisions, and project context in their established documentation files; link or promote them from the operational task records.
 
 ### 3. Create a task from an observable outcome
 

@@ -2,6 +2,8 @@
 
 ## Required layout
 
+Use `tasks/` as the default operational placement:
+
 ```text
 tasks/
 ├── index.md
@@ -12,6 +14,8 @@ tasks/
     └── time/
         └── <entry-id>.md
 ```
+
+Use `docs/tasks/` as an optional project-documentation placement only when `docs/` already owns an actual project's context and delivery material. The bundle structure below `docs/tasks/` is identical. Task records remain operational state; durable requirements, architecture, decisions, and project context stay in their canonical documents.
 
 Every non-reserved Markdown file must contain parseable YAML frontmatter and a non-empty `type` to conform to OKF v0.1.
 

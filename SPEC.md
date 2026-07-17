@@ -1,6 +1,6 @@
 # OKF Tasks Profile
 
-Version 0.2
+Version 0.3
 
 OKF Tasks is an independent profile of Open Knowledge Format (OKF) v0.1 for representing trackable work as portable Markdown concepts. It adds task lifecycle, workstream, evidence, relationship, and tracker-mapping conventions without changing the OKF base format.
 
@@ -24,13 +24,13 @@ It does not standardize product requirements, architecture, sprint membership, t
 
 An OKF Tasks bundle MUST conform to [OKF v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/ee67a5ca27044ebe7c38385f5b6cffc2305a9c1a/okf/SPEC.md). Requirements in this profile are additional constraints. The commit-pinned link identifies the exact upstream text used by this version.
 
-The published identity of this profile version is `https://github.com/polaralias/okf-tasks/blob/v0.2.0/SPEC.md`. Producers SHOULD include that identity in the bundle root index as described in section 10.
+The published identity of this profile version is `https://github.com/polaralias/okf-tasks/blob/v0.3.0/SPEC.md`. Producers SHOULD include that identity in the bundle root index as described in section 10.
 
 Each non-reserved Markdown file in the bundle MUST be an OKF concept with parseable YAML frontmatter and a non-empty `type`. Producers MAY add fields. Consumers MUST preserve unknown fields when round-tripping a record and MUST tolerate unknown task-adjacent concept types.
 
 ## 3. Bundle structure
 
-The recommended repository-local bundle root is `tasks/`:
+The default repository-local bundle root is `tasks/`:
 
 ```text
 tasks/
@@ -43,6 +43,21 @@ tasks/
     └── time/
         └── <entry-id>.md
 ```
+
+This default placement keeps operational execution state visibly separate from durable documentation, source code, and configuration.
+
+A repository MAY instead use `docs/tasks/` when its `docs/` tree is already the established home for an actual project's delivery plan and project operations:
+
+```text
+docs/
+├── PROJECT.md                     durable project context
+└── tasks/
+    ├── index.md
+    └── <task-slug>/
+        └── task.md
+```
+
+The `docs/tasks/` placement does not make task records canonical product requirements, architecture, or decisions. Producers MUST keep those durable conclusions in the repository's established documentation surfaces and link or promote them from task records. Consumers and adapters MUST accept an explicitly selected bundle root at either placement; document and bundle conformance are otherwise identical.
 
 `index.md` and `log.md` retain their OKF-reserved meanings. Any additional Markdown file, including session or coordination records, MUST be an OKF concept with a descriptive `type`.
 
@@ -298,8 +313,8 @@ The bundle-root `index.md` SHOULD declare the following fields using the OKF roo
 
 ```yaml
 okf_version: "0.1"
-okf_tasks_version: "0.2"
-okf_tasks_profile: https://github.com/polaralias/okf-tasks/blob/v0.2.0/SPEC.md
+okf_tasks_version: "0.3"
+okf_tasks_profile: https://github.com/polaralias/okf-tasks/blob/v0.3.0/SPEC.md
 ```
 
 Its body MUST contain a top-level heading and SHOULD group task links under status headings. Each entry SHOULD include the task description.
@@ -324,7 +339,7 @@ A Task, Workstream, or Time Entry document is conformant when it satisfies the a
 
 ### 11.2 Bundle conformance
 
-An OKF Tasks v0.2 bundle is conformant when:
+An OKF Tasks v0.3 bundle is conformant when:
 
 1. it conforms to OKF v0.1;
 2. every `Task` and `Workstream` concept satisfies the required profile fields and body headings;
@@ -355,7 +370,7 @@ Consumers SHOULD treat semantic completion evidence and knowledge promotion as r
 
 The repository `VERSION` file is the release source of truth. Profile `0.x` releases may add constraints in a new minor version; patch releases clarify text or fix tooling without changing conformant data. A tagged profile URL and schema `$id` are immutable. Normative changes require corresponding positive and negative conformance fixtures and agreement from both maintained implementations.
 
-Version 0.2 adds secure external-artifact preparation and repository-link portability. It is released when all required clauses have fixtures where machine-testable, two independently implemented validators agree on the fixture manifest, examples validate, release automation is green, and governance identifies the accepting maintainer. Those conditions are part of this repository's automated release bar.
+Version 0.3 defines the default `tasks/` placement and the optional `docs/tasks/` project-documentation placement. It is released when all required clauses have fixtures where machine-testable, two independently implemented validators agree on the fixture manifest, examples validate, release automation is green, and governance identifies the accepting maintainer. Those conditions are part of this repository's automated release bar.
 
 ## Appendix A — Minimal task
 
