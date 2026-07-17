@@ -84,6 +84,36 @@ class ConformanceFixtureTests(unittest.TestCase):
                 actual = target == source or target in okf_tasks.TRANSITIONS[source]
                 self.assertEqual(expected, actual, f"{source} -> {target}")
 
+    def test_every_external_artifact_case_has_the_expected_result(self) -> None:
+        manifest = json.loads((REPOSITORY / "conformance" / "export-manifest.json").read_text(encoding="utf-8"))
+        for case in manifest["cases"]:
+            with self.subTest(case=case["id"]):
+                root = REPOSITORY / "conformance" / case["path"]
+                source = root / case["source"]
+                _, body = okf_tasks.read_document(source)
+                try:
+                    findings = okf_tasks.egress_findings(body, root)
+                    if findings:
+                        raise SystemExit("\n".join(findings))
+                    rendered = okf_tasks.resolve_repository_links(
+                        body,
+                        root,
+                        source,
+                        case["remote"],
+                        case["ref"],
+                        case.get("provider"),
+                    )
+                except SystemExit as error:
+                    self.assertFalse(case["valid"], str(error))
+                    self.assertIn(case["error"], str(error))
+                    if case.get("excludes"):
+                        self.assertNotIn(case["excludes"], str(error))
+                else:
+                    self.assertTrue(case["valid"], rendered)
+                    self.assertIn(case["contains"], rendered)
+                    if case.get("excludes"):
+                        self.assertNotIn(case["excludes"], rendered)
+
 
 class LifecycleTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -191,6 +221,60 @@ class LifecycleTests(unittest.TestCase):
         self.assertEqual(1, len(task["completion_history"]))
         self.assertTrue(okf_tasks.is_rfc3339(task["completion_history"][0]["finished"]))
         self.assertTrue(okf_tasks.is_rfc3339(task["completion_history"][0]["reopened"]))
+
+    def test_prepare_external_artifact_is_body_only_and_pinned(self) -> None:
+        self.create_task()
+        guide = self.root / "docs" / "guide.md"
+        guide.parent.mkdir(parents=True)
+        guide.write_text("# Guide\n", encoding="utf-8")
+        task_path = self.root / "tasks" / "first-task" / "task.md"
+        metadata, body = okf_tasks.read_document(task_path)
+        body += "\n## Related knowledge\n\nSee [the guide](../../docs/guide.md).\n"
+        okf_tasks.write_document(task_path, metadata, body)
+        output = self.root / "prepared.md"
+        okf_tasks.prepare_external_artifact(
+            arguments(
+                root=str(self.root),
+                source="tasks/first-task/task.md",
+                remote="origin",
+                remote_url="https://token@github.com/example/project.git",
+                provider="github",
+                ref="abc123",
+                include_frontmatter=False,
+                allow_remote_images=False,
+                output=str(output),
+                force=False,
+            )
+        )
+        rendered = output.read_text(encoding="utf-8")
+        self.assertIn("source=tasks/first-task/task.md; revision=abc123", rendered)
+        self.assertIn("https://github.com/example/project/blob/abc123/docs/guide.md", rendered)
+        self.assertNotIn("token@", rendered)
+        self.assertNotIn("type: Task", rendered)
+
+    def test_prepare_external_artifact_does_not_echo_a_secret(self) -> None:
+        self.create_task()
+        task_path = self.root / "tasks" / "first-task" / "task.md"
+        metadata, body = okf_tasks.read_document(task_path)
+        secret = "supersecretvalue123456"
+        okf_tasks.write_document(task_path, metadata, body + f"\napi_key={secret}\n")
+        with self.assertRaises(SystemExit) as caught:
+            okf_tasks.prepare_external_artifact(
+                arguments(
+                    root=str(self.root),
+                    source="tasks/first-task/task.md",
+                    remote="origin",
+                    remote_url="https://github.com/example/project.git",
+                    provider="github",
+                    ref="abc123",
+                    include_frontmatter=False,
+                    allow_remote_images=False,
+                    output=None,
+                    force=False,
+                )
+            )
+        self.assertIn("detected assigned secret", str(caught.exception))
+        self.assertNotIn(secret, str(caught.exception))
 
     def test_bundle_cannot_escape_repository(self) -> None:
         with self.assertRaisesRegex(SystemExit, "inside the repository"):

@@ -8,7 +8,7 @@ This project is not affiliated with or endorsed by Google Cloud.
 
 ## What is included
 
-- [`SPEC.md`](./SPEC.md) — the OKF Tasks v0.1 profile.
+- [`SPEC.md`](./SPEC.md) — the OKF Tasks v0.2 profile.
 - [`schemas/`](./schemas/) — versioned JSON Schemas for task, workstream, and time-entry frontmatter.
 - [`skills/okf-task-lifecycle/`](./skills/okf-task-lifecycle/) — a portable agent skill and deterministic CLI.
 - [`examples/`](./examples/) — standalone, knowledge-linked, and tracker-synchronised bundles.
@@ -38,11 +38,19 @@ python skills/okf-task-lifecycle/scripts/okf_tasks.py validate --root .
 
 The default bundle location is `tasks/`. Use `--bundle <path>` to select another repository-relative bundle root.
 
+Prepare a task body for an external tracker without leaking secrets or local paths:
+
+```text
+python skills/okf-task-lifecycle/scripts/okf_tasks.py prepare-export --root . --source tasks/first-task/task.md --output .okf-exports/first-task.md
+```
+
+Repository-relative links are converted to credential-free GitHub or GitLab links pinned to the current commit. Unsafe or unresolved content stops the export.
+
 ## Design boundary
 
 OKF Tasks governs execution truth. It links to product requirements, architecture, decisions, runbooks, and other canonical knowledge, but does not prescribe how a repository creates or governs that knowledge.
 
-External issue trackers are projections or upstream sources according to an explicit sync authority. Provider-specific adapters are outside the core profile.
+External issue trackers are projections or upstream sources according to an explicit sync authority. Provider-specific APIs remain outside the core profile, while adapter trust boundaries, egress checks, and portable-link behavior are normative.
 
 ## Verify the release bar
 
@@ -56,7 +64,7 @@ python scripts/check_release.py
 
 ## Status
 
-Version 0.1 is the first published profile. Normative changes require fixtures and agreement between the Python and TypeScript implementations; see [`GOVERNANCE.md`](./GOVERNANCE.md).
+Version 0.2 adds secure external-artifact preparation and repository-link portability. Normative changes require fixtures and agreement between the Python and TypeScript implementations; see [`GOVERNANCE.md`](./GOVERNANCE.md).
 
 ## License
 

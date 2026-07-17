@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reference CLI for OKF Tasks v0.1 bundles."""
+"""Reference CLI for OKF Tasks v0.2 bundles."""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote, unquote, urlsplit
 
 try:
     import yaml
@@ -49,6 +50,23 @@ TIME_METHODS = {"tracked", "tracked-adjusted", "manual", "estimated-commit-revie
 ESTIMATE_CONFIDENCE = {"low", "medium", "high"}
 ESTIMATE_METHODS = {"agent", "manual", "historical"}
 LIVE_TIME_STATUSES = {"ready", "in-progress", "blocked", "validation"}
+PROFILE_VERSION = "0.2"
+PROFILE_URL = "https://github.com/polaralias/okf-tasks/blob/v0.2.0/SPEC.md"
+MARKDOWN_LINK_PATTERN = re.compile(r"(?P<image>!)?(?P<label>\[[^\]\n]*\])\((?P<target>[^)\s]+)(?P<suffix>[^)]*)\)")
+SECRET_PATTERNS = {
+    "private key": re.compile(r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----"),
+    "GitHub token": re.compile(r"\bgh[pousr]_[A-Za-z0-9_]{20,}\b"),
+    "AWS access key": re.compile(r"\bAKIA[0-9A-Z]{16}\b"),
+    "assigned secret": re.compile(
+        r"(?i)\b(?:api[_-]?key|access[_-]?token|secret|password)\s*[:=]\s*[\"']?[A-Za-z0-9_./+=-]{12,}"
+    ),
+}
+MACHINE_PATH_PATTERNS = {
+    "file URI": re.compile(r"(?i)\bfile://"),
+    "Windows absolute path": re.compile(r"(?<![A-Za-z0-9])(?:[A-Za-z]:[\\/]|\\\\)[^\s<>'\"]+"),
+    "POSIX machine path": re.compile(r"(?<![A-Za-z0-9])/(?:home|Users|tmp|var/tmp|etc|opt|srv|root|mnt|Volumes)/[^\s<>'\"]+"),
+    "home-relative path": re.compile(r"(?<![A-Za-z0-9])~[\\/][^\s<>'\"]+"),
+}
 
 
 class FrontmatterLoader(yaml.SafeLoader):
@@ -182,6 +200,156 @@ def write_new_document(path: Path, metadata: dict[str, Any], body: str) -> None:
     write_document(path, metadata, body)
 
 
+def git_value(root: Path, *arguments: str) -> str:
+    result = subprocess.run(
+        ["git", "-C", str(root), *arguments],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0 or not result.stdout.strip():
+        fail(f"Git could not resolve {' '.join(arguments)} for external artifact preparation.")
+    return result.stdout.strip()
+
+
+def repository_web_base(remote_url: str, provider: str | None = None) -> tuple[str, str]:
+    """Return provider and credential-free repository web base for common Git remotes."""
+    value = remote_url.strip()
+    scp = re.fullmatch(r"(?:[^@/]+@)?([^:]+):(.+)", value) if "://" not in value else None
+    if scp:
+        host, repository_path = scp.groups()
+    else:
+        parsed = urlsplit(value)
+        if parsed.scheme not in {"http", "https", "ssh", "git"} or not parsed.hostname:
+            fail("Unsupported repository remote; use a GitHub or GitLab HTTPS/SSH remote.")
+        host = parsed.hostname + (f":{parsed.port}" if parsed.port else "")
+        repository_path = parsed.path.lstrip("/")
+    repository_path = repository_path.removesuffix(".git").strip("/")
+    if not repository_path or repository_path.startswith("../"):
+        fail("Repository remote does not contain a safe project path.")
+    detected = provider
+    host_name = host.split(":", 1)[0].lower()
+    if detected is None:
+        if host_name == "github.com" or host_name.endswith(".github.com"):
+            detected = "github"
+        elif "gitlab" in host_name:
+            detected = "gitlab"
+    if detected not in {"github", "gitlab"}:
+        fail("Repository provider is not identifiable; pass --provider github or --provider gitlab.")
+    encoded_path = "/".join(quote(unquote(part), safe="-._~") for part in repository_path.split("/"))
+    return detected, f"https://{host}/{encoded_path}"
+
+
+def egress_findings(text: str, root: Path) -> list[str]:
+    """Report finding classes and line numbers without reproducing sensitive values."""
+    findings: list[str] = []
+    root_forms = {str(root.resolve()), str(root.resolve()).replace("\\", "/")}
+    for line_number, line in enumerate(text.splitlines(), 1):
+        for name, pattern in SECRET_PATTERNS.items():
+            if pattern.search(line):
+                findings.append(f"line {line_number}: detected {name}")
+        for name, pattern in MACHINE_PATH_PATTERNS.items():
+            if pattern.search(line):
+                findings.append(f"line {line_number}: detected {name}")
+        if any(value and value.lower() in line.lower() for value in root_forms):
+            findings.append(f"line {line_number}: detected repository-local absolute path")
+    return list(dict.fromkeys(findings))
+
+
+def resolve_repository_links(
+    text: str,
+    root: Path,
+    source: Path,
+    remote_url: str,
+    ref: str,
+    provider: str | None = None,
+    allow_remote_images: bool = False,
+) -> str:
+    root = root.resolve()
+    source = source.resolve()
+    try:
+        source.relative_to(root)
+    except ValueError:
+        fail("Source document must remain inside the repository root.")
+    detected_provider, web_base = repository_web_base(remote_url, provider)
+    encoded_ref = quote(ref, safe="-._~")
+
+    def replace(match: re.Match[str]) -> str:
+        target = match.group("target").strip("<>")
+        is_image = bool(match.group("image"))
+        if target.startswith("#"):
+            return match.group(0)
+        parsed = urlsplit(target)
+        if parsed.scheme:
+            if parsed.scheme != "https":
+                fail("External artifact contains a non-HTTPS or machine-local link.")
+            if is_image and not allow_remote_images:
+                fail("External artifact contains a remote image without an explicit allow policy.")
+            return match.group(0)
+        if target.startswith("//") or re.match(r"^[A-Za-z]:[\\/]", target):
+            fail("External artifact contains a machine-local absolute link.")
+        if parsed.query:
+            fail("Repository-local links with query strings are not portable.")
+        local_path = unquote(parsed.path).replace("\\", "/")
+        candidate = (root / local_path.lstrip("/")) if local_path.startswith("/") else (source.parent / local_path)
+        candidate = candidate.resolve()
+        try:
+            relative = candidate.relative_to(root)
+        except ValueError:
+            fail("External artifact contains a repository link outside the declared root.")
+        if not candidate.exists():
+            fail("External artifact contains an unresolved repository-local link.")
+        view = "tree" if candidate.is_dir() else "blob"
+        encoded_path = quote(relative.as_posix(), safe="/-._~")
+        fragment = f"#{quote(unquote(parsed.fragment), safe='-._~')}" if parsed.fragment else ""
+        resolved = f"{web_base}/{'-/' if detected_provider == 'gitlab' else ''}{view}/{encoded_ref}/{encoded_path}{fragment}"
+        return f"{'!' if is_image else ''}{match.group('label')}({resolved}{match.group('suffix')})"
+
+    return MARKDOWN_LINK_PATTERN.sub(replace, text)
+
+
+def prepare_external_artifact(args: argparse.Namespace) -> int:
+    root = repository_root(args.root)
+    source = (root / args.source).resolve()
+    try:
+        source.relative_to(root)
+    except ValueError:
+        fail("Source document must remain inside the repository root.")
+    if not source.is_file():
+        fail(f"Source document does not exist: {args.source}")
+    metadata, body = read_document(source)
+    payload = source.read_text(encoding="utf-8") if args.include_frontmatter else body
+    initial_findings = egress_findings(payload, root)
+    if initial_findings:
+        fail("External artifact failed egress inspection:\n" + "\n".join(initial_findings))
+    remote_url = args.remote_url or git_value(root, "remote", "get-url", args.remote)
+    ref = args.ref or git_value(root, "rev-parse", "HEAD")
+    rendered = resolve_repository_links(
+        payload,
+        root,
+        source,
+        remote_url,
+        ref,
+        args.provider,
+        args.allow_remote_images,
+    )
+    provenance = f"<!-- OKF Tasks export: source={source.relative_to(root).as_posix()}; revision={ref} -->\n\n"
+    output = provenance + rendered.rstrip() + "\n"
+    final_findings = egress_findings(output, root)
+    if final_findings:
+        fail("Rendered external artifact failed egress inspection:\n" + "\n".join(final_findings))
+    if args.output:
+        destination = Path(args.output).resolve()
+        if destination.exists() and not args.force:
+            fail(f"Refusing to overwrite external artifact: {destination}")
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(output, encoding="utf-8")
+        print(f"Prepared external artifact at {destination}")
+    else:
+        print(output, end="")
+    return 0
+
+
 def task_records(bundle: Path) -> list[tuple[Path, dict[str, Any], str]]:
     records: list[tuple[Path, dict[str, Any], str]] = []
     if not bundle.exists():
@@ -267,8 +435,8 @@ def generated_index(bundle: Path) -> str:
     return (
         "---\n"
         'okf_version: "0.1"\n'
-        'okf_tasks_version: "0.1"\n'
-        'okf_tasks_profile: https://github.com/polaralias/okf-tasks/blob/v0.1.0/SPEC.md\n'
+        f'okf_tasks_version: "{PROFILE_VERSION}"\n'
+        f'okf_tasks_profile: {PROFILE_URL}\n'
         "---\n\n"
         "<!-- Generated by okf-task-lifecycle. Do not edit by hand. -->\n"
         "# Task index\n\n"
@@ -1218,7 +1386,7 @@ def add_commit_review_arguments(parser: argparse.ArgumentParser) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Maintain OKF Tasks v0.1 bundles.")
+    parser = argparse.ArgumentParser(description="Maintain OKF Tasks v0.2 bundles.")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     initialize = subparsers.add_parser("init-bundle", help="Initialize a generated task index")
@@ -1260,6 +1428,22 @@ def build_parser() -> argparse.ArgumentParser:
     external.add_argument("--url", required=True)
     external.add_argument("--authority", choices=sorted(SYNC_AUTHORITIES), required=True)
     external.set_defaults(func=link_external)
+
+    export = subparsers.add_parser(
+        "prepare-export",
+        help="Prepare a repository artifact for safe publication to an external system",
+    )
+    export.add_argument("--root", required=True, help="Repository root")
+    export.add_argument("--source", required=True, help="Repository-relative Markdown source")
+    export.add_argument("--remote", default="origin", help="Git remote name (default: origin)")
+    export.add_argument("--remote-url", help="Explicit GitHub or GitLab remote URL")
+    export.add_argument("--provider", choices=("github", "gitlab"))
+    export.add_argument("--ref", help="Publication ref (default: current commit SHA)")
+    export.add_argument("--include-frontmatter", action="store_true", help="Export frontmatter as well as body")
+    export.add_argument("--allow-remote-images", action="store_true", help="Allow HTTPS images under an explicit policy")
+    export.add_argument("--output", help="Write the prepared artifact instead of stdout")
+    export.add_argument("--force", action="store_true", help="Overwrite an existing output file")
+    export.set_defaults(func=prepare_external_artifact)
 
     estimate = subparsers.add_parser("set-estimate", help="Record expected effort and optional sprint points")
     add_location_arguments(estimate)

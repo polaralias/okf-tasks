@@ -43,10 +43,16 @@ def main() -> int:
         errors.append("conformance manifest profile does not agree with VERSION")
     if not any(case.get("valid") for case in manifest.get("cases", [])) or not any(not case.get("valid") for case in manifest.get("cases", [])):
         errors.append("conformance manifest requires positive and negative cases")
+    export_manifest = json.loads((ROOT / "conformance" / "export-manifest.json").read_text(encoding="utf-8"))
+    if export_manifest.get("profile") != profile:
+        errors.append("export conformance manifest profile does not agree with VERSION")
+    if not any(case.get("valid") for case in export_manifest.get("cases", [])) or not any(not case.get("valid") for case in export_manifest.get("cases", [])):
+        errors.append("export conformance manifest requires positive and negative cases")
     if errors:
         print("\n".join(errors), file=sys.stderr)
         return 1
-    print(f"Release metadata is consistent for {tag} ({len(manifest['cases'])} conformance cases).")
+    total_cases = len(manifest["cases"]) + len(export_manifest["cases"])
+    print(f"Release metadata is consistent for {tag} ({total_cases} conformance cases).")
     return 0
 
 
