@@ -1,5 +1,5 @@
 {
-  "profile": "https://github.com/polaralias/okf-tasks/blob/v0.2.0/SPEC.md",
+  "profile": "https://github.com/polaralias/okf-tasks/blob/v0.3.0/SPEC.md",
   "cases": [
     {"id": "valid-minimal", "path": "valid/minimal/tasks", "valid": true},
     {"id": "valid-full-task", "path": "generated/valid/full-task/tasks", "valid": true},
@@ -9,6 +9,7 @@
     {"id": "valid-reopened-history", "path": "generated/valid/reopened-history/tasks", "valid": true},
     {"id": "valid-time-methods", "path": "generated/valid/time-methods/tasks", "valid": true},
     {"id": "valid-unique-external-mappings", "path": "generated/valid/unique-external-mappings/tasks", "valid": true},
+    {"id": "valid-docs-placement", "path": "generated/valid/docs-placement/docs/tasks", "valid": true},
 
     {"id": "invalid-missing-type", "path": "invalid/missing-type/tasks", "valid": false, "error": "requires a non-empty type"},
     {"id": "invalid-bad-time-rollup", "path": "invalid/bad-time-rollup/tasks", "valid": false, "error": "closed time-entry sum"},

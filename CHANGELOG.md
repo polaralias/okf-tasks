@@ -2,6 +2,13 @@
 
 All notable changes to OKF Tasks are recorded here.
 
+## 0.3.0 — 2026-07-17
+
+- Define `tasks/` as the default operational placement.
+- Add `docs/tasks/` as an optional placement for repositories whose documentation tree already owns actual project delivery material.
+- Add `init-bundle --placement docs` while preserving custom `--bundle` support.
+- Add project-documentation example and conformance coverage.
+
 ## 0.2.0 — 2026-07-17
 
 - Define untrusted external content and prompt injection as an adapter trust-boundary concern.

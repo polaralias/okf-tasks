@@ -8,7 +8,7 @@ This project is not affiliated with or endorsed by Google Cloud.
 
 ## What is included
 
-- [`SPEC.md`](./SPEC.md) — the OKF Tasks v0.2 profile.
+- [`SPEC.md`](./SPEC.md) — the OKF Tasks v0.3 profile.
 - [`schemas/`](./schemas/) — versioned JSON Schemas for task, workstream, and time-entry frontmatter.
 - [`skills/okf-task-lifecycle/`](./skills/okf-task-lifecycle/) — a portable agent skill and deterministic CLI.
 - [`examples/`](./examples/) — standalone, knowledge-linked, and tracker-synchronised bundles.
@@ -38,6 +38,15 @@ python skills/okf-task-lifecycle/scripts/okf_tasks.py validate --root .
 
 The default bundle location is `tasks/`. Use `--bundle <path>` to select another repository-relative bundle root.
 
+For a repository whose `docs/` tree already contains an actual project's context and delivery material, initialize the optional project-documentation placement:
+
+```text
+python skills/okf-task-lifecycle/scripts/okf_tasks.py init-bundle --root . --placement docs
+python skills/okf-task-lifecycle/scripts/okf_tasks.py create --root . --bundle docs/tasks --slug first-task --title "First task" --description "Deliver the first observable result."
+```
+
+This creates `docs/tasks/`; it does not turn operational task records into canonical requirements or architecture.
+
 Prepare a task body for an external tracker without leaking secrets or local paths:
 
 ```text
@@ -64,7 +73,7 @@ python scripts/check_release.py
 
 ## Status
 
-Version 0.2 adds secure external-artifact preparation and repository-link portability. Normative changes require fixtures and agreement between the Python and TypeScript implementations; see [`GOVERNANCE.md`](./GOVERNANCE.md).
+Version 0.3 defines root and project-documentation bundle placements. Normative changes require fixtures and agreement between the Python and TypeScript implementations; see [`GOVERNANCE.md`](./GOVERNANCE.md).
 
 ## License
 
