@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="OKF%20Tasks%20Banner.png" alt="OKF Tasks banner" width="960" />
+</p>
+
 # OKF Tasks
 
 OKF Tasks is an independent profile of the [Open Knowledge Format (OKF) v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/ee67a5ca27044ebe7c38385f5b6cffc2305a9c1a/okf/SPEC.md) for portable, repository-local task records.
