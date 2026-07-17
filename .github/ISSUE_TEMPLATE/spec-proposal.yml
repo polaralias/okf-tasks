@@ -1,0 +1,30 @@
+name: Specification proposal
+description: Propose an interoperable OKF Tasks rule or clarification.
+title: "spec: "
+labels: [specification]
+body:
+  - type: textarea
+    id: gap
+    attributes:
+      label: Interoperability gap
+      description: What cannot producers and consumers agree on today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed rule
+    validations:
+      required: true
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Compatibility and alternatives
+    validations:
+      required: true
+  - type: textarea
+    id: fixtures
+    attributes:
+      label: Positive and negative examples
+    validations:
+      required: true
