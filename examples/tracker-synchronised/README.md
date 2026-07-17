@@ -1,3 +1,11 @@
 # Tracker-synchronised bundle
 
-This example keeps the repository task canonical and records a Linear issue as an external projection. No provider API behavior is implied by the profile.
+This example keeps the repository task canonical and records a Linear issue as an external projection. Provider API behavior is not implied, but any adapter must prepare the exact outbound artifact according to sections 9.1 and 9.2 of the profile.
+
+From the repository root, a safe body can be staged with:
+
+```text
+python skills/okf-task-lifecycle/scripts/okf_tasks.py prepare-export --root . --source examples/tracker-synchronised/tasks/add-audit-events/task.md --output .okf-exports/add-audit-events.md
+```
+
+The ignored `.okf-exports/` staging directory is deliberately outside this example and should not be committed.

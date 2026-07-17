@@ -1,10 +1,12 @@
 # Conformance fixtures
 
-Fixtures are repository roots whose `tasks/` subdirectories exercise OKF Tasks v0.1. `manifest.json` is the shared contract consumed independently by the Python and TypeScript implementations.
+Fixtures exercise OKF Tasks v0.2. `manifest.json` covers bundle conformance and `export-manifest.json` covers external-artifact preparation; both are consumed independently by the Python and TypeScript implementations.
 
 Hand-authored fixtures cover the minimal document, base OKF failure, and bad time rollup. Deterministic fixtures under `generated/` cover task fields and headings, workstreams, time methods, estimates, points, sync authority, external uniqueness, reopening history, unknown concepts, broken-link warnings, and generated indexes.
 
 `transitions.json` enumerates every normal lifecycle edge. Tests evaluate all 64 source/target pairs, including idempotent same-state updates.
+
+The external-artifact corpus covers GitHub and GitLab conversion, credential stripping, untrusted instruction text, secrets in text and links, Windows, POSIX and home-relative paths, `file:` URIs, missing and escaping links, insecure HTTP, and remote-image policy.
 
 Run the fixtures through the reference implementation:
 

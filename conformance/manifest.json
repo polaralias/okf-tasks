@@ -1,5 +1,5 @@
 {
-  "profile": "https://github.com/polaralias/okf-tasks/blob/v0.1.0/SPEC.md",
+  "profile": "https://github.com/polaralias/okf-tasks/blob/v0.2.0/SPEC.md",
   "cases": [
     {"id": "valid-minimal", "path": "valid/minimal/tasks", "valid": true},
     {"id": "valid-full-task", "path": "generated/valid/full-task/tasks", "valid": true},

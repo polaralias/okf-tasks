@@ -11,6 +11,19 @@ const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 type RecordValue = Record<string, unknown>;
 type Parsed = { metadata: RecordValue; body: string };
 
+const secretPatterns: Array<[string, RegExp]> = [
+  ["private key", /-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----/],
+  ["GitHub token", /\bgh[pousr]_[A-Za-z0-9_]{20,}\b/],
+  ["AWS access key", /\bAKIA[0-9A-Z]{16}\b/],
+  ["assigned secret", /\b(?:api[_-]?key|access[_-]?token|secret|password)\s*[:=]\s*["']?[A-Za-z0-9_./+=-]{12,}/i],
+];
+const machinePathPatterns: Array<[string, RegExp]> = [
+  ["file URI", /\bfile:\/\//i],
+  ["Windows absolute path", /(?:^|[^A-Za-z0-9])(?:[A-Za-z]:[\\/]|\\\\)[^\s<>'"]+/],
+  ["POSIX machine path", /(?:^|[^A-Za-z0-9])\/(?:home|Users|tmp|var\/tmp|etc|opt|srv|root|mnt|Volumes)\/[^\s<>'"]+/],
+  ["home-relative path", /(?:^|[^A-Za-z0-9])~[\\/][^\s<>'"]+/],
+];
+
 function markdownFiles(root: string): string[] {
   if (!fs.existsSync(root)) return [];
   return fs.readdirSync(root, { withFileTypes: true }).flatMap((entry) => {
@@ -28,6 +41,81 @@ function parseDocument(file: string): Parsed {
   try { metadata = YAML.parse(match[1]); } catch (error) { throw new Error(`Invalid YAML frontmatter in ${file}: ${String(error)}`); }
   if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) throw new Error(`Frontmatter must be a mapping in ${file}`);
   return { metadata: metadata as RecordValue, body: source.slice(match[0].length).replace(/^\r?\n/, "") };
+}
+
+export function egressFindings(text: string, root: string): string[] {
+  const findings: string[] = [];
+  const roots = [path.resolve(root), path.resolve(root).replaceAll("\\", "/")].map((value) => value.toLowerCase());
+  text.split(/\r?\n/).forEach((line, index) => {
+    for (const [name, pattern] of secretPatterns) if (pattern.test(line)) findings.push(`line ${index + 1}: detected ${name}`);
+    for (const [name, pattern] of machinePathPatterns) if (pattern.test(line)) findings.push(`line ${index + 1}: detected ${name}`);
+    if (roots.some((value) => value && line.toLowerCase().includes(value))) findings.push(`line ${index + 1}: detected repository-local absolute path`);
+  });
+  return [...new Set(findings)];
+}
+
+function repositoryWebBase(remote: string, requestedProvider?: string): { provider: "github" | "gitlab"; base: string } {
+  let host: string; let repositoryPath: string;
+  const scp = !remote.includes("://") ? remote.trim().match(/^(?:[^@/]+@)?([^:]+):(.+)$/) : null;
+  if (scp) { [, host, repositoryPath] = scp; }
+  else {
+    let parsed: URL; try { parsed = new URL(remote); } catch { throw new Error("Unsupported repository remote"); }
+    if (!["http:", "https:", "ssh:", "git:"].includes(parsed.protocol) || !parsed.hostname) throw new Error("Unsupported repository remote");
+    host = parsed.host; repositoryPath = parsed.pathname.replace(/^\//, "");
+  }
+  repositoryPath = repositoryPath.replace(/\.git$/, "").replace(/^\/+|\/+$/g, "");
+  let provider = requestedProvider;
+  const hostname = host.split(":", 1)[0].toLowerCase();
+  if (!provider && (hostname === "github.com" || hostname.endsWith(".github.com"))) provider = "github";
+  if (!provider && hostname.includes("gitlab")) provider = "gitlab";
+  if (provider !== "github" && provider !== "gitlab") throw new Error("Repository provider is not identifiable");
+  const encoded = repositoryPath.split("/").map((part) => encodeURIComponent(decodeURIComponent(part))).join("/");
+  return { provider, base: `https://${host}/${encoded}` };
+}
+
+export function prepareExternalArtifact(
+  rootValue: string,
+  sourceValue: string,
+  remote: string,
+  ref: string,
+  requestedProvider?: string,
+  allowRemoteImages = false,
+): string {
+  const root = path.resolve(rootValue); const source = path.resolve(root, sourceValue);
+  const relativeSource = path.relative(root, source);
+  if (relativeSource.startsWith("..") || path.isAbsolute(relativeSource)) throw new Error("Source document must remain inside the repository root");
+  const { body } = parseDocument(source);
+  const findings = egressFindings(body, root);
+  if (findings.length) throw new Error(findings.join("\n"));
+  const { provider, base } = repositoryWebBase(remote, requestedProvider);
+  const encodedRef = encodeURIComponent(ref);
+  const rendered = body.replace(/(!)?(\[[^\]\n]*\])\(([^)\s]+)([^)]*)\)/g, (original, image: string | undefined, label: string, rawTarget: string, suffix: string) => {
+    const target = rawTarget.replace(/^<|>$/g, "");
+    if (target.startsWith("#")) return original;
+    if (/^[A-Za-z][A-Za-z0-9+.-]*:/.test(target)) {
+      if (!target.startsWith("https://")) throw new Error("External artifact contains a non-HTTPS or machine-local link");
+      if (image && !allowRemoteImages) throw new Error("External artifact contains a remote image without an explicit allow policy");
+      return original;
+    }
+    if (target.startsWith("//") || /^[A-Za-z]:[\\/]/.test(target)) throw new Error("External artifact contains a machine-local absolute link");
+    const [withoutFragment, fragment = ""] = target.split("#", 2);
+    if (withoutFragment.includes("?")) throw new Error("Repository-local links with query strings are not portable");
+    const localPath = decodeURIComponent(withoutFragment).replaceAll("\\", "/");
+    const candidate = path.resolve(localPath.startsWith("/") ? root : path.dirname(source), localPath.replace(/^\//, ""));
+    const relative = path.relative(root, candidate);
+    if (relative.startsWith("..") || path.isAbsolute(relative)) throw new Error("External artifact contains a repository link outside the declared root");
+    if (!fs.existsSync(candidate)) throw new Error("External artifact contains an unresolved repository-local link");
+    const view = fs.statSync(candidate).isDirectory() ? "tree" : "blob";
+    const encodedPath = relative.split(path.sep).map((part) => encodeURIComponent(part)).join("/");
+    const encodedFragment = fragment ? `#${encodeURIComponent(decodeURIComponent(fragment))}` : "";
+    const providerPath = provider === "gitlab" ? `-/${view}` : view;
+    return `${image ?? ""}${label}(${base}/${providerPath}/${encodedRef}/${encodedPath}${encodedFragment}${suffix})`;
+  });
+  const provenance = `<!-- OKF Tasks export: source=${relativeSource.replaceAll("\\", "/")}; revision=${ref} -->\n\n`;
+  const output = provenance + rendered.replace(/\s+$/, "") + "\n";
+  const finalFindings = egressFindings(output, root);
+  if (finalFindings.length) throw new Error(finalFindings.join("\n"));
+  return output;
 }
 
 function heading(body: string, name: string): boolean {

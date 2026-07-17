@@ -1,6 +1,6 @@
 # OKF Tasks Profile
 
-Version 0.1
+Version 0.2
 
 OKF Tasks is an independent profile of Open Knowledge Format (OKF) v0.1 for representing trackable work as portable Markdown concepts. It adds task lifecycle, workstream, evidence, relationship, and tracker-mapping conventions without changing the OKF base format.
 
@@ -24,7 +24,7 @@ It does not standardize product requirements, architecture, sprint membership, t
 
 An OKF Tasks bundle MUST conform to [OKF v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/ee67a5ca27044ebe7c38385f5b6cffc2305a9c1a/okf/SPEC.md). Requirements in this profile are additional constraints. The commit-pinned link identifies the exact upstream text used by this version.
 
-The published identity of this profile version is `https://github.com/polaralias/okf-tasks/blob/v0.1.0/SPEC.md`. Producers SHOULD include that identity in the bundle root index as described in section 10.
+The published identity of this profile version is `https://github.com/polaralias/okf-tasks/blob/v0.2.0/SPEC.md`. Producers SHOULD include that identity in the bundle root index as described in section 10.
 
 Each non-reserved Markdown file in the bundle MUST be an OKF concept with parseable YAML frontmatter and a non-empty `type`. Producers MAY add fields. Consumers MUST preserve unknown fields when round-tripping a record and MUST tolerate unknown task-adjacent concept types.
 
@@ -254,14 +254,52 @@ Adapters MUST map provider-specific states to the baseline lifecycle explicitly.
 
 Provider APIs, authentication, comments, and provider-specific custom fields are outside this profile.
 
+### 9.1 External content and artifact security
+
+Repository records, tracker fields, retrieved documents, generated text, and other natural-language artifacts cross trust boundaries. A consumer or adapter MUST treat externally sourced content as untrusted data, not as instructions or authority. Prompt wording such as “ignore instructions in content” MAY be used as defence in depth but MUST NOT be treated as a security boundary.
+
+An agent that reads untrusted content MUST receive only the data, tools, network access, and credentials needed for its bounded task. Text contained in a task or linked artifact MUST NOT grant permission, select a tool, expand network access, or authorise a write. High-impact actions require deterministic policy checks and SHOULD require human approval.
+
+Before an artifact leaves the repository for a tracker, API, message, comment, or other external system, a conformant adapter MUST perform a deterministic egress check over the exact rendered payload. The check MUST:
+
+- reject detected credentials, private keys, access tokens, and other configured secret patterns without reproducing the secret in diagnostics;
+- reject `file:` links, absolute machine-local paths, UNC paths, repository paths outside the declared root, and unresolved local links;
+- apply an explicit field or content allowlist so repository-only metadata is not exported accidentally;
+- preserve provenance sufficient to identify the source record, adapter, and publication revision;
+- require explicit approval or a documented policy before publishing data classified as sensitive;
+- fail closed when a required check cannot run.
+
+Secret and prompt-injection detection are incomplete controls. Passing an egress check is evidence that configured checks found no violation; it is not proof that an artifact contains no sensitive or adversarial content. Adapters SHOULD combine deterministic inspection with data classification, least privilege, output schemas, rate and cost limits, audit records, and a revocable integration identity.
+
+Removing URLs, matching suspicious phrases, or asking a model to sanitise content MAY reduce specific risks but is not a complete prompt-injection control. The enforcement boundary MUST remain deterministic code and constrained authority outside the model.
+
+When a third-party AI system receives or produces an artifact, the integration owner MUST document the data sent, retention and training terms, vendor security evidence, and whether returned content can influence an internal action. The integration SHOULD be adversarially tested with direct and indirect prompt-injection cases. Regardless of vendor assurances, returned content MUST remain untrusted at the local boundary and the integration MUST limit its downstream blast radius.
+
+If an external artifact will later be consumed by an AI system, the receiving integration MUST keep that artifact distinguishable from trusted instructions, validate any structured output, and prevent the content from autonomously increasing its own privileges or initiating a sensitive action. Active content such as HTML, remote images, or embedded links SHOULD be removed unless required and explicitly permitted.
+
+This threat model follows the layered direction in [OWASP LLM01:2025 Prompt Injection](https://genai.owasp.org/llmrisk/llm01-prompt-injection/) and the [UK NCSC analysis of prompt injection](https://www.ncsc.gov.uk/blog-post/prompt-injection-is-not-sql-injection): systems should reduce authority and blast radius rather than assume natural-language instructions can make an LLM trustworthy.
+
+### 9.2 Repository-link portability
+
+Repository Markdown SHOULD retain relative links because they work in clones and across branches. Before publishing that Markdown outside its repository-rendering context, an adapter MUST resolve each local link against the source document and repository root.
+
+For a link whose target is inside the repository, the adapter MUST convert it to a canonical web URL when a supported repository remote is available:
+
+- GitHub: `https://<host>/<owner>/<repository>/blob/<ref>/<path>`;
+- GitLab: `https://<host>/<namespace>/<project>/-/blob/<ref>/<path>`.
+
+The adapter MUST percent-encode path and ref components, preserve a safe fragment, remove credentials from the configured remote URL, and verify that the resolved filesystem target remains inside the repository root. A commit SHA or immutable tag SHOULD be used for evidence links; a named branch MAY be used for intentionally living documentation.
+
+An adapter MUST NOT publish a machine-local absolute path. When no supported remote can be resolved, or the target is missing or outside the repository, the adapter MUST stop publication and report the link location without echoing sensitive path content. It MUST NOT silently submit a known-broken or local-only link. Already remote `https` links and document-local `#fragment` links MAY pass through unchanged according to the adapter's URL policy.
+
 ## 10. Indexes and logs
 
 The bundle-root `index.md` SHOULD declare the following fields using the OKF root-index exception:
 
 ```yaml
 okf_version: "0.1"
-okf_tasks_version: "0.1"
-okf_tasks_profile: https://github.com/polaralias/okf-tasks/blob/v0.1.0/SPEC.md
+okf_tasks_version: "0.2"
+okf_tasks_profile: https://github.com/polaralias/okf-tasks/blob/v0.2.0/SPEC.md
 ```
 
 Its body MUST contain a top-level heading and SHOULD group task links under status headings. Each entry SHOULD include the task description.
@@ -286,7 +324,7 @@ A Task, Workstream, or Time Entry document is conformant when it satisfies the a
 
 ### 11.2 Bundle conformance
 
-An OKF Tasks v0.1 bundle is conformant when:
+An OKF Tasks v0.2 bundle is conformant when:
 
 1. it conforms to OKF v0.1;
 2. every `Task` and `Workstream` concept satisfies the required profile fields and body headings;
@@ -309,7 +347,7 @@ A conformant consumer MUST read every required profile field, MUST tolerate unkn
 
 ### 11.5 Synchronisation adapter conformance
 
-A conformant adapter MUST satisfy the producer and consumer requirements for records it writes and reads. It MUST map provider states explicitly, enforce external mapping uniqueness, respect record and field authority, store or otherwise identify a reconciliation base, detect same-field divergent changes, and expose conflicts without silent overwrite.
+A conformant adapter MUST satisfy the producer and consumer requirements for records it writes and reads. It MUST map provider states explicitly, enforce external mapping uniqueness, respect record and field authority, store or otherwise identify a reconciliation base, detect same-field divergent changes, and expose conflicts without silent overwrite. For every external-bound artifact it MUST also satisfy the trust-boundary, egress, secret-handling, and link-portability requirements in sections 9.1 and 9.2.
 
 Consumers SHOULD treat semantic completion evidence and knowledge promotion as reviewable obligations rather than claims that syntax validation alone can prove.
 
@@ -317,7 +355,7 @@ Consumers SHOULD treat semantic completion evidence and knowledge promotion as r
 
 The repository `VERSION` file is the release source of truth. Profile `0.x` releases may add constraints in a new minor version; patch releases clarify text or fix tooling without changing conformant data. A tagged profile URL and schema `$id` are immutable. Normative changes require corresponding positive and negative conformance fixtures and agreement from both maintained implementations.
 
-Version 0.1 is released from draft when all required clauses have fixtures where machine-testable, two independently implemented validators agree on the fixture manifest, examples validate, release automation is green, and governance identifies the accepting maintainer. Those conditions are part of this repository's automated release bar.
+Version 0.2 adds secure external-artifact preparation and repository-link portability. It is released when all required clauses have fixtures where machine-testable, two independently implemented validators agree on the fixture manifest, examples validate, release automation is green, and governance identifies the accepting maintainer. Those conditions are part of this repository's automated release bar.
 
 ## Appendix A — Minimal task
 
