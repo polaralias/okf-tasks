@@ -2,7 +2,7 @@
   "repoType": "specification",
   "license": "Apache-2.0",
   "summary": "An OKF profile for portable repository-local task, effort, and tracker records.",
-  "descriptionWip": true,
+  "descriptionWip": false,
   "enforcePrs": true,
   "releaseProfile": "generic",
   "codeOwners": [
