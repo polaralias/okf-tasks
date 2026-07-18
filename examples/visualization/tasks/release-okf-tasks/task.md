@@ -13,11 +13,18 @@ tags:
   - release
   - standard
 external:
-  - system: github
-    id: "4"
+  - tracker: github-main
+    system: github
+    host: https://github.com
+    kind: pull-request
+    scope:
+      id: R_kgDOTbr1Iw
+      key: polaralias/okf-tasks
+    id: PR_kwDOTbr1I87zKuvU
+    key: "4"
     url: https://github.com/polaralias/okf-tasks/pull/4
-sync:
-  authority: repository
+    sync:
+      base: {}
 ---
 
 # Release OKF Tasks

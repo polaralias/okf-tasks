@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/polaralias/okf-tasks/v0.3.0/schemas/task.schema.json",
-  "title": "OKF Tasks v0.3 Task frontmatter",
+  "$id": "https://raw.githubusercontent.com/polaralias/okf-tasks/v0.4.0/schemas/task.schema.json",
+  "title": "OKF Tasks v0.4 Task frontmatter",
   "type": "object",
   "required": ["type", "task", "title", "description", "status", "created", "timestamp"],
   "properties": {
@@ -58,37 +58,50 @@
     "assignees": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
     "priority": { "type": "string" },
     "tags": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "fields": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["type", "value"],
+        "properties": {
+          "type": { "enum": ["text", "number", "date", "boolean", "single-select", "multi-select", "user", "url"] },
+          "value": {}
+        },
+        "additionalProperties": true
+      }
+    },
     "parent": { "type": "string", "minLength": 1 },
     "depends_on": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
     "external": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["system", "id", "url"],
+        "required": ["tracker", "system", "host", "kind", "scope", "id", "key", "url", "sync"],
         "properties": {
-          "system": { "type": "string", "minLength": 1 },
+          "tracker": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+          "system": { "enum": ["github", "gitlab", "linear", "clickup"] },
+          "host": { "type": "string", "format": "uri" },
+          "kind": { "type": "string", "minLength": 1 },
+          "scope": {
+            "type": "object", "required": ["id", "key"],
+            "properties": { "id": { "type": ["string", "integer"] }, "key": { "type": "string", "minLength": 1 } },
+            "additionalProperties": true
+          },
           "id": { "type": ["string", "integer"] },
+          "key": { "type": ["string", "integer"] },
           "url": { "type": "string", "format": "uri" },
-          "status": { "type": "string" },
-          "timestamp": { "type": "string", "format": "date-time" }
+          "sync": {
+            "type": "object",
+            "properties": {
+              "last_synced": { "type": "string", "format": "date-time" },
+              "remote_revision": { "type": ["string", "integer"] },
+              "base": { "type": "object", "additionalProperties": true }
+            },
+            "additionalProperties": true
+          }
         },
         "additionalProperties": true
       }
-    },
-    "sync": {
-      "type": "object",
-      "required": ["authority"],
-      "properties": {
-        "authority": { "enum": ["repository", "tracker", "manual"] },
-        "last_synced": { "type": "string", "format": "date-time" },
-        "revision": { "type": ["string", "integer"] },
-        "field_authority": {
-          "type": "object",
-          "additionalProperties": { "enum": ["repository", "tracker", "manual"] }
-        },
-        "base": { "type": "object", "additionalProperties": true }
-      },
-      "additionalProperties": true
     }
   },
   "additionalProperties": true

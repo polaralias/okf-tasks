@@ -7,7 +7,8 @@ status: ready
 created: '2026-07-17T09:00:00Z'
 timestamp: '2026-07-17T09:00:00Z'
 external:
-- system: linear
+- tracker: github-main
+  system: github
 ---
 
 # Fixture task

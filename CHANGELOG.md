@@ -2,6 +2,15 @@
 
 All notable changes to OKF Tasks are recorded here.
 
+## 0.4.0 — 2026-07-18
+
+- Replace unscoped `(system, id)` mappings with host-scoped, provider-global external identities.
+- Add reusable Tracker Profile concepts with explicit direction, authority, status, field, and managed-label policies.
+- Add live and snapshot-based initialization for GitHub, GitLab, Linear, and ClickUp plus inspection and drift-safe refresh commands.
+- Move reconciliation state from the task to each external binding and add portable typed custom fields.
+- Extend both independent validators, schemas, normative fixtures, examples, security rules, and agent execution boundaries.
+- Add project-local default Tracker Profiles, safe fallback selection, setup evidence in generated profiles, and documented live integration evidence.
+
 ## 0.3.0 — 2026-07-17
 
 - Define `tasks/` as the default operational placement.

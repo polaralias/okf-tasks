@@ -6,6 +6,9 @@ export const statuses = ["proposed", "ready", "in-progress", "blocked", "validat
 const statusSet = new Set<string>(statuses);
 const terminal = new Set(["done", "superseded", "deferred"]);
 const authorities = new Set(["repository", "tracker", "manual"]);
+const syncModes = new Set(["push", "pull", "bidirectional", "manual"]);
+const trackerSystems = new Set(["github", "gitlab", "linear", "clickup"]);
+const labelStrategies = new Set(["replace", "managed-subset", "read-only", "ignore"]);
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 type RecordValue = Record<string, unknown>;
@@ -155,21 +158,68 @@ function validateSync(file: string, task: RecordValue, errors: string[]): void {
   if (task.external !== undefined) {
     if (!Array.isArray(task.external)) errors.push(`${file}: external must be a list`);
     else task.external.forEach((item, index) => {
-      if (!mapping(item) || !item.system || item.id === undefined || item.id === "" || !item.url) errors.push(`${file}: external[${index}] requires system, id, and url`);
+      const required = ["tracker", "system", "host", "kind", "scope", "id", "key", "url", "sync"];
+      if (!mapping(item) || required.some((key) => item[key] === undefined || item[key] === "" || item[key] === null)) {
+        errors.push(`${file}: external[${index}] requires tracker, system, host, kind, scope, id, key, url, and sync`); return;
+      }
+      if (!trackerSystems.has(String(item.system))) errors.push(`${file}: external[${index}].system is unsupported`);
+      if (!mapping(item.scope) || !item.scope.id || !item.scope.key) errors.push(`${file}: external[${index}].scope requires id and key`);
+      if (!mapping(item.sync)) errors.push(`${file}: external[${index}].sync must be a mapping`);
+      else if (item.sync.base !== undefined && !mapping(item.sync.base)) errors.push(`${file}: external[${index}].sync.base must be a mapping`);
     });
   }
-  if (task.sync !== undefined) {
-    if (!mapping(task.sync)) errors.push(`${file}: sync must be a mapping`);
-    else {
-      if (!authorities.has(String(task.sync.authority))) errors.push(`${file}: sync.authority must be repository, tracker, or manual`);
-      if (task.sync.field_authority !== undefined) {
-        if (!mapping(task.sync.field_authority)) errors.push(`${file}: sync.field_authority must be a mapping`);
-        else Object.entries(task.sync.field_authority).forEach(([field, authority]) => {
-          if (!authorities.has(String(authority))) errors.push(`${file}: sync.field_authority.${field} must be repository, tracker, or manual`);
-        });
-      }
+  if (task.sync !== undefined) errors.push(`${file}: task-level sync is not permitted; synchronization state belongs to each external binding`);
+}
+
+function validatePortableFields(file: string, task: RecordValue, errors: string[]): void {
+  if (task.fields === undefined) return;
+  if (!mapping(task.fields)) { errors.push(`${file}: fields must be a mapping`); return; }
+  const supported = new Set(["text", "number", "date", "boolean", "single-select", "multi-select", "user", "url"]);
+  Object.entries(task.fields).forEach(([name, field]) => {
+    if (!mapping(field) || !supported.has(String(field.type)) || !("value" in field)) { errors.push(`${file}: fields.${name} requires a supported type and value`); return; }
+    const type = String(field.type); const value = field.value;
+    const valid = (["text", "date", "single-select", "user", "url"].includes(type) && typeof value === "string")
+      || (type === "number" && typeof value === "number") || (type === "boolean" && typeof value === "boolean")
+      || (type === "multi-select" && Array.isArray(value) && value.every((item) => typeof item === "string"));
+    if (!valid) errors.push(`${file}: fields.${name}.value is incompatible with type ${type}`);
+  });
+}
+
+function validateTrackerProfile(file: string, profile: RecordValue, errors: string[]): void {
+  const required = ["type", "tracker", "system", "host", "resource", "scope", "sync", "status_map", "field_map", "discovery"];
+  const missing = required.filter((key) => profile[key] === undefined || profile[key] === "" || profile[key] === null);
+  if (missing.length) { errors.push(`${file}: Tracker Profile missing required fields: ${missing.join(", ")}`); return; }
+  if (profile.type !== "Tracker Profile") errors.push(`${file}: type must be Tracker Profile`);
+  if (profile.tracker !== path.basename(file, ".md") || !slugPattern.test(String(profile.tracker))) errors.push(`${file}: tracker slug must match its filename`);
+  if (profile.default !== undefined && typeof profile.default !== "boolean") errors.push(`${file}: default must be a boolean`);
+  if (!trackerSystems.has(String(profile.system))) errors.push(`${file}: unsupported tracker system`);
+  try { const host = new URL(String(profile.host)); if (host.protocol !== "https:" || host.username || host.password || host.pathname !== "/" || host.search || host.hash) errors.push(`${file}: host must be an HTTPS origin without a path`); }
+  catch { errors.push(`${file}: host must be an HTTPS origin without a path`); }
+  if (!mapping(profile.scope) || !profile.scope.kind || !profile.scope.id || !profile.scope.key) errors.push(`${file}: scope requires kind, id, and key`);
+  if (!mapping(profile.sync)) errors.push(`${file}: sync must be a mapping`);
+  else {
+    if (!syncModes.has(String(profile.sync.mode))) errors.push(`${file}: sync.mode must be push, pull, bidirectional, or manual`);
+    if (!authorities.has(String(profile.sync.authority))) errors.push(`${file}: sync.authority must be repository, tracker, or manual`);
+  }
+  if (!mapping(profile.status_map)) errors.push(`${file}: status_map must be a mapping`);
+  else {
+    const statusMap = profile.status_map;
+    statuses.forEach((status) => { if (!statusMap[status]) errors.push(`${file}: status_map requires ${status}`); });
+    if (mapping(profile.sync) && profile.sync.mode === "bidirectional" && profile.sync.authority === "tracker") {
+      const values = statuses.map((status) => String((profile.status_map as RecordValue)[status])).filter((value) => value !== "undefined");
+      if (new Set(values).size !== values.length) errors.push(`${file}: tracker-authoritative bidirectional status_map must be round-trippable`);
     }
   }
+  if (!mapping(profile.field_map)) errors.push(`${file}: field_map must be a mapping`);
+  else Object.entries(profile.field_map).forEach(([field, value]) => {
+    if (!mapping(value) || !value.remote) errors.push(`${file}: field_map.${field} requires remote`);
+    else {
+      if (field === "tags" && !labelStrategies.has(String(value.strategy))) errors.push(`${file}: field_map.tags.strategy is invalid`);
+      if (field === "tags" && value.strategy === "managed-subset" && !value.managed_prefix && !value.managed_values) errors.push(`${file}: field_map.tags managed-subset requires managed_prefix or managed_values`);
+      if (value.authority !== undefined && !authorities.has(String(value.authority))) errors.push(`${file}: field_map.${field}.authority is invalid`);
+    }
+  });
+  if (!mapping(profile.discovery) || !rfc3339(profile.discovery.observed_at) || !profile.discovery.fingerprint) errors.push(`${file}: discovery requires observed_at and fingerprint`);
 }
 
 function validateTime(taskFile: string, task: RecordValue, errors: string[]): void {
@@ -220,6 +270,13 @@ export function validateBundle(bundle: string): string[] {
     try { if (!parseDocument(file).metadata.type) errors.push(`${file}: non-reserved Markdown concept requires a non-empty type`); }
     catch (error) { errors.push(String((error as Error).message)); }
   }
+  const profiles = new Map<string, RecordValue>();
+  const trackerDir = path.join(bundle, "trackers");
+  if (fs.existsSync(trackerDir)) fs.readdirSync(trackerDir).filter((name) => name.endsWith(".md")).sort().forEach((name) => {
+    const file = path.join(trackerDir, name); try { const parsed = parseDocument(file); validateTrackerProfile(file, parsed.metadata, errors); if (parsed.metadata.tracker) profiles.set(String(parsed.metadata.tracker), parsed.metadata); } catch { /* parse error recorded above */ }
+  });
+  const defaults = [...profiles.values()].filter((profile) => profile.default === true).map((profile) => String(profile.tracker));
+  if (defaults.length > 1) errors.push(`${trackerDir}: only one default Tracker Profile is allowed; found ${defaults.join(", ")}`);
   const taskFiles = fs.readdirSync(bundle, { withFileTypes: true }).filter((entry) => entry.isDirectory() && fs.existsSync(path.join(bundle, entry.name, "task.md"))).map((entry) => path.join(bundle, entry.name, "task.md")).sort();
   const external = new Map<string, string>();
   const branches = new Map<string, string>();
@@ -238,10 +295,16 @@ export function validateBundle(bundle: string): string[] {
       if (!Array.isArray(task.completion_history)) errors.push(`${file}: completion_history must be a list`);
       else task.completion_history.forEach((event, index) => { if (!mapping(event) || !rfc3339(event.finished) || !rfc3339(event.reopened)) errors.push(`${file}: completion_history[${index}] requires finished and reopened RFC 3339 datetimes`); });
     }
-    validateEstimate(file, task, errors); validateSync(file, task, errors); validateTime(file, task, errors);
+    validateEstimate(file, task, errors); validatePortableFields(file, task, errors); validateSync(file, task, errors); validateTime(file, task, errors);
     if (Array.isArray(task.external)) task.external.forEach((item) => {
-      if (!mapping(item) || !item.system || item.id === undefined) return;
-      const key = `${item.system}:${item.id}`; if (external.has(key)) errors.push(`${file}: external mapping ${key} also used by ${external.get(key)}`); else external.set(key, file);
+      if (!mapping(item) || !item.system || !item.host || !item.kind || item.id === undefined) return;
+      const key = `${item.system}|${item.host}|${item.kind}|${item.id}`; if (external.has(key)) errors.push(`${file}: external mapping ${key} also used by ${external.get(key)}`); else external.set(key, file);
+      const profile = profiles.get(String(item.tracker));
+      if (!profile) errors.push(`${file}: external tracker profile ${String(item.tracker)} does not exist`);
+      else {
+        if (item.system !== profile.system || item.host !== profile.host) errors.push(`${file}: external binding system and host must match its Tracker Profile`);
+        if (mapping(item.scope) && mapping(profile.scope) && item.scope.id !== profile.scope.id) errors.push(`${file}: external binding scope must match its Tracker Profile`);
+      }
     });
     const workstreamDir = path.join(path.dirname(file), "workstreams");
     const workstreamFiles = fs.existsSync(workstreamDir) ? fs.readdirSync(workstreamDir).filter((name) => name.endsWith(".md")).map((name) => path.join(workstreamDir, name)).sort() : [];

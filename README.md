@@ -12,11 +12,12 @@ This project is not affiliated with or endorsed by Google Cloud.
 
 ## What is included
 
-- [`SPEC.md`](./SPEC.md) — the OKF Tasks v0.3 profile.
-- [`schemas/`](./schemas/) — versioned JSON Schemas for task, workstream, and time-entry frontmatter.
+- [`SPEC.md`](./SPEC.md) — the OKF Tasks v0.4 profile.
+- [`schemas/`](./schemas/) — versioned JSON Schemas for task, workstream, time-entry, and Tracker Profile frontmatter.
 - [`skills/okf-task-lifecycle/`](./skills/okf-task-lifecycle/) — a portable agent skill and deterministic CLI.
 - [`examples/`](./examples/) — standalone, knowledge-linked, and tracker-synchronised bundles.
 - [`docs/VISUALIZATION.md`](./docs/VISUALIZATION.md) — a generated Mermaid task graph that renders directly in GitHub.
+- [`docs/TRACKER_INTEGRATION.md`](./docs/TRACKER_INTEGRATION.md) — provider setup, project-default selection, and live integration evidence.
 - [`conformance/`](./conformance/) — a shared positive/negative fixture manifest and exhaustive lifecycle matrix.
 - [`implementations/typescript/`](./implementations/typescript/) — an independent validator that cross-checks the same manifest.
 - [`tests/`](./tests/) — Python reference implementation tests.
@@ -52,6 +53,48 @@ python skills/okf-task-lifecycle/scripts/okf_tasks.py create --root . --bundle d
 
 This creates `docs/tasks/`; it does not turn operational task records into canonical requirements or architecture.
 
+Initialize a first-class tracker connection from a live provider API. Credentials are read only from the runtime environment and are never written to the profile:
+
+```text
+python skills/okf-task-lifecycle/scripts/okf_tasks.py tracker init --root . --tracker github-main --system github --scope owner/repository --mode bidirectional --authority repository
+python skills/okf-task-lifecycle/scripts/okf_tasks.py tracker init --root . --tracker gitlab-platform --system gitlab --scope group/project --mode bidirectional --authority repository
+python skills/okf-task-lifecycle/scripts/okf_tasks.py tracker init --root . --tracker linear-engineering --system linear --scope ENG --mode bidirectional --authority repository --default
+python skills/okf-task-lifecycle/scripts/okf_tasks.py tracker init --root . --tracker clickup-delivery --system clickup --scope 123456789 --mode bidirectional --authority repository
+```
+
+The default credential variables are `GITHUB_TOKEN`, `GITLAB_TOKEN`, `LINEAR_API_KEY`, and `CLICKUP_API_TOKEN`. Use `--api-base` for GitHub Enterprise or self-managed GitLab. For reviewed or offline setup, pass a normalized provider snapshot with `--discovery-file`.
+
+Choose the scope that belongs to the current project, prompt when more than one repository, project, team, or List is plausible, and save the chosen profile with `--default` or `tracker set-default`. An explicit `--tracker` takes precedence; otherwise create, import, sync, and link commands use the saved default or the sole profile. Multiple profiles without a default stop with a candidate list instead of guessing.
+
+```text
+python skills/okf-task-lifecycle/scripts/okf_tasks.py tracker set-default --root . --tracker clickup-delivery
+```
+
+Inspect configuration and detect provider drift without silently remapping fields or statuses:
+
+```text
+python skills/okf-task-lifecycle/scripts/okf_tasks.py tracker inspect --root . --tracker linear-engineering
+python skills/okf-task-lifecycle/scripts/okf_tasks.py tracker refresh --root . --tracker linear-engineering --discovery-file discovery.json
+python skills/okf-task-lifecycle/scripts/okf_tasks.py tracker refresh --root . --tracker linear-engineering --discovery-file discovery.json --accept
+```
+
+Link a task using the provider-global object ID and separate human-facing key:
+
+```text
+python skills/okf-task-lifecycle/scripts/okf_tasks.py link-external --root . --task first-task --tracker linear-engineering --id <issue-uuid> --key ENG-123 --url https://linear.app/example/issue/ENG-123
+```
+
+Create and verify a remote record from a local task, import a remote record to work from it locally, or reconcile an existing binding:
+
+```text
+python skills/okf-task-lifecycle/scripts/okf_tasks.py tracker create --root . --task first-task
+python skills/okf-task-lifecycle/scripts/okf_tasks.py tracker import --root . --remote-key 123 --slug imported-issue
+python skills/okf-task-lifecycle/scripts/okf_tasks.py tracker sync --root . --task first-task --direction push
+python skills/okf-task-lifecycle/scripts/okf_tasks.py tracker sync --root . --task first-task --direction pull
+```
+
+Creation and push perform the same deterministic egress and repository-link checks as `prepare-export`. A remote revision change stops push until it is explicitly resolved. Provider writes are read back before the binding base advances.
+
 Prepare a task body for an external tracker without leaking secrets or local paths:
 
 ```text
@@ -82,7 +125,7 @@ GitHub renders the Mermaid diagram directly in [`docs/VISUALIZATION.md`](./docs/
 
 OKF Tasks governs execution truth. It links to product requirements, architecture, decisions, runbooks, and other canonical knowledge, but does not prescribe how a repository creates or governs that knowledge.
 
-External issue trackers are projections or upstream sources according to an explicit sync authority. Provider-specific APIs remain outside the core profile, while adapter trust boundaries, egress checks, and portable-link behavior are normative.
+External issue trackers are projections or upstream sources according to an explicit direction and authority. Versioned Tracker Profiles capture provider scope, stable status and field IDs, discovery state, and mapping policy for GitHub, GitLab, Linear, and ClickUp. Authentication and webhook deployment remain runtime concerns.
 
 ## Verify the release bar
 
@@ -96,7 +139,7 @@ python scripts/check_release.py
 
 ## Status
 
-Version 0.3 defines root and project-documentation bundle placements. Normative changes require fixtures and agreement between the Python and TypeScript implementations; see [`GOVERNANCE.md`](./GOVERNANCE.md).
+Version 0.4 defines first-class provider setup and scoped external bindings. Normative changes require fixtures and agreement between the Python and TypeScript implementations; see [`GOVERNANCE.md`](./GOVERNANCE.md).
 
 ## License
 

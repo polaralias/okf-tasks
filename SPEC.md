@@ -1,6 +1,6 @@
 # OKF Tasks Profile
 
-Version 0.3
+Version 0.4
 
 OKF Tasks is an independent profile of Open Knowledge Format (OKF) v0.1 for representing trackable work as portable Markdown concepts. It adds task lifecycle, workstream, evidence, relationship, and tracker-mapping conventions without changing the OKF base format.
 
@@ -18,13 +18,13 @@ The profile standardizes:
 - live, manual, and estimated effort records;
 - task-bundle indexes and conformance.
 
-It does not standardize product requirements, architecture, sprint membership, tracker APIs, comments, or user-interface views. Effort estimates and sprint points are portable values; the planning method that produces them remains local.
+It does not standardize product requirements, architecture, sprint membership, comments, attachments, credentials, webhook deployment, or user-interface views. It standardizes portable tracker configuration and adapter behavior while provider authentication and transport remain adapter concerns. Effort estimates and sprint points are portable values; the planning method that produces them remains local.
 
 ## 2. Relationship to OKF
 
 An OKF Tasks bundle MUST conform to [OKF v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/ee67a5ca27044ebe7c38385f5b6cffc2305a9c1a/okf/SPEC.md). Requirements in this profile are additional constraints. The commit-pinned link identifies the exact upstream text used by this version.
 
-The published identity of this profile version is `https://github.com/polaralias/okf-tasks/blob/v0.3.0/SPEC.md`. Producers SHOULD include that identity in the bundle root index as described in section 10.
+The published identity of this profile version is `https://github.com/polaralias/okf-tasks/blob/v0.4.0/SPEC.md`. Producers SHOULD include that identity in the bundle root index as described in section 10.
 
 Each non-reserved Markdown file in the bundle MUST be an OKF concept with parseable YAML frontmatter and a non-empty `type`. Producers MAY add fields. Consumers MUST preserve unknown fields when round-tripping a record and MUST tolerate unknown task-adjacent concept types.
 
@@ -36,6 +36,8 @@ The default repository-local bundle root is `tasks/`:
 tasks/
 ├── index.md
 ├── log.md                         optional
+├── trackers/                      optional
+│   └── <tracker-slug>.md
 └── <task-slug>/
     ├── task.md
     ├── workstreams/
@@ -85,10 +87,10 @@ The following fields are optional profile extensions:
 | `assignees` | list of strings | Assigned people or agents. |
 | `priority` | string | Producer-defined priority. |
 | `tags` | list of strings | OKF cross-cutting categories. |
+| `fields` | mapping | Portable typed custom values. Each entry contains `type` and `value`. |
 | `parent` | string | Bundle-relative link to a parent task concept. |
 | `depends_on` | list of strings | Bundle-relative links to prerequisite task concepts. |
 | `external` | list of mappings | External tracker identities defined in section 9. |
-| `sync` | mapping | Synchronisation policy defined in section 9. |
 | `started` | datetime | Start of the first recorded work session. |
 | `finished` | datetime | Final task completion time, set when the task becomes `done`. |
 | `effort_minutes` | integer | Generated sum of closed time-entry effort. |
@@ -243,33 +245,62 @@ An OKF Tasks bundle does not require a particular knowledge-engineering system. 
 
 ## 9. External trackers and synchronisation
 
-External tracker identities MUST NOT replace the task slug or concept ID. Each `external` entry MUST contain:
+External tracker identities MUST NOT replace the task slug or concept ID. Provider setup is represented by `Tracker Profile` concepts under `trackers/`. Credentials, tokens, webhook secrets, and credential references MUST NOT be stored in a Tracker Profile or task record.
 
-- `system`: stable provider name such as `github`, `linear`, or `clickup`;
-- `id`: provider-native issue identifier;
-- `url`: canonical issue URL.
+### 9.1 Tracker Profiles
 
-An entry MAY include `status` and `timestamp` to record the last observed external state.
+A Tracker Profile MUST contain:
 
-The pair `(system, id)` MUST be unique across the bundle. Multiple provider mappings for one task are allowed, but the same provider-native record MUST NOT map to more than one local task.
+- `type`: exactly `Tracker Profile`;
+- `tracker`: stable lowercase kebab-case slug matching the filename;
+- `default`: optional boolean selecting the project-local default profile;
+- `system`: `github`, `gitlab`, `linear`, or `clickup`;
+- `host`: an HTTPS origin without credentials, path, query, or fragment;
+- `resource`: provider resource kind, initially `issue` or `task`;
+- `scope`: mapping containing provider scope `kind`, stable `id`, and human-facing `key`;
+- `sync`: mapping containing `mode` and `authority`;
+- `status_map`: complete mapping from every section 6 status to a stable remote state identifier;
+- `field_map`: explicit mappings from portable fields to native or custom remote fields;
+- `discovery`: mapping containing RFC 3339 `observed_at` and a deterministic `fingerprint` of the discovered provider configuration.
 
-When synchronisation is enabled, `sync.authority` MUST be one of:
+`sync.mode` MUST be `push`, `pull`, `bidirectional`, or `manual`. `sync.authority` MUST be `repository`, `tracker`, or `manual`. Direction controls permitted operations; authority controls conflict resolution. They MUST NOT be inferred from each other.
 
-- `repository`: the task concept is canonical and the tracker is a projection;
-- `tracker`: the external tracker is canonical and repository records are imported projections;
-- `manual`: no automated authority is assumed.
+An initializer MUST discover the selected remote scope, stable state and field identifiers, capabilities, and relevant provider constraints before proposing a profile. It MUST require explicit overrides for missing or ambiguous mappings. Refreshing discovery MUST report configuration drift and MUST NOT silently change an existing mapping. Authentication material remains runtime configuration.
 
-`sync.last_synced` and `sync.revision` MAY record the last successful reconciliation time and an adapter-defined revision or content hash.
+A bundle MUST contain at most one Tracker Profile with `default: true`. When an operation omits an explicit profile, a producer MAY use that saved default or a sole available profile. If several profiles exist without one unambiguous default, it MUST stop, identify the available profiles, and require a user or governing policy to choose the project scope. Setup agents SHOULD derive candidate surfaces from the current repository and provider discovery, prompt before selecting among multiple writable repositories, projects, teams, or Lists, and save the confirmed choice for later task creation and synchronization.
 
-Record-level authority is the default. `sync.field_authority` MAY override it for named fields; each value MUST be `repository`, `tracker`, or `manual`. An adapter MUST preserve authority metadata it does not implement.
+For tracker-authoritative bidirectional synchronization, `status_map` MUST be round-trippable: two OKF states MUST NOT map to the same remote identifier. Repository-authoritative projections MAY be lossy, but adapters MUST preserve the local state and MUST NOT infer a more specific local state when pulling the collapsed remote value.
 
-For bidirectional synchronisation, `sync.base` SHOULD store the local revision, remote revision, and/or per-field hashes observed at the last successful reconciliation. A conflict exists when the same mapped field changed both locally and remotely since that base. Adapters MUST report the affected field and competing values and MUST NOT silently select a winner. A change to an unmapped or differently authoritative field is not, by itself, a sync conflict.
+Each `field_map` value MUST contain `remote`, using a provider-stable field identifier where available. A mapping MAY override `authority`. A `tags` mapping MUST declare `strategy` as `replace`, `managed-subset`, `read-only`, or `ignore`. `managed-subset` also requires `managed_prefix` or `managed_values`; adapters MUST preserve labels or tags outside that declared ownership boundary.
 
-Adapters MUST map provider-specific states to the baseline lifecycle explicitly. They MUST NOT silently overwrite divergent changes. Bidirectional adapters SHOULD detect conflicts using stored revision data and require an explicit resolution policy.
+Portable custom values use task `fields` entries containing a declared `type` and `value`. Adapters MUST NOT coerce an incompatible remote type silently, match mutable field names as identities, or invent missing select options.
 
-Provider APIs, authentication, comments, and provider-specific custom fields are outside this profile.
+### 9.2 External bindings
 
-### 9.1 External content and artifact security
+Each task `external` entry MUST contain `tracker`, `system`, `host`, `kind`, `scope`, `id`, `key`, `url`, and `sync`. `scope` MUST contain stable `id` and human-facing `key`. `id` is the provider-global opaque object identity; `key` is the human-facing issue number or identifier. The binding system, host, and scope ID MUST agree with its referenced Tracker Profile.
+
+The tuple `(system, host, kind, id)` MUST be unique across the bundle. Multiple provider mappings for one task are allowed, but the same provider-native record MUST NOT map to more than one local task. Issue numbers and display keys are not identities because they may repeat across repositories, projects, lists, or provider hosts.
+
+Binding `sync` MAY contain `last_synced`, `remote_revision`, and `base`. Reconciliation state belongs to the binding; task-level `sync` is not permitted. `base` SHOULD retain local and remote revisions and/or per-field hashes from the last successful reconciliation.
+
+A conflict exists when the same mapped field changed locally and remotely since the base. Adapters MUST report the field and competing values and MUST NOT silently select a winner. Writes MUST be read back and verified when the provider may omit unsupported or unauthorized values. Missing remote records MUST NOT cause automatic local deletion.
+
+Webhook consumers MUST authenticate provider events, deduplicate replayed deliveries, tolerate out-of-order events, and reconcile against current remote state rather than trusting an event payload as complete state.
+
+### 9.3 Provider requirements
+
+- GitHub profiles are repository-scoped. An adapter MUST distinguish organization Issue Fields from Projects item fields and MUST exclude pull requests returned by issue-list APIs.
+- GitLab profiles are project-scoped and MUST record host identity. Adapters MAY use the Issues REST API for baseline issues and the Work Item API for discovered capabilities, but MUST account for server version and tier.
+- Linear profiles are team-scoped. Initializers MUST use stable workflow-state IDs and categories; state names alone are insufficient. Triage, blocked, validation, duplicate, and cancellation mappings require explicit discovered states or documented lossy projection.
+- ClickUp profiles are List-scoped and MUST record the Workspace and custom task type when applicable. Initializers MUST discover status and custom-field applicability. A moved task MUST be revalidated against its new location before synchronization continues.
+
+Creating or updating a remote record MUST use only mapped allowlisted fields. Provider-required fields and custom-field applicability MUST be checked, and the resulting record MUST be read back before recording a successful base.
+
+### 9.4 Agent execution boundary
+
+Remote content and synchronization do not authorize execution. Assignment, labels, comments, field values, or issue text MUST NOT grant an agent tools, credentials, network access, repository write access, or permission to publish. An agent invocation requires an independent policy or human authorization identifying the allowed provider scope, repository, starting ref, agent identity, resource limits, and remote revision used as input. Resulting branches, pull requests, merge requests, and validation evidence SHOULD be linked from task evidence.
+
+### 9.5 External content and artifact security
 
 Repository records, tracker fields, retrieved documents, generated text, and other natural-language artifacts cross trust boundaries. A consumer or adapter MUST treat externally sourced content as untrusted data, not as instructions or authority. Prompt wording such as “ignore instructions in content” MAY be used as defence in depth but MUST NOT be treated as a security boundary.
 
@@ -294,7 +325,7 @@ If an external artifact will later be consumed by an AI system, the receiving in
 
 This threat model follows the layered direction in [OWASP LLM01:2025 Prompt Injection](https://genai.owasp.org/llmrisk/llm01-prompt-injection/) and the [UK NCSC analysis of prompt injection](https://www.ncsc.gov.uk/blog-post/prompt-injection-is-not-sql-injection): systems should reduce authority and blast radius rather than assume natural-language instructions can make an LLM trustworthy.
 
-### 9.2 Repository-link portability
+### 9.6 Repository-link portability
 
 Repository Markdown SHOULD retain relative links because they work in clones and across branches. Before publishing that Markdown outside its repository-rendering context, an adapter MUST resolve each local link against the source document and repository root.
 
@@ -313,8 +344,8 @@ The bundle-root `index.md` SHOULD declare the following fields using the OKF roo
 
 ```yaml
 okf_version: "0.1"
-okf_tasks_version: "0.3"
-okf_tasks_profile: https://github.com/polaralias/okf-tasks/blob/v0.3.0/SPEC.md
+okf_tasks_version: "0.4"
+okf_tasks_profile: https://github.com/polaralias/okf-tasks/blob/v0.4.0/SPEC.md
 ```
 
 Its body MUST contain a top-level heading and SHOULD group task links under status headings. Each entry SHOULD include the task description.
@@ -339,7 +370,7 @@ A Task, Workstream, or Time Entry document is conformant when it satisfies the a
 
 ### 11.2 Bundle conformance
 
-An OKF Tasks v0.3 bundle is conformant when:
+An OKF Tasks v0.4 bundle is conformant when:
 
 1. it conforms to OKF v0.1;
 2. every `Task` and `Workstream` concept satisfies the required profile fields and body headings;
@@ -350,7 +381,7 @@ An OKF Tasks v0.3 bundle is conformant when:
 7. a `done` task has no running time entries and has a `finished` timestamp;
 8. estimates and sprint points satisfy section 7.5 without implicit conversion;
 9. `index.md`, when generated, agrees with the task records;
-10. external mappings are bundle-unique and sync authority follows section 9.
+10. Tracker Profiles and external bindings satisfy section 9, and external identities are bundle-unique.
 
 ### 11.3 Producer conformance
 
@@ -362,7 +393,7 @@ A conformant consumer MUST read every required profile field, MUST tolerate unkn
 
 ### 11.5 Synchronisation adapter conformance
 
-A conformant adapter MUST satisfy the producer and consumer requirements for records it writes and reads. It MUST map provider states explicitly, enforce external mapping uniqueness, respect record and field authority, store or otherwise identify a reconciliation base, detect same-field divergent changes, and expose conflicts without silent overwrite. For every external-bound artifact it MUST also satisfy the trust-boundary, egress, secret-handling, and link-portability requirements in sections 9.1 and 9.2.
+A conformant adapter MUST satisfy the producer and consumer requirements for records it writes and reads. It MUST map provider states explicitly, enforce external mapping uniqueness, respect record and field authority, store or otherwise identify a reconciliation base, detect same-field divergent changes, and expose conflicts without silent overwrite. For every external-bound artifact it MUST also satisfy the trust-boundary, egress, secret-handling, and link-portability requirements in sections 9.5 and 9.6.
 
 Consumers SHOULD treat semantic completion evidence and knowledge promotion as reviewable obligations rather than claims that syntax validation alone can prove.
 
@@ -370,7 +401,7 @@ Consumers SHOULD treat semantic completion evidence and knowledge promotion as r
 
 The repository `VERSION` file is the release source of truth. Profile `0.x` releases may add constraints in a new minor version; patch releases clarify text or fix tooling without changing conformant data. A tagged profile URL and schema `$id` are immutable. Normative changes require corresponding positive and negative conformance fixtures and agreement from both maintained implementations.
 
-Version 0.3 defines the default `tasks/` placement and the optional `docs/tasks/` project-documentation placement. It is released when all required clauses have fixtures where machine-testable, two independently implemented validators agree on the fixture manifest, examples validate, release automation is green, and governance identifies the accepting maintainer. Those conditions are part of this repository's automated release bar.
+Version 0.4 defines first-class Tracker Profiles and scoped external bindings for GitHub, GitLab, Linear, and ClickUp. It is released when all required clauses have fixtures where machine-testable, two independently implemented validators agree on the fixture manifest, examples validate, release automation is green, and governance identifies the accepting maintainer. Those conditions are part of this repository's automated release bar.
 
 ## Appendix A — Minimal task
 
