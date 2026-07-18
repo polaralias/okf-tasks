@@ -5,7 +5,7 @@ This example uses `docs/tasks/` because the repository's `docs/` tree is already
 Initialize this placement with:
 
 ```text
-python skills/okf-task-lifecycle/scripts/okf_tasks.py init-bundle --root . --placement docs
+okf-tasks init-bundle --root . --placement docs
 ```
 
 Use `--bundle docs/tasks` for subsequent lifecycle commands.
