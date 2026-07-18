@@ -2,3 +2,13 @@ interface:
   display_name: "OKF Task Lifecycle"
   short_description: "Manage and visually review portable OKF task bundles"
   default_prompt: "Use $okf-task-lifecycle to manage an OKF task, estimate and track its effort, and generate the local Graph and Documents viewer when visual review would help."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+
+policy:
+  allow_implicit_invocation: true
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas

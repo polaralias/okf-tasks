@@ -182,6 +182,17 @@ timestamp: 2026-07-17T20:30:00Z
         self.assertIn("<summary>Complete source document</summary>", generated)
         self.assertIn('id="raw-document"', generated)
 
+    def test_html_surfaces_explicit_record_timestamps(self) -> None:
+        graph = visualize_bundle.build_graph(visualize_bundle.read_records(self.root))
+        generated = visualize_bundle.generate_html(graph, "Example")
+        self.assertIn('id="record-last-updated"', generated)
+        self.assertIn('id="record-created"', generated)
+        self.assertIn('id="record-started"', generated)
+        self.assertIn('id="record-finished"', generated)
+        self.assertIn('Last meaningful change', generated)
+        self.assertIn('function setRecordTime(id,value)', generated)
+        self.assertIn('setRecordTime("record-last-updated",d.frontmatter?.timestamp)', generated)
+
     def test_html_renders_github_flavored_markdown_and_mermaid_safely(self) -> None:
         graph = visualize_bundle.build_graph(visualize_bundle.read_records(self.root))
         generated = visualize_bundle.generate_html(graph, "Example")
