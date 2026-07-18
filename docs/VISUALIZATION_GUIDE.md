@@ -39,6 +39,10 @@ The viewer is a derived consumer. The source Markdown/YAML bundle remains author
 
 ## Viewer behavior
 
+- Grid is the default layout for routine review. Timeline lays record types into lanes and orders them by the selected temporal field.
+- The temporal rail can filter the current graph through Last meaningful change, Created, Started, or Finished. Exact RFC 3339 values remain available in titles while the control uses friendly local dates.
+- Drift review highlights relationships whose source has a newer selected timestamp than its target. Treat these as possible review signals only; timestamp order cannot prove semantic drift.
+- Task, Workstream, Time Entry, Tracker Profile, Visualization, and fallback records use distinct node geometry. Cards expose connection counts, and records with `effort_minutes` expose their recorded duration.
 - Relationship labels remain visible without selecting a node and gain stronger emphasis around the selected record.
 - The inspector presents summarized record metadata, rendered Markdown, backlinks, then collapsed raw YAML and complete-source disclosures.
 - The document browser includes every Markdown file below the selected source tree, including files that are not OKF records.
@@ -62,3 +66,7 @@ The generated HTML currently loads pinned browser builds from jsDelivr:
 - Mermaid `11.10.1`.
 
 Internet access is therefore needed for the interactive libraries when opening a generated file. The embedded repository content itself remains local.
+
+## Temporal interpretation limits
+
+The viewer operates on the current bundle. Moving the time control earlier shows which current records have a selected event at or before that point; it does not reconstruct the body or frontmatter that existed then. Historical facts require retained superseded/versioned concepts or repository history. Plain Markdown documents without OKF temporal metadata remain available in Documents view but cannot participate in timestamp drift comparison.

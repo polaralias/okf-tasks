@@ -9,6 +9,7 @@ All notable changes to OKF Tasks are recorded here.
 - Generate the focused visualization and complete examples browser from one reproducible, checkable script.
 - Make `timestamp` explicitly mean the portable last meaningful change across tasks, workstreams, time entries, skills, and viewer summaries.
 - Consolidate the bundled lifecycle skill metadata, visual review guidance, and upstream RKE parity around derived OKF Visualization concepts.
+- Default graph review to Grid, distinguish record classes by geometry, expose effort and link metrics, and add timestamp-based timeline filtering and possible-drift review.
 
 ## 0.4.0 — 2026-07-18
 

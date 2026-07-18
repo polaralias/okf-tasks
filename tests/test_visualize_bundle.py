@@ -236,6 +236,32 @@ timestamp: 2026-07-17T20:30:00Z
         self.assertIn("function showReaderDocument(path)", generated)
         self.assertIn('renderTree(tree,$("reader-tree"),showReaderDocument)', generated)
 
+    def test_html_defaults_to_grid_and_distinguishes_record_classes(self) -> None:
+        graph = visualize_bundle.build_graph(visualize_bundle.read_records(self.root))
+        generated = visualize_bundle.generate_html(graph, "Example")
+        self.assertIn('<option value="grid" selected>Grid</option>', generated)
+        self.assertIn('layout:{name:"grid"', generated)
+        self.assertIn('.selector(\'node[type = "Task"]\')', generated)
+        self.assertIn('.selector(\'node[type = "Workstream"]\')', generated)
+        self.assertIn('.selector(\'node[type = "Time Entry"]\')', generated)
+        self.assertIn('width:"data(nodeWidth)"', generated)
+        self.assertIn('d.metric=', generated)
+
+    def test_html_exposes_temporal_navigation_and_timestamp_drift_review(self) -> None:
+        graph = visualize_bundle.build_graph(visualize_bundle.read_records(self.root))
+        generated = visualize_bundle.generate_html(graph, "Example")
+        self.assertIn('id="temporal-field"', generated)
+        self.assertIn('id="time-range"', generated)
+        self.assertIn('id="time-output"', generated)
+        self.assertIn('id="drift-review"', generated)
+        self.assertIn('<option value="timeline">Timeline</option>', generated)
+        self.assertIn('function temporalValue(data,field=temporalField)', generated)
+        self.assertIn('function updateTemporalRange(reset=false)', generated)
+        self.assertIn('function updateDrift()', generated)
+        self.assertIn('function runLayout(name)', generated)
+        self.assertIn('edge.possible-drift', generated)
+        self.assertIn('Timestamp ordering is a review signal, not proof of drift.', generated)
+
     def test_local_documentation_generator_builds_both_pages_from_the_same_viewer(self) -> None:
         output = self.root / "local-docs"
         completed = subprocess.run(
