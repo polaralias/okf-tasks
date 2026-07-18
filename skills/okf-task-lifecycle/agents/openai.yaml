@@ -1,4 +1,4 @@
 interface:
   display_name: "OKF Task Lifecycle"
-  short_description: "Manage portable tasks, time, and effort with OKF Tasks"
-  default_prompt: "Use $okf-task-lifecycle to manage an OKF task, estimate its effort, and track active work in this repository."
+  short_description: "Manage and visually review portable OKF task bundles"
+  default_prompt: "Use $okf-task-lifecycle to manage an OKF task, estimate and track its effort, and generate the local Graph and Documents viewer when visual review would help."

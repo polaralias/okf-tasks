@@ -36,9 +36,11 @@ python scripts/visualize_bundle.py \
 - Relationship labels remain visible without selecting a node and gain stronger emphasis around the selected record.
 - The inspector presents summarized record metadata, rendered Markdown, backlinks, then collapsed raw YAML and complete-source disclosures.
 - The document browser includes every Markdown file below the selected source tree, including files that are not OKF records.
-- The theme control persists light or dark mode locally.
+- The viewer opens in light mode on first use and persists a later light or dark choice locally.
+- Every button exposes a hover label as well as an accessible name, including graph controls whose icons are otherwise ambiguous.
+- The top-level Graph and Documents tabs separate relationship exploration from sustained reading. The Documents view renders the selected file at full width with a permanent repository tree on the right.
 - The fullscreen control uses the browser Fullscreen API and resizes/refits the graph when entering or leaving fullscreen.
-- Search, type filters, layout selection, graph fitting, and reset remain independent controls.
+- Search, type filters, layout selection, graph fitting, and reset remain independent controls in the Graph tab.
 
 ## GitHub-style Markdown
 
