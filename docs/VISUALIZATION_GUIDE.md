@@ -31,6 +31,12 @@ python scripts/visualize_bundle.py \
   --markdown docs/VISUALIZATION.md
 ```
 
+## Freshness and authority
+
+The viewer labels each record's `timestamp` as **Last meaningful change** and shows `created`, `started`, and `finished` separately when present. The portable timestamp comes from OKF frontmatter; the viewer does not infer freshness from filesystem metadata or the generated HTML date.
+
+The viewer is a derived consumer. The source Markdown/YAML bundle remains authoritative, and both generated pages must be regenerated from the shared renderer after a meaningful record or renderer change.
+
 ## Viewer behavior
 
 - Relationship labels remain visible without selecting a node and gain stronger emphasis around the selected record.
