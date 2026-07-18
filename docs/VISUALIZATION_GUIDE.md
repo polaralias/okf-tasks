@@ -13,9 +13,12 @@ python scripts/generate_local_docs.py
 This creates the ignored local review artifacts:
 
 - `local-docs/okf-tasks-visualization.html` from `examples/visualization/tasks/`;
-- `local-docs/okf-tasks-examples.html` from the complete `examples/` tree.
+- `local-docs/okf-tasks-examples.html` from the complete `examples/` tree;
+- `local-docs/okf-tasks-relationships.html` from the complete `examples/` tree, with stable source-bundle lanes and every explicit relationship retained as a labelled edge.
 
-Both pages use `scripts/visualize_bundle.py` and therefore share the same HTML, styling, interaction, security, and Markdown-rendering behavior. Verify that generated files are current with:
+Use the relationship map when topology is the question: it groups records for spatial orientation but does not infer or replace relationships. The ordinary example page remains the neutral record browser.
+
+All three pages use `scripts/visualize_bundle.py` and therefore share the same HTML, styling, interaction, security, and Markdown-rendering behavior. Verify that generated files are current with:
 
 ```text
 python scripts/generate_local_docs.py --check
