@@ -16,6 +16,7 @@ This project is not affiliated with or endorsed by Google Cloud.
 - [`schemas/`](./schemas/) — versioned JSON Schemas for task, workstream, and time-entry frontmatter.
 - [`skills/okf-task-lifecycle/`](./skills/okf-task-lifecycle/) — a portable agent skill and deterministic CLI.
 - [`examples/`](./examples/) — standalone, knowledge-linked, and tracker-synchronised bundles.
+- [`docs/VISUALIZATION.md`](./docs/VISUALIZATION.md) — a generated Mermaid task graph that renders directly in GitHub.
 - [`conformance/`](./conformance/) — a shared positive/negative fixture manifest and exhaustive lifecycle matrix.
 - [`implementations/typescript/`](./implementations/typescript/) — an independent validator that cross-checks the same manifest.
 - [`tests/`](./tests/) — Python reference implementation tests.
@@ -58,6 +59,24 @@ python skills/okf-task-lifecycle/scripts/okf_tasks.py prepare-export --root . --
 ```
 
 Repository-relative links are converted to credential-free GitHub or GitLab links pinned to the current commit. Unsafe or unresolved content stops the export.
+
+## Visualize a bundle
+
+The optional visualizer follows the consumer pattern demonstrated by Google's [OKF reference visualizer](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf): the Markdown/YAML bundle remains canonical and visualization is a derived view.
+
+Generate an interactive HTML graph and a GitHub-rendered Mermaid graph:
+
+```text
+python scripts/visualize_bundle.py \
+  --bundle examples/visualization/tasks \
+  --name "OKF Tasks visualization example" \
+  --html local-docs/okf-tasks-visualization.html \
+  --markdown docs/VISUALIZATION.md
+```
+
+Open the HTML file locally for search, type filters, switchable layouts, frontmatter, sanitized Markdown bodies, and backlinks. The HTML loads pinned Cytoscape, Marked, and DOMPurify browser libraries from jsDelivr; task data is embedded in the generated file.
+
+GitHub renders the Mermaid diagram directly in [`docs/VISUALIZATION.md`](./docs/VISUALIZATION.md). For a hosted interactive graph, publish the generated HTML through GitHub Pages; ordinary GitHub file views do not execute committed HTML.
 
 ## Design boundary
 
