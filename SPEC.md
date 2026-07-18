@@ -79,6 +79,8 @@ A task concept MUST use `type: Task` and contain:
 | `created` | required | RFC 3339 creation timestamp. |
 | `timestamp` | required | RFC 3339 time of the last meaningful change. |
 
+`timestamp` is the portable last-updated value. Producers MUST advance it whenever they change lifecycle state, ownership, scope, acceptance, evidence, relationships, effort, estimates, external bindings, or other content that changes the record's meaning. Pure formatting changes that preserve meaning MAY retain it. Filesystem modification time and Git commit time MUST NOT replace this field. Consumers SHOULD label it **Last meaningful change** so it is not confused with creation, work start, completion, synchronization, or observation times.
+
 The following fields are optional profile extensions:
 
 | Field | Shape | Meaning |
@@ -118,6 +120,8 @@ A separately owned or independently validated delivery unit MAY be represented a
 - `status` from section 6;
 - `created` as an RFC 3339 datetime;
 - `timestamp` as an RFC 3339 datetime.
+
+Workstream `timestamp` follows the same last-meaningful-change rule as Task `timestamp`.
 
 `owner`, `assignees`, and `branch` are optional. Workstream bodies MUST contain `## Assigned outcome`, `## Acceptance and validation`, `## Evidence`, and `## Handoff`.
 
@@ -177,6 +181,8 @@ Time MUST be recorded as `Time Entry` concepts under `<task-slug>/time/`. Each e
 | `started` | required | RFC 3339 session or evidence-window start. |
 | `method` | required | `tracked`, `tracked-adjusted`, `manual`, or `estimated-commit-review`. |
 | `timestamp` | required | RFC 3339 last meaningful change. |
+
+Time Entry `timestamp` MUST advance when an entry is closed or corrected. It is distinct from the activity interval expressed by `started` and `finished`.
 
 A closed entry MUST also contain `finished` and a non-negative integer `effort_minutes`. It SHOULD contain `elapsed_minutes` when a meaningful wall-clock window is known. An entry MAY identify a `workstream`, `source_commits`, and `confidence`.
 
