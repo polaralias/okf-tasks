@@ -6,10 +6,6 @@ description: Exercise one portable task conformance rule.
 status: ready
 created: '2026-07-17T09:00:00Z'
 timestamp: '2026-07-17T09:00:00Z'
-sync:
-  authority: repository
-  field_authority:
-    status: both
 ---
 
 # Fixture task

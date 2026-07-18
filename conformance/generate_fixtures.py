@@ -129,6 +129,34 @@ def time_entry(slug: str, **updates: Any) -> dict[str, Any]:
     return value
 
 
+def tracker_profile(slug: str = "github-main", **updates: Any) -> dict[str, Any]:
+    value: dict[str, Any] = {
+        "type": "Tracker Profile", "tracker": slug, "system": "github",
+        "host": "https://github.com", "resource": "issue",
+        "scope": {"kind": "repository", "id": "R_main", "key": "example/main"},
+        "sync": {"mode": "bidirectional", "authority": "repository"},
+        "status_map": {status: ("closed" if status in {"done", "superseded", "deferred"} else "open") for status in cli.STATUSES},
+        "field_map": {"title": {"remote": "title"}, "tags": {"remote": "labels", "strategy": "managed-subset", "managed_prefix": "okf:"}},
+        "discovery": {"observed_at": STAMP, "fingerprint": "sha256:fixture", "capabilities": {"webhooks": True}},
+    }
+    value.update(updates)
+    return value
+
+
+def external_binding(tracker: str = "github-main", **updates: Any) -> dict[str, Any]:
+    value: dict[str, Any] = {
+        "tracker": tracker, "system": "github", "host": "https://github.com", "kind": "issue",
+        "scope": {"id": "R_main", "key": "example/main"}, "id": "I_issue_1", "key": "1",
+        "url": "https://github.com/example/main/issues/1", "sync": {"remote_revision": "revision-1", "base": {"remote": "revision-1"}},
+    }
+    value.update(updates)
+    return value
+
+
+def write_tracker(bundle: Path, metadata: dict[str, Any]) -> None:
+    write_document(bundle / "trackers" / f"{metadata['tracker']}.md", metadata, f"# {metadata['tracker']}\n\nFixture Tracker Profile.\n")
+
+
 def fixture(root: Path, category: str, name: str, task_meta: dict[str, Any], body: str | None = None) -> Path:
     bundle = root / category / name / "tasks"
     slug = str(task_meta.get("task", "fixture-task"))
@@ -146,10 +174,10 @@ def build(root: Path) -> None:
         owner="agent", assignees=["agent", "reviewer"], priority="high", tags=["spec"],
         estimate={"effort_minutes": 180, "method": "agent", "confidence": "medium", "basis": "Compared with similar work.", "actor": "agent", "timestamp": STAMP},
         sprint_points={"value": 3, "scale": "fibonacci", "context": "platform", "timestamp": STAMP},
-        external=[{"system": "linear", "id": "ENG-1", "url": "https://linear.app/example/ENG-1"}],
-        sync={"authority": "repository", "field_authority": {"status": "tracker"}, "base": {"local_revision": "abc", "remote_revision": "7"}},
+        fields={"risk": {"type": "single-select", "value": "high"}, "target-date": {"type": "date", "value": "2026-08-01"}},
+        external=[external_binding()],
         producer_extension={"preserve": True},
-    )); finalize(bundle)
+    )); write_tracker(bundle, tracker_profile()); finalize(bundle)
 
     bundle = fixture(root, "valid", "workstream", task())
     write_document(bundle / "fixture-task" / "workstreams" / "delivery.md", workstream(), WORKSTREAM_BODY.format(title="Delivery workstream")); finalize(bundle)
@@ -169,8 +197,11 @@ def build(root: Path) -> None:
         write_document(bundle / "fixture-task" / "time" / f"{name}.md", meta, TIME_BODY)
     finalize(bundle)
 
-    bundle = fixture(root, "valid", "unique-external-mappings", task(external=[{"system": "github", "id": "1", "url": "https://github.com/example/repo/issues/1"}], sync={"authority": "manual"}))
-    other = task("second-task", title="Second task", external=[{"system": "github", "id": "2", "url": "https://github.com/example/repo/issues/2"}])
+    bundle = fixture(root, "valid", "unique-external-mappings", task(external=[external_binding()]))
+    second_profile = tracker_profile("github-other", scope={"kind": "repository", "id": "R_other", "key": "example/other"})
+    other_binding = external_binding("github-other", scope={"id": "R_other", "key": "example/other"}, id="I_issue_2", url="https://github.com/example/other/issues/1")
+    other = task("second-task", title="Second task", external=[other_binding])
+    write_tracker(bundle, tracker_profile()); write_tracker(bundle, second_profile)
     write_document(bundle / "second-task" / "task.md", other, TASK_BODY.format(title="Second task")); finalize(bundle)
 
     bundle = root / "valid" / "docs-placement" / "docs" / "tasks"
@@ -187,9 +218,9 @@ def build(root: Path) -> None:
         "missing-task-heading": (task(), TASK_BODY.format(title="Fixture").replace("## Evidence", "## Proof")),
         "invalid-estimate": (task(estimate={"effort_minutes": -1, "method": "guess", "confidence": "certain", "basis": "", "actor": "agent", "timestamp": STAMP}), None),
         "invalid-points": (task(sprint_points={"value": -3, "scale": "", "timestamp": "today"}), None),
-        "invalid-sync-authority": (task(sync={"authority": "both"}), None),
-        "invalid-field-authority": (task(sync={"authority": "repository", "field_authority": {"status": "both"}}), None),
+        "invalid-task-level-sync": (task(sync={"authority": "repository"}), None),
         "invalid-completion-history": (task(completion_history=[{"finished": STAMP}]), None),
+        "invalid-portable-field": (task(fields={"risk": {"type": "number", "value": "high"}}), None),
     }
     for name, (metadata, body) in negatives.items():
         bundle = fixture(root, "invalid", name, metadata, body); finalize(bundle)
@@ -229,11 +260,27 @@ def build(root: Path) -> None:
         write_document(bundle / "fixture-task" / "time" / f"{slug}.md", running, TIME_BODY)
     finalize(bundle)
 
-    bundle = fixture(root, "invalid", "external-missing-fields", task(external=[{"system": "linear"}])); finalize(bundle)
+    bundle = fixture(root, "invalid", "external-missing-fields", task(external=[{"tracker": "github-main", "system": "github"}])); finalize(bundle)
 
-    bundle = fixture(root, "invalid", "duplicate-external-mapping", task(external=[{"system": "linear", "id": "ENG-1", "url": "https://linear.app/example/ENG-1"}]))
-    other = task("second-task", title="Second", external=[{"system": "linear", "id": "ENG-1", "url": "https://linear.app/example/ENG-1"}])
+    bundle = fixture(root, "invalid", "duplicate-external-mapping", task(external=[external_binding()]))
+    other = task("second-task", title="Second", external=[external_binding()])
+    write_tracker(bundle, tracker_profile())
     write_document(bundle / "second-task" / "task.md", other, TASK_BODY.format(title="Second")); finalize(bundle)
+
+    bundle = fixture(root, "invalid", "missing-tracker-profile", task(external=[external_binding()])); finalize(bundle)
+
+    bundle = fixture(root, "invalid", "incomplete-status-map", task())
+    incomplete = tracker_profile(); incomplete["status_map"].pop("validation")
+    write_tracker(bundle, incomplete); finalize(bundle)
+
+    bundle = fixture(root, "invalid", "lossy-tracker-authority", task())
+    lossy = tracker_profile(sync={"mode": "bidirectional", "authority": "tracker"})
+    write_tracker(bundle, lossy); finalize(bundle)
+
+    bundle = fixture(root, "invalid", "multiple-default-trackers", task())
+    write_tracker(bundle, tracker_profile(default=True))
+    write_tracker(bundle, tracker_profile("linear-default", system="linear", host="https://api.linear.app", scope={"kind": "team", "id": "team-id", "key": "ENG"}, default=True))
+    finalize(bundle)
 
     bundle = fixture(root, "invalid", "stale-index", task())
     (bundle / "index.md").write_text("# Stale task index\n", encoding="utf-8")

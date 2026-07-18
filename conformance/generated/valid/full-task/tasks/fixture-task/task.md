@@ -25,17 +25,28 @@ sprint_points:
   scale: fibonacci
   context: platform
   timestamp: '2026-07-17T09:00:00Z'
+fields:
+  risk:
+    type: single-select
+    value: high
+  target-date:
+    type: date
+    value: '2026-08-01'
 external:
-- system: linear
-  id: ENG-1
-  url: https://linear.app/example/ENG-1
-sync:
-  authority: repository
-  field_authority:
-    status: tracker
-  base:
-    local_revision: abc
-    remote_revision: '7'
+- tracker: github-main
+  system: github
+  host: https://github.com
+  kind: issue
+  scope:
+    id: R_main
+    key: example/main
+  id: I_issue_1
+  key: '1'
+  url: https://github.com/example/main/issues/1
+  sync:
+    remote_revision: revision-1
+    base:
+      remote: revision-1
 producer_extension:
   preserve: true
 ---

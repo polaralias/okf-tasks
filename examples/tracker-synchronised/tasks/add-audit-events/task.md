@@ -22,15 +22,22 @@ sprint_points:
   timestamp: 2026-07-17T07:30:00Z
 owner: security-team
 external:
-  - system: linear
-    id: SEC-142
+  - tracker: linear-security
+    system: linear
+    host: https://api.linear.app
+    kind: issue
+    scope:
+      id: 6c02a067-25da-4f67-b2e3-c0aa3217f01a
+      key: SEC
+    id: 1edc92a8-bb50-46f1-ae17-b7bd05c8bfdf
+    key: SEC-142
     url: https://linear.app/example/issue/SEC-142
-    status: In Progress
-    timestamp: 2026-07-17T11:55:00Z
-sync:
-  authority: repository
-  last_synced: 2026-07-17T12:00:00Z
-  revision: linear-SEC-142-17
+    sync:
+      last_synced: 2026-07-17T12:00:00Z
+      remote_revision: 2026-07-17T11:55:00Z
+      base:
+        local: sha256:task-revision-17
+        remote: sha256:linear-revision-17
 ---
 
 # Add authentication audit events

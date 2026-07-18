@@ -6,8 +6,10 @@ description: Exercise one portable task conformance rule.
 status: ready
 created: '2026-07-17T09:00:00Z'
 timestamp: '2026-07-17T09:00:00Z'
-sync:
-  authority: both
+fields:
+  risk:
+    type: number
+    value: high
 ---
 
 # Fixture task
