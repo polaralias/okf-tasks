@@ -4,7 +4,7 @@ description: Create and maintain OKF Tasks bundles containing portable repositor
 license: Apache-2.0. license.txt has complete terms
 metadata:
   author: Polaralias
-  version: 0.4.0
+  version: 0.5.0
   updated: '2026-07-18'
 ---
 
@@ -18,7 +18,9 @@ Maintain execution truth as an OKF-conformant task bundle without imposing a kno
 
 Read [references/okf-tasks-profile.md](./references/okf-tasks-profile.md) before creating, changing, or publishing records. Prefer the installed `okf-tasks` command for deterministic creation, transition, indexing, external mapping, egress preparation, and validation. When the distribution is unavailable, [scripts/okf_tasks.py](./scripts/okf_tasks.py) remains the portable fallback with the same command surface. Use [scripts/visualize_bundle.py](./scripts/visualize_bundle.py) to generate the light-first interactive Graph and Documents views when a bundle needs local visual review.
 
-Every meaningful Task, Workstream, Time Entry, or Tracker Profile edit must advance its RFC 3339 `timestamp`. Treat that field as the portable **Last meaningful change** value; never substitute filesystem modification time, Git commit time, provider observation time, `created`, `started`, or `finished`. The viewer surfaces these values separately and remains a derived consumer of the Markdown/YAML bundle.
+Every meaningful Task, Workstream, or Time Entry edit must advance its RFC 3339 `timestamp`. Treat that field as the portable **Last meaningful change** value; never substitute filesystem modification time, Git commit time, provider observation time, `created`, `started`, or `finished`. Tracker Profile discovery uses its separate `discovery.observed_at` contract. The viewer surfaces these values separately and remains a derived consumer of the Markdown/YAML bundle.
+
+The viewer defaults to Grid, distinguishes record classes by shape, surfaces effort and connection metrics, and can arrange or filter current records by `timestamp`, `created`, `started`, or `finished`. Its drift review compares timestamps across existing links. Report every highlight as a possible review signal, never proof that an older target is stale; the current bundle does not reconstruct historical record bodies.
 
 ## Boundaries
 

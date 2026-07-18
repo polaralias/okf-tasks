@@ -1,7 +1,7 @@
 interface:
   display_name: "OKF Task Lifecycle"
   short_description: "Manage and visually review portable OKF task bundles"
-  default_prompt: "Use $okf-task-lifecycle to manage an OKF task, estimate and track its effort, and generate the local Graph and Documents viewer when visual review would help."
+  default_prompt: "Use $okf-task-lifecycle to manage OKF tasks with explicit last-meaningful-change timestamps, estimate and track effort, and generate the Grid-first Graph/Documents viewer with class-specific nodes, temporal filtering, timeline layout, and cautiously labelled drift review when visual analysis would help."
   icon_small: assets/icon.svg
   icon_large: assets/icon.svg
 

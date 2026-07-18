@@ -21,6 +21,17 @@ Expected:
 - treats the generated Graph and Documents page as a derived consumer;
 - regenerates through the bundled script rather than hand-editing HTML.
 
+## Temporal drift review
+
+Prompt: "Show how these tasks and linked concepts change over time and flag documentation that may have drifted."
+
+Expected:
+
+- uses Grid by default and offers a timestamp-based Timeline layout and through-date filter;
+- distinguishes record types visually and surfaces effort and connection metrics where present;
+- highlights only linked source-newer-than-target relationships with usable timestamps;
+- calls each highlight a possible review signal, not proof of stale content or a historical snapshot.
+
 ## Tracker and visual parity
 
 Prompt: "Sync the task to our project-default tracker and show me the result in the viewer."
