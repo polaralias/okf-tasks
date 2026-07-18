@@ -262,7 +262,19 @@ timestamp: 2026-07-17T20:30:00Z
         self.assertIn('edge.possible-drift', generated)
         self.assertIn('Timestamp ordering is a review signal, not proof of drift.', generated)
 
-    def test_local_documentation_generator_builds_both_pages_from_the_same_viewer(self) -> None:
+    def test_relationship_html_groups_bundles_without_replacing_explicit_edges(self) -> None:
+        records = visualize_bundle.read_records(self.root)
+        graph = visualize_bundle.build_graph(records)
+        generated = visualize_bundle.generate_relationship_html(graph, "Relationships")
+        self.assertIn('OKF Tasks · relationship map', generated)
+        self.assertIn('<option value="relationship" selected>Relationship layout</option>', generated)
+        self.assertIn('node[virtual]', generated)
+        self.assertIn('Bundle lane', generated)
+        self.assertIn('label:"data(relationship)"', generated)
+        self.assertIn('"relationshipPosition":', generated)
+        self.assertIn('"relationship": "workstream"', generated)
+
+    def test_local_documentation_generator_builds_all_review_pages(self) -> None:
         output = self.root / "local-docs"
         completed = subprocess.run(
             [sys.executable, str(GENERATE_LOCAL_DOCS), "--output-dir", str(output)],
@@ -273,10 +285,13 @@ timestamp: 2026-07-17T20:30:00Z
         self.assertEqual(0, completed.returncode, completed.stderr)
         visualization = (output / "okf-tasks-visualization.html").read_text(encoding="utf-8")
         examples = (output / "okf-tasks-examples.html").read_text(encoding="utf-8")
+        relationships = (output / "okf-tasks-relationships.html").read_text(encoding="utf-8")
         for generated in (visualization, examples):
             self.assertIn('id="browse-documents"', generated)
             self.assertIn('id="theme"', generated)
             self.assertIn('id="fullscreen"', generated)
+        self.assertIn('OKF Tasks · relationship map', relationships)
+        self.assertIn('Bundle lane', relationships)
         checked = subprocess.run(
             [sys.executable, str(GENERATE_LOCAL_DOCS), "--output-dir", str(output), "--check"],
             cwd=SCRIPT.parents[1],
