@@ -17,10 +17,10 @@ This document records how OKF Tasks establishes a first-class tracker connection
 7. Re-run `tracker refresh` when provider configuration changes, and retain validation or live-test evidence with the delivery change.
 
 ```text
-python skills/okf-task-lifecycle/scripts/okf_tasks.py tracker init --root . --tracker linear-engineering --system linear --scope ENG --mode bidirectional --authority repository --default
-python skills/okf-task-lifecycle/scripts/okf_tasks.py tracker set-default --root . --tracker linear-engineering
-python skills/okf-task-lifecycle/scripts/okf_tasks.py tracker create --root . --task new-task
-python skills/okf-task-lifecycle/scripts/okf_tasks.py tracker sync --root . --task new-task --direction push
+okf-tasks tracker init --root . --tracker linear-engineering --system linear --scope ENG --mode bidirectional --authority repository --default
+okf-tasks tracker set-default --root . --tracker linear-engineering
+okf-tasks tracker create --root . --task new-task
+okf-tasks tracker sync --root . --task new-task --direction push
 ```
 
 An explicit `--tracker` always wins. Without one, the CLI uses the saved default, then a sole profile. If several profiles exist without one safe default, it stops and lists the available profiles so the user can choose and save one.

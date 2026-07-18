@@ -2,6 +2,12 @@
 
 All notable changes to OKF Tasks are recorded here.
 
+## Unreleased
+
+- Add an installable `okf-tasks` console command for the reference lifecycle CLI.
+- Polish the interactive viewer with persistent light mode, working fullscreen, always-readable relationship labels, GitHub-style Markdown and Mermaid rendering, collapsible raw sources, and full Markdown-tree browsing.
+- Generate the focused visualization and complete examples browser from one reproducible, checkable script.
+
 ## 0.4.0 — 2026-07-18
 
 - Replace unscoped `(system, id)` mappings with host-scoped, provider-global external identities.

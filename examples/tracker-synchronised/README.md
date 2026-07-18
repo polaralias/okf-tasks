@@ -5,7 +5,7 @@ This example keeps the repository task canonical and records a Linear issue as a
 From the repository root, a safe body can be staged with:
 
 ```text
-python skills/okf-task-lifecycle/scripts/okf_tasks.py prepare-export --root . --source examples/tracker-synchronised/tasks/add-audit-events/task.md --output .okf-exports/add-audit-events.md
+okf-tasks prepare-export --root . --source examples/tracker-synchronised/tasks/add-audit-events/task.md --output .okf-exports/add-audit-events.md
 ```
 
 The ignored `.okf-exports/` staging directory is deliberately outside this example and should not be committed.

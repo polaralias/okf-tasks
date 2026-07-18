@@ -17,6 +17,7 @@ This project is not affiliated with or endorsed by Google Cloud.
 - [`skills/okf-task-lifecycle/`](./skills/okf-task-lifecycle/) — a portable agent skill and deterministic CLI.
 - [`examples/`](./examples/) — standalone, knowledge-linked, and tracker-synchronised bundles.
 - [`docs/VISUALIZATION.md`](./docs/VISUALIZATION.md) — a generated Mermaid task graph that renders directly in GitHub.
+- [`docs/VISUALIZATION_GUIDE.md`](./docs/VISUALIZATION_GUIDE.md) — interactive viewer features, generation, and review workflow.
 - [`docs/TRACKER_INTEGRATION.md`](./docs/TRACKER_INTEGRATION.md) — provider setup, project-default selection, and live integration evidence.
 - [`conformance/`](./conformance/) — a shared positive/negative fixture manifest and exhaustive lifecycle matrix.
 - [`implementations/typescript/`](./implementations/typescript/) — an independent validator that cross-checks the same manifest.
@@ -24,22 +25,23 @@ This project is not affiliated with or endorsed by Google Cloud.
 
 ## Quick start
 
-Install the reference CLI dependency:
+Install the project in editable mode to expose the `okf-tasks` command:
 
 ```text
-python -m pip install PyYAML
+python -m pip install -e .
+okf-tasks --help
 ```
 
 Create, track time, and validate a task bundle:
 
 ```text
-python skills/okf-task-lifecycle/scripts/okf_tasks.py init-bundle --root .
-python skills/okf-task-lifecycle/scripts/okf_tasks.py create --root . --slug first-task --title "First task" --description "Deliver the first observable result."
-python skills/okf-task-lifecycle/scripts/okf_tasks.py set-status --root . --task first-task --status ready
-python skills/okf-task-lifecycle/scripts/okf_tasks.py start-time --root . --task first-task --actor agent
+okf-tasks init-bundle --root .
+okf-tasks create --root . --slug first-task --title "First task" --description "Deliver the first observable result."
+okf-tasks set-status --root . --task first-task --status ready
+okf-tasks start-time --root . --task first-task --actor agent
 # Perform the work, then close the session:
-python skills/okf-task-lifecycle/scripts/okf_tasks.py stop-time --root . --task first-task --actor agent
-python skills/okf-task-lifecycle/scripts/okf_tasks.py validate --root .
+okf-tasks stop-time --root . --task first-task --actor agent
+okf-tasks validate --root .
 ```
 
 The default bundle location is `tasks/`. Use `--bundle <path>` to select another repository-relative bundle root.
@@ -47,8 +49,8 @@ The default bundle location is `tasks/`. Use `--bundle <path>` to select another
 For a repository whose `docs/` tree already contains an actual project's context and delivery material, initialize the optional project-documentation placement:
 
 ```text
-python skills/okf-task-lifecycle/scripts/okf_tasks.py init-bundle --root . --placement docs
-python skills/okf-task-lifecycle/scripts/okf_tasks.py create --root . --bundle docs/tasks --slug first-task --title "First task" --description "Deliver the first observable result."
+okf-tasks init-bundle --root . --placement docs
+okf-tasks create --root . --bundle docs/tasks --slug first-task --title "First task" --description "Deliver the first observable result."
 ```
 
 This creates `docs/tasks/`; it does not turn operational task records into canonical requirements or architecture.
@@ -56,10 +58,10 @@ This creates `docs/tasks/`; it does not turn operational task records into canon
 Initialize a first-class tracker connection from a live provider API. Credentials are read only from the runtime environment and are never written to the profile:
 
 ```text
-python skills/okf-task-lifecycle/scripts/okf_tasks.py tracker init --root . --tracker github-main --system github --scope owner/repository --mode bidirectional --authority repository
-python skills/okf-task-lifecycle/scripts/okf_tasks.py tracker init --root . --tracker gitlab-platform --system gitlab --scope group/project --mode bidirectional --authority repository
-python skills/okf-task-lifecycle/scripts/okf_tasks.py tracker init --root . --tracker linear-engineering --system linear --scope ENG --mode bidirectional --authority repository --default
-python skills/okf-task-lifecycle/scripts/okf_tasks.py tracker init --root . --tracker clickup-delivery --system clickup --scope 123456789 --mode bidirectional --authority repository
+okf-tasks tracker init --root . --tracker github-main --system github --scope owner/repository --mode bidirectional --authority repository
+okf-tasks tracker init --root . --tracker gitlab-platform --system gitlab --scope group/project --mode bidirectional --authority repository
+okf-tasks tracker init --root . --tracker linear-engineering --system linear --scope ENG --mode bidirectional --authority repository --default
+okf-tasks tracker init --root . --tracker clickup-delivery --system clickup --scope 123456789 --mode bidirectional --authority repository
 ```
 
 The default credential variables are `GITHUB_TOKEN`, `GITLAB_TOKEN`, `LINEAR_API_KEY`, and `CLICKUP_API_TOKEN`. Use `--api-base` for GitHub Enterprise or self-managed GitLab. For reviewed or offline setup, pass a normalized provider snapshot with `--discovery-file`.
@@ -67,30 +69,30 @@ The default credential variables are `GITHUB_TOKEN`, `GITLAB_TOKEN`, `LINEAR_API
 Choose the scope that belongs to the current project, prompt when more than one repository, project, team, or List is plausible, and save the chosen profile with `--default` or `tracker set-default`. An explicit `--tracker` takes precedence; otherwise create, import, sync, and link commands use the saved default or the sole profile. Multiple profiles without a default stop with a candidate list instead of guessing.
 
 ```text
-python skills/okf-task-lifecycle/scripts/okf_tasks.py tracker set-default --root . --tracker clickup-delivery
+okf-tasks tracker set-default --root . --tracker clickup-delivery
 ```
 
 Inspect configuration and detect provider drift without silently remapping fields or statuses:
 
 ```text
-python skills/okf-task-lifecycle/scripts/okf_tasks.py tracker inspect --root . --tracker linear-engineering
-python skills/okf-task-lifecycle/scripts/okf_tasks.py tracker refresh --root . --tracker linear-engineering --discovery-file discovery.json
-python skills/okf-task-lifecycle/scripts/okf_tasks.py tracker refresh --root . --tracker linear-engineering --discovery-file discovery.json --accept
+okf-tasks tracker inspect --root . --tracker linear-engineering
+okf-tasks tracker refresh --root . --tracker linear-engineering --discovery-file discovery.json
+okf-tasks tracker refresh --root . --tracker linear-engineering --discovery-file discovery.json --accept
 ```
 
 Link a task using the provider-global object ID and separate human-facing key:
 
 ```text
-python skills/okf-task-lifecycle/scripts/okf_tasks.py link-external --root . --task first-task --tracker linear-engineering --id <issue-uuid> --key ENG-123 --url https://linear.app/example/issue/ENG-123
+okf-tasks link-external --root . --task first-task --tracker linear-engineering --id <issue-uuid> --key ENG-123 --url https://linear.app/example/issue/ENG-123
 ```
 
 Create and verify a remote record from a local task, import a remote record to work from it locally, or reconcile an existing binding:
 
 ```text
-python skills/okf-task-lifecycle/scripts/okf_tasks.py tracker create --root . --task first-task
-python skills/okf-task-lifecycle/scripts/okf_tasks.py tracker import --root . --remote-key 123 --slug imported-issue
-python skills/okf-task-lifecycle/scripts/okf_tasks.py tracker sync --root . --task first-task --direction push
-python skills/okf-task-lifecycle/scripts/okf_tasks.py tracker sync --root . --task first-task --direction pull
+okf-tasks tracker create --root . --task first-task
+okf-tasks tracker import --root . --remote-key 123 --slug imported-issue
+okf-tasks tracker sync --root . --task first-task --direction push
+okf-tasks tracker sync --root . --task first-task --direction pull
 ```
 
 Creation and push perform the same deterministic egress and repository-link checks as `prepare-export`. A remote revision change stops push until it is explicitly resolved. Provider writes are read back before the binding base advances.
@@ -98,7 +100,7 @@ Creation and push perform the same deterministic egress and repository-link chec
 Prepare a task body for an external tracker without leaking secrets or local paths:
 
 ```text
-python skills/okf-task-lifecycle/scripts/okf_tasks.py prepare-export --root . --source tasks/first-task/task.md --output .okf-exports/first-task.md
+okf-tasks prepare-export --root . --source tasks/first-task/task.md --output .okf-exports/first-task.md
 ```
 
 Repository-relative links are converted to credential-free GitHub or GitLab links pinned to the current commit. Unsafe or unresolved content stops the export.
@@ -107,7 +109,14 @@ Repository-relative links are converted to credential-free GitHub or GitLab link
 
 The optional visualizer follows the consumer pattern demonstrated by Google's [OKF reference visualizer](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf): the Markdown/YAML bundle remains canonical and visualization is a derived view.
 
-Generate an interactive HTML graph and a GitHub-rendered Mermaid graph:
+Generate both review pages—the focused visualization and the full examples browser—from the shared viewer template:
+
+```text
+python scripts/generate_local_docs.py
+python scripts/generate_local_docs.py --check
+```
+
+Generate a custom interactive HTML graph and a GitHub-rendered Mermaid graph:
 
 ```text
 python scripts/visualize_bundle.py \
@@ -117,7 +126,7 @@ python scripts/visualize_bundle.py \
   --markdown docs/VISUALIZATION.md
 ```
 
-Open the HTML file locally for search, type filters, switchable layouts, frontmatter, sanitized Markdown bodies, and backlinks. The HTML loads pinned Cytoscape, Marked, and DOMPurify browser libraries from jsDelivr; task data is embedded in the generated file.
+Open the HTML file locally for search, type filters, switchable layouts, readable relationship labels, light/dark themes, fullscreen graph review, a complete Markdown document tree, GitHub-style sanitized Markdown, Mermaid diagrams, backlinks, and collapsible raw YAML/source. Both `local-docs/okf-tasks-visualization.html` and `local-docs/okf-tasks-examples.html` are generated from the same renderer. The HTML loads pinned Cytoscape, Marked, DOMPurify, and Mermaid browser libraries from jsDelivr; task and document data are embedded in the generated file.
 
 GitHub renders the Mermaid diagram directly in [`docs/VISUALIZATION.md`](./docs/VISUALIZATION.md). For a hosted interactive graph, publish the generated HTML through GitHub Pages; ordinary GitHub file views do not execute committed HTML.
 
