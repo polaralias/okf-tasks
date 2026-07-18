@@ -126,7 +126,7 @@ python scripts/visualize_bundle.py \
   --markdown docs/VISUALIZATION.md
 ```
 
-Open the HTML file locally for search, type filters, switchable layouts, readable relationship labels, light/dark themes, fullscreen graph review, a complete Markdown document tree, GitHub-style sanitized Markdown, Mermaid diagrams, backlinks, and collapsible raw YAML/source. Both `local-docs/okf-tasks-visualization.html` and `local-docs/okf-tasks-examples.html` are generated from the same renderer. The HTML loads pinned Cytoscape, Marked, DOMPurify, and Mermaid browser libraries from jsDelivr; task and document data are embedded in the generated file.
+Open the HTML file locally for search, type filters, switchable layouts, readable relationship labels, a light-first theme with a persistent dark option, labelled graph controls, fullscreen graph review, and separate Graph and Documents tabs. The Documents tab provides a full-size Markdown reader with a permanent file tree, while the graph inspector retains its quick document drawer, backlinks, and collapsible raw YAML/source. Both views support GitHub-style sanitized Markdown and Mermaid diagrams. Both `local-docs/okf-tasks-visualization.html` and `local-docs/okf-tasks-examples.html` are generated from the same renderer. The HTML loads pinned Cytoscape, Marked, DOMPurify, and Mermaid browser libraries from jsDelivr; task and document data are embedded in the generated file.
 
 GitHub renders the Mermaid diagram directly in [`docs/VISUALIZATION.md`](./docs/VISUALIZATION.md). For a hosted interactive graph, publish the generated HTML through GitHub Pages; ordinary GitHub file views do not execute committed HTML.
 

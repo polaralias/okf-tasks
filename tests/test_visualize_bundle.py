@@ -138,7 +138,7 @@ timestamp: 2026-07-17T20:30:00Z
         graph = visualize_bundle.build_graph(visualize_bundle.read_records(self.root))
         generated = visualize_bundle.generate_html(graph, "Example")
         self.assertIn("marked@16.1.2/lib/marked.umd.js", generated)
-        self.assertIn("function renderMarkdown(value)", generated)
+        self.assertIn('function renderMarkdown(value,body=$("record-body"))', generated)
         self.assertIn("body.textContent=value", generated)
 
     def test_html_keeps_relationship_labels_visible_and_legible(self) -> None:
@@ -164,6 +164,15 @@ timestamp: 2026-07-17T20:30:00Z
         self.assertIn('id="theme"', generated)
         self.assertIn('localStorage.getItem("okf-theme")', generated)
         self.assertIn('localStorage.setItem("okf-theme",theme)', generated)
+
+    def test_html_defaults_to_light_and_labels_every_button(self) -> None:
+        graph = visualize_bundle.build_graph(visualize_bundle.read_records(self.root))
+        generated = visualize_bundle.generate_html(graph, "Example")
+        self.assertIn('document.documentElement.dataset.theme=savedTheme||"light"', generated)
+        self.assertIn('function labelButtons()', generated)
+        self.assertIn('button.dataset.tooltip=label', generated)
+        self.assertIn('button.title=label', generated)
+        self.assertIn('.icon-button[data-tooltip]:hover:after', generated)
 
     def test_html_prioritizes_rendered_markdown_and_collapses_raw_sources(self) -> None:
         graph = visualize_bundle.build_graph(visualize_bundle.read_records(self.root))
@@ -200,6 +209,22 @@ timestamp: 2026-07-17T20:30:00Z
         )
         self.assertNotIn("for(const document of graph.documents", generated)
 
+    def test_html_has_a_full_page_document_reader_tab_with_a_persistent_tree(self) -> None:
+        (self.root / "README.md").write_text("# Repository guide\n\nRead the docs.\n", encoding="utf-8")
+        records = visualize_bundle.read_records(self.root)
+        graph = visualize_bundle.build_graph(records, visualize_bundle.read_documents(self.root, records))
+        generated = visualize_bundle.generate_html(graph, "Example")
+        self.assertIn('role="tablist"', generated)
+        self.assertIn('id="graph-tab"', generated)
+        self.assertIn('id="documents-tab"', generated)
+        self.assertIn('id="documents-view"', generated)
+        self.assertIn('id="document-reader"', generated)
+        self.assertIn('id="reader-tree"', generated)
+        self.assertIn('grid-template-columns:minmax(0,1fr) 280px', generated)
+        self.assertIn("function switchView(view)", generated)
+        self.assertIn("function showReaderDocument(path)", generated)
+        self.assertIn('renderTree(tree,$("reader-tree"),showReaderDocument)', generated)
+
     def test_local_documentation_generator_builds_both_pages_from_the_same_viewer(self) -> None:
         output = self.root / "local-docs"
         completed = subprocess.run(
@@ -222,6 +247,10 @@ timestamp: 2026-07-17T20:30:00Z
             text=True,
         )
         self.assertEqual(0, checked.returncode, checked.stderr)
+
+    def test_repository_skill_bundles_the_same_visualizer(self) -> None:
+        bundled = SCRIPT.parents[1] / "skills" / "okf-task-lifecycle" / "scripts" / "visualize_bundle.py"
+        self.assertEqual(SCRIPT.read_bytes(), bundled.read_bytes())
 
 
 if __name__ == "__main__":

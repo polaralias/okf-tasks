@@ -7,7 +7,7 @@ description: Create and maintain OKF Tasks bundles containing portable repositor
 
 Maintain execution truth as an OKF-conformant task bundle without imposing a knowledge-engineering system or external tracker.
 
-Read [references/okf-tasks-profile.md](./references/okf-tasks-profile.md) before creating, changing, or publishing records. Prefer the installed `okf-tasks` command for deterministic creation, transition, indexing, external mapping, egress preparation, and validation. When the distribution is unavailable, [scripts/okf_tasks.py](./scripts/okf_tasks.py) remains the portable fallback with the same command surface.
+Read [references/okf-tasks-profile.md](./references/okf-tasks-profile.md) before creating, changing, or publishing records. Prefer the installed `okf-tasks` command for deterministic creation, transition, indexing, external mapping, egress preparation, and validation. When the distribution is unavailable, [scripts/okf_tasks.py](./scripts/okf_tasks.py) remains the portable fallback with the same command surface. Use [scripts/visualize_bundle.py](./scripts/visualize_bundle.py) to generate the light-first interactive Graph and Documents views when a bundle needs local visual review.
 
 ## Boundaries
 
