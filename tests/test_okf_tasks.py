@@ -54,6 +54,7 @@ class ConformanceFixtureTests(unittest.TestCase):
             "knowledge-linked": "tasks",
             "tracker-synchronised": "tasks",
             "project-docs": "docs/tasks",
+            "visualization": "tasks",
         }
         for name, bundle_path in examples.items():
             with self.subTest(name=name):

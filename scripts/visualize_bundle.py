@@ -1,0 +1,399 @@
+from __future__ import annotations
+
+import argparse
+import json
+import re
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+
+INDEX_NAME = "index.md"
+LINK_PATTERN = re.compile(r"\]\(([^)\s]+\.md)(?:#[A-Za-z0-9_-]*)?\)")
+COLORS = {
+    "Task": "#2563eb",
+    "Workstream": "#7c3aed",
+    "Time Entry": "#059669",
+}
+DEFAULT_COLOR = "#64748b"
+
+
+class FrontmatterLoader(yaml.SafeLoader):
+    pass
+
+
+FrontmatterLoader.yaml_implicit_resolvers = {
+    key: list(value) for key, value in yaml.SafeLoader.yaml_implicit_resolvers.items()
+}
+for resolver_key, resolvers in list(FrontmatterLoader.yaml_implicit_resolvers.items()):
+    FrontmatterLoader.yaml_implicit_resolvers[resolver_key] = [
+        resolver for resolver in resolvers if resolver[0] != "tag:yaml.org,2002:timestamp"
+    ]
+
+
+@dataclass
+class Record:
+    id: str
+    path: Path
+    type: str
+    title: str
+    description: str
+    status: str
+    tags: list[str]
+    body: str
+    frontmatter: dict[str, Any]
+    links: list[tuple[str, str]] = field(default_factory=list)
+
+    def node(self) -> dict[str, Any]:
+        return {
+            "data": {
+                "id": self.id,
+                "label": self.title or self.id,
+                "type": self.type,
+                "description": self.description,
+                "status": self.status,
+                "tags": self.tags,
+                "color": COLORS.get(self.type, DEFAULT_COLOR),
+                "size": 34 + min(44, len(self.body) // 250),
+                "frontmatter": self.frontmatter,
+            }
+        }
+
+
+def parse_document(path: Path) -> tuple[dict[str, Any], str] | None:
+    text = path.read_text(encoding="utf-8")
+    if not text.startswith("---\n") and not text.startswith("---\r\n"):
+        return None
+    normalized = text.replace("\r\n", "\n")
+    try:
+        _, frontmatter, body = normalized.split("---", 2)
+        metadata = yaml.load(frontmatter, Loader=FrontmatterLoader)
+    except (ValueError, yaml.YAMLError):
+        return None
+    if not isinstance(metadata, dict) or not metadata.get("type"):
+        return None
+    return metadata, body.lstrip("\n")
+
+
+def as_strings(value: Any) -> list[str]:
+    if value in (None, ""):
+        return []
+    if isinstance(value, list):
+        return [str(item) for item in value]
+    return [str(value)]
+
+
+def task_prefix(record_id: str) -> str:
+    marker = "/tasks/"
+    normalized = f"/{record_id}"
+    if marker in normalized:
+        return normalized.split(marker, 1)[0].lstrip("/")
+    return ""
+
+
+def task_id(record_id: str, slug: str) -> str:
+    prefix = task_prefix(record_id)
+    base = f"{prefix}/tasks" if prefix else "tasks"
+    if record_id.startswith("tasks/") or "/tasks/" in record_id:
+        return f"{base}/{slug}/task"
+    return f"{slug}/task"
+
+
+def relationship_id(record_id: str, value: str) -> str:
+    clean = value.split("#", 1)[0].strip().lstrip("./")
+    if clean.endswith(".md"):
+        return clean[:-3]
+    if "/" in clean:
+        return clean
+    return task_id(record_id, clean)
+
+
+def extract_markdown_links(body: str, source: Path, root: Path) -> list[tuple[str, str]]:
+    relationships: list[tuple[str, str]] = []
+    root = root.resolve()
+    for match in LINK_PATTERN.finditer(body):
+        target = match.group(1)
+        if "://" in target or target.startswith("/"):
+            continue
+        try:
+            resolved = (source.parent / target).resolve().relative_to(root)
+        except ValueError:
+            continue
+        relationships.append((resolved.with_suffix("").as_posix(), "links"))
+    return relationships
+
+
+def structured_links(record: Record) -> list[tuple[str, str]]:
+    metadata = record.frontmatter
+    relationships: list[tuple[str, str]] = []
+    if record.type == "Workstream":
+        task = metadata.get("task")
+        if task:
+            relationships.append((task_id(record.id, str(task)), "workstream"))
+    elif record.type == "Time Entry":
+        task = metadata.get("task")
+        workstream = metadata.get("workstream")
+        if task and workstream:
+            parent = task_id(record.id, str(task)).removesuffix("/task")
+            relationships.append((f"{parent}/workstreams/{workstream}", "time"))
+        elif task:
+            relationships.append((task_id(record.id, str(task)), "time"))
+    elif record.type == "Task":
+        parent = metadata.get("parent")
+        if parent:
+            relationships.append((relationship_id(record.id, str(parent)), "parent"))
+        for dependency in as_strings(metadata.get("depends_on")):
+            relationships.append((relationship_id(record.id, dependency), "depends on"))
+    return relationships
+
+
+def read_records(root: Path) -> list[Record]:
+    root = root.resolve()
+    records: list[Record] = []
+    for path in sorted(root.rglob("*.md")):
+        if path.name == INDEX_NAME:
+            continue
+        parsed = parse_document(path)
+        if parsed is None:
+            continue
+        metadata, body = parsed
+        record_id = path.relative_to(root).with_suffix("").as_posix()
+        record = Record(
+            id=record_id,
+            path=path,
+            type=str(metadata.get("type") or "Unknown"),
+            title=str(metadata.get("title") or metadata.get("entry") or record_id),
+            description=str(metadata.get("description") or ""),
+            status=str(metadata.get("status") or ""),
+            tags=as_strings(metadata.get("tags")),
+            body=body,
+            frontmatter=metadata,
+        )
+        record.links.extend(extract_markdown_links(body, path, root))
+        record.links.extend(structured_links(record))
+        records.append(record)
+    return records
+
+
+def build_graph(records: list[Record]) -> dict[str, Any]:
+    ids = {record.id for record in records}
+    edges: list[dict[str, Any]] = []
+    seen: set[tuple[str, str, str]] = set()
+    for record in records:
+        for target, relationship in record.links:
+            if target == record.id or target not in ids:
+                continue
+            key = (record.id, target, relationship)
+            if key in seen:
+                continue
+            seen.add(key)
+            edges.append(
+                {
+                    "data": {
+                        "id": f"e{len(edges)}",
+                        "source": record.id,
+                        "target": target,
+                        "relationship": relationship,
+                    }
+                }
+            )
+    structured_pairs = {
+        frozenset((edge["data"]["source"], edge["data"]["target"]))
+        for edge in edges
+        if edge["data"]["relationship"] != "links"
+    }
+    edges = [
+        edge
+        for edge in edges
+        if edge["data"]["relationship"] != "links"
+        or frozenset((edge["data"]["source"], edge["data"]["target"])) not in structured_pairs
+    ]
+    for index, edge in enumerate(edges):
+        edge["data"]["id"] = f"e{index}"
+    return {
+        "nodes": [record.node() for record in records],
+        "edges": edges,
+        "bodies": {record.id: record.body for record in records},
+        "types": sorted({record.type for record in records}),
+        "palette": COLORS,
+    }
+
+
+def safe_json(value: Any) -> str:
+    return json.dumps(value, ensure_ascii=False).replace("<", "\\u003c")
+
+
+def mermaid_label(value: str) -> str:
+    return value.replace("\\", "\\\\").replace('"', "\\\"").replace("\n", " ")
+
+
+def generate_markdown(graph: dict[str, Any], name: str, source: str) -> str:
+    nodes = graph["nodes"]
+    id_map = {node["data"]["id"]: f"n{index}" for index, node in enumerate(nodes)}
+    tick = chr(96)
+    lines = [
+        f"# {name}",
+        "",
+        "> Generated from repository-local OKF records. The Markdown/YAML bundle remains canonical.",
+        "",
+        f"Source: {tick}{source}{tick}",
+        "",
+        f"{tick * 3}mermaid",
+        "flowchart LR",
+    ]
+    for node in nodes:
+        data = node["data"]
+        detail = f" · {data['status']}" if data.get("status") else ""
+        class_name = data["type"].lower().replace(" ", "_")
+        if class_name not in {"task", "workstream", "time_entry"}:
+            class_name = "unknown"
+        lines.append(f'    {id_map[data["id"]]}["{mermaid_label(data["label"] + detail)}"]:::{class_name}')
+    for edge in graph["edges"]:
+        data = edge["data"]
+        lines.append(
+            f'    {id_map[data["source"]]} -->|{mermaid_label(data["relationship"])}| {id_map[data["target"]]}'
+        )
+    lines.extend(
+        [
+            "    classDef task fill:#dbeafe,stroke:#2563eb,color:#172554",
+            "    classDef workstream fill:#ede9fe,stroke:#7c3aed,color:#2e1065",
+            "    classDef time_entry fill:#d1fae5,stroke:#059669,color:#022c22",
+            "    classDef unknown fill:#e2e8f0,stroke:#64748b,color:#0f172a",
+            tick * 3,
+            "",
+            "## Legend",
+            "",
+            "- Blue: task",
+            "- Purple: workstream",
+            "- Green: time entry",
+            "- Arrows: structured relationships or repository-local Markdown links",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+HTML_TEMPLATE = r"""<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Interactive graph of an OKF Tasks bundle">
+<title>OKF Tasks Viewer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/cytoscape@3.31.2/dist/cytoscape.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked@16.1.2/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js"></script>
+<style>
+:root{color-scheme:dark;--ink:#eef6ff;--muted:#8fa6c7;--faint:#526887;--base:#050b18;--surface:#081426;--surface-2:#0b1b32;--line:rgba(139,181,235,.14);--line-strong:rgba(114,197,255,.3);--cyan:#22c7f4;--blue:#2d75ff;--red:#f04452;--radius-xl:24px;--radius-lg:18px;--ease:cubic-bezier(.32,.72,0,1)}
+*{box-sizing:border-box}html,body{height:100%}html{background:var(--base);scroll-behavior:smooth}body{margin:0;overflow:hidden;background:radial-gradient(circle at 12% 0%,rgba(26,77,161,.18),transparent 34%),var(--base);color:var(--ink);font:14px/1.55 Manrope,Segoe UI,sans-serif}
+body:after{content:"";position:fixed;inset:0;pointer-events:none;z-index:4;opacity:.18;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.12'/%3E%3C/svg%3E")}
+button,input,select{font:inherit}.skip-link{position:fixed;top:10px;left:10px;z-index:20;transform:translateY(-160%);padding:8px 12px;border-radius:8px;background:white;color:#071126}.skip-link:focus{transform:none}
+.app-header{position:relative;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:24px;height:82px;padding:0 24px;border-bottom:1px solid var(--line);background:rgba(5,11,24,.94)}
+.identity{display:flex;align-items:center;gap:13px;min-width:0}.mark{display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:linear-gradient(145deg,#0f294e,#071226);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 10px 30px rgba(0,95,190,.17);color:var(--cyan);font:500 16px JetBrains Mono,monospace}.mark:after{content:"";position:absolute;width:5px;height:5px;margin:25px 0 0 27px;border-radius:50%;background:var(--red);box-shadow:0 0 12px var(--red)}
+.identity-copy{min-width:0}.identity h1{margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:16px;font-weight:700;letter-spacing:-.02em}.identity p{margin:1px 0 0;color:var(--muted);font-size:11px}.stats{display:flex;align-items:center;gap:8px}.stat{min-width:82px;padding:8px 11px;border-radius:12px;background:rgba(16,35,63,.62);box-shadow:inset 0 0 0 1px var(--line)}.stat strong{display:block;font:500 15px JetBrains Mono,monospace;font-variant-numeric:tabular-nums}.stat span{display:block;color:var(--muted);font-size:9px;letter-spacing:.12em;text-transform:uppercase}
+.workspace{position:relative;z-index:2;display:grid;grid-template-columns:minmax(0,1fr) minmax(340px,410px);gap:10px;height:calc(100% - 82px);padding:10px}.graph-shell,.detail-shell{min-height:0;padding:5px;border-radius:var(--radius-xl);background:rgba(109,161,224,.06);box-shadow:inset 0 0 0 1px rgba(153,197,255,.08)}
+.graph-core,.detail-core{position:relative;height:100%;overflow:hidden;border-radius:calc(var(--radius-xl) - 5px);background:var(--surface);box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 22px 60px rgba(0,5,15,.28)}
+.graph-core:before{content:"";position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(rgba(79,130,190,.24) .7px,transparent .7px),radial-gradient(circle at 50% 34%,rgba(28,86,170,.2),transparent 42%);background-size:22px 22px,100% 100%}.graph-toolbar{position:absolute;z-index:3;top:16px;left:16px;right:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;pointer-events:none}.tool-group{display:flex;align-items:center;gap:7px;padding:5px;border-radius:14px;background:rgba(7,18,35,.9);box-shadow:inset 0 0 0 1px var(--line),0 14px 34px rgba(0,6,18,.3);pointer-events:auto}
+.search-wrap{position:relative}.search-wrap svg{position:absolute;top:50%;left:12px;width:15px;transform:translateY(-50%);color:var(--muted)}#search{width:min(29vw,320px);height:38px;padding:0 36px;border:0;border-radius:10px;outline:0;background:#0c1c33;color:var(--ink);transition:box-shadow .45s var(--ease),background .45s var(--ease)}#search::placeholder{color:#6f85a5}#search:focus{background:#102441;box-shadow:0 0 0 2px rgba(34,199,244,.42)}.clear-search{position:absolute;top:50%;right:8px;width:25px;height:25px;transform:translateY(-50%);border:0;border-radius:7px;background:transparent;color:var(--muted);cursor:pointer}.clear-search:hover{background:rgba(255,255,255,.06);color:var(--ink)}
+select,.icon-button{height:38px;border:0;border-radius:10px;background:#0c1c33;color:var(--ink);cursor:pointer;outline:0;transition:transform .45s var(--ease),background .45s var(--ease),box-shadow .45s var(--ease)}select{padding:0 31px 0 11px}.icon-button{display:grid;place-items:center;width:38px}.icon-button svg{width:16px}.icon-button:hover,select:hover{background:#132845}.icon-button:active{transform:scale(.95)}select:focus-visible,.icon-button:focus-visible{box-shadow:0 0 0 2px rgba(34,199,244,.45)}
+.filter-rail{position:absolute;z-index:3;top:79px;left:21px;display:flex;gap:6px}.filter-chip{padding:6px 10px;border:0;border-radius:9px;background:rgba(7,18,35,.82);box-shadow:inset 0 0 0 1px var(--line);color:var(--muted);font-size:11px;cursor:pointer;transition:color .45s var(--ease),background .45s var(--ease),transform .45s var(--ease)}.filter-chip:hover{color:var(--ink);transform:translateY(-1px)}.filter-chip[aria-pressed="true"]{background:#123153;box-shadow:inset 0 0 0 1px rgba(34,199,244,.45);color:#dff8ff}
+#graph{position:absolute;inset:0}.graph-foot{position:absolute;z-index:3;right:17px;bottom:16px;display:flex;align-items:center;gap:11px;padding:8px 11px;border-radius:10px;background:rgba(7,18,35,.8);box-shadow:inset 0 0 0 1px var(--line);color:var(--muted);font-size:10px;pointer-events:none}.legend-item{display:flex;align-items:center;gap:5px}.legend-dot{width:7px;height:7px;border-radius:2px}.results{position:absolute;z-index:3;left:20px;bottom:16px;color:var(--muted);font:500 10px JetBrains Mono,monospace;letter-spacing:.02em}
+.detail-core{overflow:auto;scrollbar-color:#294568 transparent;scrollbar-width:thin}.detail-inner{padding:27px 25px 48px}.eyebrow{display:flex;align-items:center;gap:8px;margin-bottom:14px;color:var(--muted);font-size:9px;font-weight:700;letter-spacing:.17em;text-transform:uppercase}.eyebrow:before{content:"";width:17px;height:1px;background:var(--cyan)}.empty-state{display:grid;place-items:center;height:100%;padding:36px;text-align:center}.empty-orbit{display:grid;place-items:center;width:70px;height:70px;margin:0 auto 17px;border-radius:22px;background:#0e213c;box-shadow:inset 0 0 0 1px var(--line),0 16px 40px rgba(0,0,0,.22);color:var(--cyan)}.empty-orbit svg{width:27px}.empty-state h2{margin:0 0 5px;font-size:17px}.empty-state p{max-width:29ch;margin:0;color:var(--muted);font-size:12px}
+.record-head{padding-bottom:22px;border-bottom:1px solid var(--line)}.record-kicker{display:flex;align-items:center;justify-content:space-between;gap:12px}.type-chip{display:inline-flex;align-items:center;gap:7px;padding:5px 9px;border-radius:8px;background:#122540;color:#dbeeff;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}.type-chip:before{content:"";width:6px;height:6px;border-radius:2px;background:var(--chip-color);box-shadow:0 0 10px var(--chip-color)}.status-chip{padding:5px 8px;border-radius:7px;background:rgba(255,255,255,.045);color:var(--muted);font:500 9px JetBrains Mono,monospace}.record-head h2{margin:14px 0 4px;font-size:25px;line-height:1.15;letter-spacing:-.045em;text-wrap:balance}.record-id{overflow-wrap:anywhere;color:var(--faint);font:400 10px JetBrains Mono,monospace}.description{max-width:60ch;margin:15px 0 0;color:#b6c8e1;font-size:12px;line-height:1.65;text-wrap:pretty}
+.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0 0}.meta-block{min-height:57px;padding:10px 11px;border-radius:11px;background:#0a192e;box-shadow:inset 0 0 0 1px rgba(139,181,235,.09)}.meta-block span{display:block;margin-bottom:4px;color:var(--faint);font-size:8px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}.meta-block strong{font-size:11px;font-weight:600}.tag-list{display:flex;flex-wrap:wrap;gap:5px}.tag{display:inline-block;padding:3px 6px;border-radius:5px;background:#142b49;color:#a9c8e9;font:500 9px JetBrains Mono,monospace}
+.record-section{padding-top:23px}.section-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}.section-heading h3{margin:0;font-size:11px;font-weight:700;letter-spacing:.01em}.section-heading span{color:var(--faint);font:400 9px JetBrains Mono,monospace}.code-block{margin:0;overflow:auto;padding:14px;border-radius:12px;background:#050e1c;box-shadow:inset 0 0 0 1px rgba(122,171,230,.11);color:#a8c6e9;font:400 10px/1.65 JetBrains Mono,monospace}.markdown{color:#b8cae2;font-size:12px;line-height:1.72}.markdown h1,.markdown h2,.markdown h3{margin:1.45em 0 .55em;color:var(--ink);font-weight:650;letter-spacing:-.02em}.markdown h1{font-size:18px}.markdown h2{font-size:15px}.markdown h3{font-size:13px}.markdown p:first-child{margin-top:0}.markdown a,.backlink{color:#5ed7f8;text-decoration-color:rgba(94,215,248,.36);text-underline-offset:3px}.markdown code{padding:2px 4px;border-radius:4px;background:#102440;color:#d4edff;font:400 .92em JetBrains Mono,monospace}.markdown pre code{padding:0;background:transparent}.markdown table{display:block;max-width:100%;overflow:auto;border-collapse:collapse}.markdown th,.markdown td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:left}.markdown blockquote{margin:15px 0;padding-left:14px;border-left:2px solid var(--cyan);color:var(--muted)}.backlink-list{display:grid;gap:6px;margin:0;padding:0;list-style:none}.backlink{display:flex;align-items:center;justify-content:space-between;padding:9px 10px;border-radius:9px;background:#0b1d34;text-decoration:none;transition:transform .45s var(--ease),background .45s var(--ease)}.backlink:hover{transform:translateX(2px);background:#102946}.backlink span{color:var(--faint)}
+[hidden]{display:none!important}@media(max-width:980px){body{overflow:auto}.app-header{height:auto;min-height:76px;padding:13px 16px}.stats .stat:nth-child(3){display:none}.workspace{grid-template-columns:1fr;height:auto;min-height:calc(100dvh - 76px);padding:8px}.graph-shell{height:62dvh;min-height:470px}.detail-shell{height:auto;min-height:500px}.detail-core{overflow:visible}.graph-toolbar{align-items:flex-start}.tool-group:last-child{flex-direction:column}.filter-rail{top:76px}.graph-foot{display:none}#search{width:min(52vw,320px)}}@media(max-width:620px){.identity p,.stats{display:none}.app-header{height:68px}.workspace{min-height:calc(100dvh - 68px)}.graph-shell{height:67dvh;min-height:430px}.graph-toolbar{top:11px;left:11px;right:11px}.tool-group{gap:4px;padding:4px}.tool-group:last-child{position:absolute;right:0;top:49px;flex-direction:row}#search{width:calc(100vw - 58px)}.filter-rail{top:111px;left:15px;right:15px;overflow:auto;padding-bottom:4px}.results{left:15px}.detail-inner{padding:22px 18px 40px}.meta-grid{grid-template-columns:1fr}.record-head h2{font-size:22px}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition-duration:.01ms!important}}
+/* Restrained technical-review theme. This intentionally overrides the decorative first-pass shell. */
+:root{--ink:#e8edf5;--muted:#8d99aa;--faint:#586273;--base:#080b10;--surface:#0c1119;--surface-2:#101720;--line:#202936;--line-strong:#334154;--cyan:#39b8dd;--red:#e0525e}
+body{overflow:hidden;background:var(--base);font-size:13px}body:after,.graph-core:before{display:none}
+.app-header{height:64px;min-height:0;padding:0 20px;border-bottom:1px solid var(--line);background:#0a0e14}
+.identity{gap:11px}.mark{position:relative;width:32px;height:32px;border:1px solid #314155;border-radius:6px;background:#101925;box-shadow:none;font-size:12px}.mark:after{right:5px;bottom:5px;width:3px;height:3px;margin:0;box-shadow:none}
+.identity h1{font-size:14px;font-weight:650}.identity p{margin:0;font-size:10px}.stats{gap:0}.stat{display:flex;align-items:baseline;gap:5px;min-width:0;padding:0 12px;border-left:1px solid var(--line);border-radius:0;background:transparent;box-shadow:none}.stat strong{display:inline;font-size:12px}.stat span{display:inline;font-size:9px;letter-spacing:.08em}
+.workspace{grid-template-columns:minmax(0,1fr) 380px;gap:0;height:calc(100% - 64px);min-height:0;padding:0}.graph-shell,.detail-shell{height:auto;min-height:0;padding:0;border-radius:0;background:transparent;box-shadow:none}.detail-shell{border-left:1px solid var(--line)}.graph-core,.detail-core{border-radius:0;background:var(--surface);box-shadow:none}.detail-core{overflow:auto}
+.graph-toolbar{top:14px;left:14px;right:14px}.tool-group{gap:6px;padding:0;border-radius:0;background:transparent;box-shadow:none}.tool-group:last-child{flex-direction:row}
+#search{width:min(28vw,300px);height:36px;border:1px solid var(--line);border-radius:6px;background:#0b121c;box-shadow:none}#search:focus{border-color:#4c8296;background:#0e1722;box-shadow:none}.search-wrap svg{left:11px;width:14px}.clear-search{border-radius:4px}
+select,.icon-button{height:36px;border:1px solid var(--line);border-radius:6px;background:#0b121c;box-shadow:none}.icon-button{width:36px}.icon-button:hover,select:hover{border-color:var(--line-strong);background:#111a25}.icon-button:focus-visible,select:focus-visible{border-color:var(--cyan);box-shadow:none}
+.filter-rail{top:61px;left:14px;gap:3px;padding:3px;border:1px solid var(--line);border-radius:6px;background:#0b121c}.filter-chip{padding:5px 8px;border-radius:3px;background:transparent;box-shadow:none;font-size:10px}.filter-chip:hover{transform:none}.filter-chip[aria-pressed="true"]{background:#1a2734;box-shadow:none;color:#e6f7fb}
+.graph-foot{right:15px;bottom:13px;gap:12px;padding:0;border-radius:0;background:transparent;box-shadow:none;font-size:9px}.legend-dot{width:6px;height:6px;border-radius:1px}.results{left:15px;bottom:13px;font-size:9px}
+.detail-inner{padding:24px 22px 44px}.eyebrow{margin-bottom:16px;font-size:9px}.eyebrow:before{display:none}.empty-orbit{width:54px;height:54px;border:1px solid var(--line);border-radius:8px;background:#101720;box-shadow:none}.empty-orbit svg{width:23px}.empty-state h2{font-size:15px}.empty-state p{font-size:11px}
+.record-head{padding-bottom:20px}.type-chip{padding:0;border-radius:0;background:transparent;font-size:9px}.type-chip:before{width:5px;height:5px;border-radius:1px;box-shadow:none}.status-chip{padding:0;border-radius:0;background:transparent}.record-head h2{margin-top:13px;font-size:22px}.record-id{font-size:9px}.description{margin-top:13px;font-size:11px}
+.meta-grid{gap:14px;margin-top:17px}.meta-block{min-height:46px;padding:0 0 0 10px;border-left:1px solid var(--line-strong);border-radius:0;background:transparent;box-shadow:none}.meta-block span{font-size:8px}.meta-block strong{font-size:10px}.tag-list{gap:4px}.tag{padding:0;border-radius:0;background:transparent;color:#9cb5c9;font-size:8px}.tag:not(:last-child):after{content:","}
+.record-section{padding-top:22px}.section-heading{margin-bottom:9px}.section-heading h3{font-size:10px}.section-heading span{font-size:8px}.code-block{padding:12px;border:1px solid var(--line);border-radius:5px;background:#080d13;box-shadow:none;font-size:9px}.markdown{font-size:11px}.markdown h1{font-size:16px}.markdown h2{font-size:14px}.markdown h3{font-size:12px}.backlink-list{gap:1px}.backlink{padding:8px 0;border-bottom:1px solid var(--line);border-radius:0;background:transparent}.backlink:hover{transform:none;background:transparent;color:#9ddbed}
+@media(max-width:760px){body{overflow:auto}.app-header{height:60px;padding:0 13px}.identity p,.stats{display:none}.workspace{grid-template-columns:1fr;height:auto;min-height:calc(100dvh - 60px);padding:0}.graph-shell{height:62dvh;min-height:440px}.detail-shell{min-height:500px;border-top:1px solid var(--line);border-left:0}.detail-core{overflow:visible}.graph-toolbar{top:10px;left:10px;right:10px}.tool-group:last-child{position:absolute;top:44px;right:0;flex-direction:row}.filter-rail{top:98px;left:10px;right:10px}.graph-foot{display:none}#search{width:calc(100vw - 20px)}.results{left:11px}.detail-inner{padding:22px 17px 40px}.meta-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#detail">Skip to record details</a>
+<header class="app-header"><div class="identity"><div class="mark" aria-hidden="true">{ }</div><div class="identity-copy"><h1 id="name"></h1><p>OKF Tasks · derived bundle view</p></div></div><div class="stats" aria-label="Bundle summary"><div class="stat"><strong id="record-count">0</strong><span>Records</span></div><div class="stat"><strong id="relation-count">0</strong><span>Relations</span></div><div class="stat"><strong id="type-count">0</strong><span>Types</span></div></div></header>
+<main class="workspace"><section class="graph-shell" aria-label="Task relationship graph"><div class="graph-core"><div class="graph-toolbar"><div class="tool-group"><label class="search-wrap" aria-label="Search records"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg><input id="search" type="search" placeholder="Search records…" autocomplete="off"><button class="clear-search" id="clear-search" type="button" aria-label="Clear search" hidden>×</button></label></div><div class="tool-group"><label><span class="skip-link">Graph layout</span><select id="layout" aria-label="Graph layout"><option value="cose">Force layout</option><option value="breadthfirst">Hierarchy</option><option value="concentric">Concentric</option><option value="circle">Circle</option><option value="grid">Grid</option></select></label><button class="icon-button" id="fit" type="button" aria-label="Fit graph to view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5m13 5h5v-5"/></svg></button><button class="icon-button" id="reset" type="button" aria-label="Reset graph filters"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 4v6h6M20 20v-6h-6"/><path d="M5.5 15a7.5 7.5 0 0 0 12.2 2.4L20 14M4 10l2.3-3.4A7.5 7.5 0 0 1 18.5 9"/></svg></button></div></div><div class="filter-rail" id="type-filters" aria-label="Filter by record type"></div><div id="graph"></div><div class="results" id="results" aria-live="polite"></div><div class="graph-foot" aria-label="Graph legend"><span class="legend-item"><i class="legend-dot" style="background:#2563eb"></i>Task</span><span class="legend-item"><i class="legend-dot" style="background:#7c3aed"></i>Workstream</span><span class="legend-item"><i class="legend-dot" style="background:#059669"></i>Time</span></div></div></section>
+<aside class="detail-shell" id="detail"><div class="detail-core"><div class="empty-state" id="empty"><div><div class="empty-orbit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="8" r="2.5"/><circle cx="12" cy="17" r="2.5"/><path d="m9.2 8.2 5.3-.1m-6 1 2.5 5.6m4.3-4.5-2.1 4.5"/></svg></div><h2>Explore the bundle</h2><p>Select a node to inspect its frontmatter, linked records, and Markdown body.</p></div></div><article class="detail-inner" id="content" hidden><div class="eyebrow">Record inspector</div><header class="record-head"><div class="record-kicker"><span id="record-type" class="type-chip"></span><span id="record-status" class="status-chip"></span></div><h2 id="record-title"></h2><div id="record-id" class="record-id"></div><p id="record-description" class="description"></p><div class="meta-grid"><div class="meta-block"><span>Tags</span><div id="record-tags" class="tag-list"></div></div><div class="meta-block"><span>Connections</span><strong id="record-connections">0 relationships</strong></div></div></header><section class="record-section"><div class="section-heading"><h3>Frontmatter</h3><span>YAML source</span></div><pre id="record-frontmatter" class="code-block"></pre></section><section class="record-section"><div class="section-heading"><h3>Markdown body</h3><span>sanitized preview</span></div><div id="record-body" class="markdown"></div></section><section class="record-section" id="backlinks" hidden><div class="section-heading"><h3>Linked from</h3><span id="backlink-count"></span></div><ul id="backlinks-list" class="backlink-list"></ul></section></article></div></aside></main>
+<script>window.OKF_NAME=__NAME__;window.OKF_GRAPH=__GRAPH__;</script>
+<script>
+(()=>{const graph=window.OKF_GRAPH,index={},incoming={},outgoing={};let activeType="";const $=id=>document.getElementById(id);$("name").textContent=window.OKF_NAME;$("record-count").textContent=graph.nodes.length;$("relation-count").textContent=graph.edges.length;$("type-count").textContent=graph.types.length;for(const n of graph.nodes)index[n.data.id]=n.data;for(const e of graph.edges){(incoming[e.data.target]??=[]).push(e.data.source);(outgoing[e.data.source]??=[]).push(e.data.target)}
+const filters=$("type-filters");for(const value of ["",...graph.types]){const button=document.createElement("button");button.type="button";button.className="filter-chip";button.dataset.type=value;button.textContent=value||"All records";button.setAttribute("aria-pressed",String(value===""));button.onclick=()=>{activeType=value;for(const item of filters.children)item.setAttribute("aria-pressed",String(item===button));filter()};filters.appendChild(button)}
+function xml(value){return String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&apos;"})[char])}
+function titleLines(value){const words=String(value||"").trim().split(/\s+/),lines=[""];for(const word of words){const current=lines.at(-1),next=(current+" "+word).trim();if(next.length<=26||!current)lines[lines.length-1]=next;else if(lines.length<2)lines.push(word);else{lines[1]+=" "+word}}if(lines[1]?.length>29)lines[1]=lines[1].slice(0,28).trimEnd()+"…";return lines.slice(0,2)}
+function cardSvg(data){const lines=titleLines(data.label),type=data.type==="Time Entry"?"TIME ENTRY":String(data.type||"RECORD").toUpperCase(),status=String(data.status||"UNSPECIFIED").replaceAll("-"," ").toUpperCase(),accent=data.color||"#64748b",titleY=lines.length===1?51:44;const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="220" height="76" viewBox="0 0 220 76"><rect x=".75" y=".75" width="218.5" height="74.5" rx="7" fill="#0f1620" stroke="#2a3543" stroke-width="1.5"/><path d="M1 8a7 7 0 0 1 7-7h2v74H8a7 7 0 0 1-7-7z" fill="${accent}" opacity=".9"/><circle cx="20" cy="17" r="3" fill="${accent}"/><text x="29" y="20" fill="#8794a5" font-family="JetBrains Mono,monospace" font-size="8" font-weight="500" letter-spacing=".8">${xml(type)}</text><text x="205" y="20" text-anchor="end" fill="#6f7c8e" font-family="JetBrains Mono,monospace" font-size="7.5">${xml(status)}</text><text x="17" y="${titleY}" fill="#edf2f8" font-family="Manrope,Segoe UI,sans-serif" font-size="13" font-weight="600">${xml(lines[0])}</text>${lines[1]?`<text x="17" y="61" fill="#edf2f8" font-family="Manrope,Segoe UI,sans-serif" font-size="13" font-weight="600">${xml(lines[1])}</text>`:""}</svg>`;return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`}
+for(const node of graph.nodes)node.data.card=cardSvg(node.data);
+const cy=cytoscape({container:$("graph"),elements:[...graph.nodes,...graph.edges],style:[{selector:"node",style:{width:220,height:76,shape:"round-rectangle","background-color":"#0f1620","background-image":"data(card)","background-fit":"cover","background-image-opacity":1,"border-width":0,"overlay-opacity":0,"transition-property":"opacity, border-width, border-color","transition-duration":"260ms"}},{selector:"node:selected",style:{"border-width":2,"border-color":"#65c8e3"}},{selector:"node.hover",style:{"border-width":1,"border-color":"#758397"}},{selector:"edge",style:{width:1.25,"line-color":"#354253","target-arrow-color":"#354253","target-arrow-shape":"triangle","arrow-scale":.7,"curve-style":"bezier",label:"",color:"#9cb0c6","font-family":"JetBrains Mono","font-size":7.5,"text-background-color":"#0c1119","text-background-opacity":1,"text-background-padding":3,"text-rotation":"none","transition-property":"opacity, line-color, target-arrow-color, width","transition-duration":"260ms"}},{selector:"edge.neighbour",style:{width:2,"line-color":"#4faac4","target-arrow-color":"#4faac4",label:"data(relationship)",color:"#b9dbe5"}},{selector:"node.neighbour",style:{"border-width":1,"border-color":"#3b6170"}},{selector:".dim",style:{opacity:.08}}],layout:{name:"cose",animate:true,animationDuration:520,animationEasing:"ease-out",padding:88,nodeRepulsion:24000,idealEdgeLength:170,edgeElasticity:.15,nestingFactor:1.1},wheelSensitivity:.18,minZoom:.22,maxZoom:1.8});
+function filter(){const q=$("search").value.trim().toLowerCase();let visible=0;cy.nodes().forEach(n=>{const d=n.data(),hay=[d.label,d.id,d.status,d.description,...(d.tags||[])].join(" ").toLowerCase(),dim=Boolean((q&&!hay.includes(q))||(activeType&&d.type!==activeType));n.toggleClass("dim",dim);if(!dim)visible++});cy.edges().forEach(e=>e.toggleClass("dim",e.source().hasClass("dim")||e.target().hasClass("dim")));$("results").textContent=`${visible} of ${graph.nodes.length} records`;$("clear-search").hidden=!q}
+function resolveInternal(sourceId,href){if(!href||href.startsWith("#")||/^[a-z][a-z0-9+.-]*:/i.test(href))return null;const clean=href.split("#",1)[0].split("?",1)[0];if(!clean.endsWith(".md"))return null;const parts=clean.startsWith("/")?[]:sourceId.split("/").slice(0,-1);for(const part of clean.replace(/^\//,"").split("/")){if(!part||part===".")continue;if(part==="..")parts.pop();else parts.push(part)}return parts.join("/").replace(/\.md$/,"")}
+function show(id){const d=index[id];if(!d)return;cy.elements().removeClass("neighbour");cy.elements().unselect();const selected=cy.getElementById(id);selected.select();selected.neighborhood().addClass("neighbour");$("empty").hidden=true;$("content").hidden=false;const chip=$("record-type");chip.textContent=d.type;chip.style.setProperty("--chip-color",d.color);$("record-title").textContent=d.label;$("record-id").textContent=id;$("record-status").textContent=d.status||"no status";$("record-description").textContent=d.description||"No description supplied.";const tags=$("record-tags");tags.replaceChildren(...((d.tags||[]).map(value=>{const span=document.createElement("span");span.className="tag";span.textContent=value;return span})));if(!tags.childNodes.length)tags.textContent="No tags";const connectionCount=new Set([...(incoming[id]||[]),...(outgoing[id]||[])]).size;$("record-connections").textContent=`${connectionCount} ${connectionCount===1?"relationship":"relationships"}`;$("record-frontmatter").textContent=JSON.stringify(d.frontmatter,null,2);const rendered=marked.parse(graph.bodies[id]||"",{gfm:true});const body=$("record-body");body.innerHTML=DOMPurify.sanitize(rendered,{USE_PROFILES:{html:true}});for(const link of body.querySelectorAll("a[href]")){const target=resolveInternal(id,link.getAttribute("href"));if(target&&index[target]){link.title=`Open ${index[target].label}`;link.onclick=event=>{event.preventDefault();show(target)}}else if(link.protocol==="http:"||link.protocol==="https:"){link.target="_blank";link.rel="noopener noreferrer"}}const sources=incoming[id]||[],section=$("backlinks"),list=$("backlinks-list");list.replaceChildren();section.hidden=!sources.length;$("backlink-count").textContent=`${sources.length} source${sources.length===1?"":"s"}`;for(const source of sources){const li=document.createElement("li"),a=document.createElement("a");a.href="#";a.className="backlink";a.innerHTML=`<strong></strong><span>↗</span>`;a.querySelector("strong").textContent=index[source]?.label||source;a.onclick=e=>{e.preventDefault();show(source)};li.appendChild(a);list.appendChild(li)}if(innerWidth<761)$("detail").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"})}
+cy.on("tap","node",e=>show(e.target.id()));cy.on("mouseover","node",e=>e.target.addClass("hover"));cy.on("mouseout","node",e=>e.target.removeClass("hover"));$("search").oninput=filter;$("clear-search").onclick=()=>{$("search").value="";$("search").focus();filter()};$("layout").onchange=e=>cy.layout({name:e.target.value,animate:true,animationDuration:650,animationEasing:"ease-out",padding:74}).run();$("fit").onclick=()=>cy.animate({fit:{eles:cy.elements(":visible"),padding:72},duration:560,easing:"ease-out"});$("reset").onclick=()=>{$("search").value="";activeType="";for(const item of filters.children)item.setAttribute("aria-pressed",String(!item.dataset.type));filter();cy.animate({fit:{eles:cy.elements(),padding:72},duration:560,easing:"ease-out"})};filter();if(graph.nodes[0])show(graph.nodes[0].data.id)})();
+</script>
+</body>
+</html>
+"""
+
+
+def generate_html(graph: dict[str, Any], name: str) -> str:
+    return HTML_TEMPLATE.replace("__NAME__", safe_json(name)).replace("__GRAPH__", safe_json(graph))
+
+
+def write_or_check(path: Path, content: str, check: bool) -> None:
+    normalized = content.rstrip() + "\n"
+    if check:
+        if not path.is_file() or path.read_text(encoding="utf-8") != normalized:
+            raise SystemExit(f"Generated visualization is stale or missing: {path}")
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(normalized, encoding="utf-8")
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Render OKF Tasks records as interactive HTML and GitHub Mermaid.")
+    parser.add_argument("--bundle", required=True, help="Directory containing OKF Markdown records")
+    parser.add_argument("--name", help="Display name (default: bundle directory name)")
+    parser.add_argument("--html", help="Interactive HTML output path")
+    parser.add_argument("--markdown", help="GitHub-rendered Mermaid Markdown output path")
+    parser.add_argument("--check", action="store_true", help="Fail when requested outputs are stale")
+    return parser
+
+
+def main() -> int:
+    args = build_parser().parse_args()
+    root = Path(args.bundle).resolve()
+    if not root.is_dir():
+        raise SystemExit(f"Bundle directory not found: {root}")
+    if not args.html and not args.markdown:
+        raise SystemExit("Select at least one output with --html or --markdown.")
+    records = read_records(root)
+    if not records:
+        raise SystemExit(f"No OKF records found under: {root}")
+    graph = build_graph(records)
+    name = args.name or root.name
+    if args.html:
+        write_or_check(Path(args.html), generate_html(graph, name), args.check)
+    if args.markdown:
+        write_or_check(Path(args.markdown), generate_markdown(graph, name, args.bundle), args.check)
+    print(f"Visualized {len(graph['nodes'])} records and {len(graph['edges'])} relationships.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
