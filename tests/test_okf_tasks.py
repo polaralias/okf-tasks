@@ -29,7 +29,7 @@ def arguments(**values: object) -> argparse.Namespace:
 
 class ConformanceFixtureTests(unittest.TestCase):
     def test_schemas_are_valid_json_documents(self) -> None:
-        for name in ("task.schema.json", "workstream.schema.json", "time-entry.schema.json", "tracker-profile.schema.json"):
+        for name in ("task.schema.json", "workstream.schema.json", "tracker-profile.schema.json"):
             with self.subTest(name=name):
                 with (REPOSITORY / "schemas" / name).open(encoding="utf-8") as handle:
                     schema = json.load(handle)
@@ -662,8 +662,8 @@ class LifecycleTests(unittest.TestCase):
         )
         task, _ = okf_tasks.read_document(task_path)
         self.assertEqual(150, task["effort_minutes"])
-        time_path = self.root / "tasks" / "first-task" / "time" / "20260717t080000z-agent-tracked.md"
-        entry, _ = okf_tasks.read_document(time_path)
+        entry = task["time"][0]
+        self.assertEqual("20260717t080000z-agent-tracked", entry["id"])
         self.assertEqual(720, entry["elapsed_minutes"])
         self.assertEqual(150, entry["effort_minutes"])
         self.assertEqual("tracked-adjusted", entry["method"])
@@ -721,6 +721,8 @@ class LifecycleTests(unittest.TestCase):
         task, _ = okf_tasks.read_document(self.root / "tasks" / "first-task" / "task.md")
         self.assertEqual(45, task["effort_minutes"])
         self.assertEqual("2026-07-17T09:00:00Z", task["started"])
+        self.assertEqual("manual", task["time"][0]["method"])
+        self.assertEqual("Manual review and acceptance checks.", task["time"][0]["basis"])
         self.assertEqual([], okf_tasks.validate_bundle(self.root / "tasks"))
 
     def test_effort_estimate_and_sprint_points_remain_separate(self) -> None:
@@ -810,6 +812,8 @@ class LifecycleTests(unittest.TestCase):
         )
         task, _ = okf_tasks.read_document(self.root / "tasks" / "first-task" / "task.md")
         self.assertEqual(180, task["effort_minutes"])
+        self.assertEqual("estimated-commit-review", task["time"][0]["method"])
+        self.assertEqual(hashes, task["time"][0]["source_commits"])
         self.assertEqual([], okf_tasks.validate_bundle(self.root / "tasks"))
 
 

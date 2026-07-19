@@ -1,8 +1,8 @@
 # Conformance fixtures
 
-Fixtures exercise OKF Tasks v0.4. `manifest.json` covers bundle conformance, Tracker Profiles, scoped external identities, and both standard placements; `export-manifest.json` covers external-artifact preparation. Both are consumed independently by the Python and TypeScript implementations.
+Fixtures exercise OKF Tasks v0.5. `manifest.json` covers bundle conformance, embedded `Task.time[]` entries and fragment identities, Tracker Profiles, scoped external identities, and both standard placements; `export-manifest.json` covers external-artifact preparation. Both are consumed independently by the Python and TypeScript implementations.
 
-Hand-authored fixtures cover the minimal document, base OKF failure, and bad time rollup. Deterministic fixtures under `generated/` cover task fields and headings, workstreams, time methods, estimates, points, sync authority, Tracker Profile default uniqueness, external uniqueness, reopening history, unknown concepts, broken-link warnings, and generated indexes.
+Hand-authored fixtures cover the minimal document, base OKF failure, and bad embedded-time rollup. Deterministic fixtures under `generated/` cover task fields and headings, workstreams, embedded time methods, rejection of legacy time files, estimates, points, sync authority, Tracker Profile default uniqueness, external uniqueness, reopening history, unknown concepts, broken-link warnings, and generated indexes.
 
 `transitions.json` enumerates every normal lifecycle edge. Tests evaluate all 64 source/target pairs, including idempotent same-state updates.
 

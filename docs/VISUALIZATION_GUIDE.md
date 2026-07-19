@@ -42,23 +42,17 @@ The viewer is a derived consumer. The source Markdown/YAML bundle remains author
 
 ## Viewer behavior
 
-- Graph, Kanban, and Documents are first-class tabs over one embedded bundle. Selecting a connected record, Topology node, or Kanban card opens the same detailed preview.
-- Graph opens in Focus mode with the selected record between readable incoming and outgoing relationship cards. Selecting a connected card recentres the explorer without losing the shared preview.
-- Topology mode retains the complete bundle overview. Grid is its initial layout for routine review, while Timeline lays record types into lanes and orders them by the selected temporal field.
-- The temporal rail can filter the current Graph and Kanban records through Last meaningful change, Created, Started, or Finished. Exact RFC 3339 values remain available in titles while the control uses friendly local dates.
-- Drift review highlights relationships whose source has a newer selected timestamp than its target. Treat these as possible review signals only; timestamp order cannot prove semantic drift.
-- The Kanban view groups Tasks and Workstreams by lifecycle status, includes edited dates and recorded effort, and carries timestamp-drift hints into the board when drift review is active.
-- The shared context rail summarizes recorded time by Workstream so commitment across concurrent work remains visible while Graph or Kanban is active.
-- Focus cards expose type, lifecycle status, edited date, effort, connection count, description, document availability, and the complete record identifier without forcing that detail into topology labels.
-- Topology uses one bounded node shape with a class-colored border. Its compact title and type/status label are truncated before rendering so text cannot escape node boundaries.
-- Topology relationship labels are revealed for the selected record and its neighbours. Focus mode keeps the same labels readable at all times on direct relationship cards.
-- The shared preview presents summarized record metadata, rendered Markdown, incoming and outgoing relationships, then collapsed raw YAML and complete-source disclosures.
+- Graph, Board, and Reader are first-class tabs over one embedded bundle. Graph and Board selections open the same detailed preview.
+- Graph presents the complete document mesh. Compact document chips use class-colored borders, folder trails remain visible beneath them, and selecting a chip fades unrelated documents while revealing labels on its direct relationships.
+- The temporal selector compares Last meaningful change, Created, Started, or Finished. Drift review highlights relationships whose source has a newer selected value than its target. Treat every highlight as a review prompt only; timestamp order cannot prove semantic drift.
+- Board groups Tasks into lifecycle columns or compact rows, nests their Workstreams, and displays estimates, recorded effort, embedded-time evidence, tracker context, link counts, and the selected temporal value.
+- Embedded `Task.time[]` entries remain individually addressable through `#time:<id>` fragments and appear as Task evidence. They are never rendered as equal-weight graph nodes or standalone documents.
+- The shared detail pane presents record identity, status, description, temporal fields, Workstream and time evidence, connections, rendered Markdown, and collapsed raw source.
 - The document browser includes every Markdown file below the selected source tree, including files that are not OKF records.
-- The viewer opens in dark mode on first use and persists a later light or dark choice locally.
+- The viewer opens in light mode on first use and persists a later light or dark choice locally.
 - Every button exposes a hover label as well as an accessible name, including graph controls whose icons are otherwise ambiguous.
-- The Documents view renders the selected file at near-full width with a persistent searchable tree on the left and a generated heading outline on the right.
-- Graph and Documents expose separate fullscreen controls through the browser Fullscreen API. Graph resizes and refits when fullscreen changes.
-- Search, type filters, Focus/Topology switching, topology layout selection, graph fitting, and reset remain independent controls in the Graph tab.
+- Reader renders the selected file at near-full width with a persistent searchable tree on the left and ancestry, connection, metadata, and heading context on the right.
+- Shared search filters Graph, Board, or Reader according to the active view. Graph fitting, Board layout, Board sorting, temporal comparison, and drift review remain independent controls.
 
 ## GitHub-style Markdown
 
