@@ -12,8 +12,8 @@ This project is not affiliated with or endorsed by Google Cloud.
 
 ## What is included
 
-- [`SPEC.md`](./SPEC.md) — the OKF Tasks v0.4 profile.
-- [`schemas/`](./schemas/) — versioned JSON Schemas for task, workstream, time-entry, and Tracker Profile frontmatter.
+- [`SPEC.md`](./SPEC.md) — the OKF Tasks v0.5 profile.
+- [`schemas/`](./schemas/) — versioned JSON Schemas for task, workstream, embedded time-entry, and Tracker Profile frontmatter.
 - [`skills/okf-task-lifecycle/`](./skills/okf-task-lifecycle/) — a portable agent skill and deterministic CLI.
 - [`examples/`](./examples/) — standalone, knowledge-linked, and tracker-synchronised bundles.
 - [`docs/VISUALIZATION.md`](./docs/VISUALIZATION.md) — a generated Mermaid task graph that renders directly in GitHub.
@@ -126,9 +126,9 @@ python scripts/visualize_bundle.py \
   --markdown docs/VISUALIZATION.md
 ```
 
-Open the HTML file locally as a three-view workspace. Graph opens as a focused relationship explorer: the selected record sits between readable incoming and outgoing records, and choosing a connected record recentres the view. Topology mode retains the complete spatial overview with compact bounded labels, switchable layouts, fullscreen review, and relationship labels revealed around the active node. Kanban groups Tasks and Workstreams by lifecycle status while preserving the same preview, recorded-effort context, edited dates, and drift hints. Documents provides a near-full-page GitHub-style Markdown reader with a searchable tree, generated heading outline, Mermaid diagrams, internal-link navigation, and document fullscreen. A persistent dark or light theme, shared search and type filters, explicit temporal fields, and workstream effort summaries remain available without changing the canonical records. The HTML loads pinned Cytoscape, Marked, DOMPurify, Mermaid, and Material Design Icons browser libraries from jsDelivr; task and document data are embedded in the generated file.
+Open the HTML file locally as the definitive three-view OKF workspace. Graph presents the complete document relationship mesh and isolates a selected document's neighbourhood without hiding the surrounding repository context. Board provides lifecycle columns or compact rows for Tasks, with nested Workstreams, embedded effort evidence, estimates, tracker context, and exact temporal values. Reader provides a searchable repository tree, full Markdown document surface, contextual ancestry, connections, and heading navigation. The same detail pane is available from Graph and Board. Light mode is the default, dark mode persists locally, and timestamp comparison can flag possible drift across existing relationships without claiming that older content is stale. Embedded `Task.time[]` entries contribute evidence and effort to their Task but never become graph nodes or standalone documents. The generated file embeds pinned Cytoscape, Marked, and DOMPurify builds and loads pinned Mermaid for strict diagram rendering; task and document data are embedded as a sanitized JSON payload.
 
-Temporal controls can order records as a timeline and filter the current graph through the declared `timestamp`, `created`, `started`, or `finished` event. Drift review highlights a linked source whose selected time is newer than its target. That ordering is a prompt to review the relationship, not proof of stale or incorrect content. A current bundle contains current record bodies; historical fact reconstruction requires retained historical concepts or repository history.
+Temporal controls compare relationships through the declared `timestamp`, `created`, `started`, or `finished` event. Drift review highlights a linked source whose selected time is newer than its target and carries that signal into Board cards and rows. That ordering is a prompt to review the relationship, not proof of stale or incorrect content. A current bundle contains current record bodies; historical fact reconstruction requires retained historical concepts or repository history.
 
 The visualization is derived, never a second task database. Markdown/YAML records remain authoritative, every meaningful record edit advances `timestamp`, and the generated pages are rebuilt through the checked-in script rather than hand-edited.
 
@@ -152,7 +152,7 @@ python scripts/check_release.py
 
 ## Status
 
-Version 0.4 defines first-class provider setup and scoped external bindings. Normative changes require fixtures and agreement between the Python and TypeScript implementations; see [`GOVERNANCE.md`](./GOVERNANCE.md).
+Version 0.5 embeds addressable time entries in Task frontmatter and retains first-class provider setup and scoped external bindings. Normative changes require fixtures and agreement between the Python and TypeScript implementations; see [`GOVERNANCE.md`](./GOVERNANCE.md).
 
 ## License
 
