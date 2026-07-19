@@ -7,7 +7,7 @@ The OKF Tasks viewer is a derived, read-only consumer. Markdown/YAML files remai
 From the repository root:
 
 ```text
-python scripts/generate_local_docs.py
+python scripts/generate_local_docs.py --mermaid
 ```
 
 This creates the ignored local review artifacts:
@@ -15,13 +15,14 @@ This creates the ignored local review artifacts:
 - `local-docs/okf-tasks-visualization.html` from `examples/visualization/tasks/`;
 - `local-docs/okf-tasks-examples.html` from the complete `examples/` tree;
 - `local-docs/okf-tasks-relationships.html` from the complete `examples/` tree, with stable source-bundle lanes and every explicit relationship retained as a labelled edge.
+- sibling `*.mermaid.md` reports for the primary visualization and examples workspaces.
 
 Use the relationship map when topology is the question: it groups records for spatial orientation but does not infer or replace relationships. The ordinary example page remains the neutral record browser.
 
 All three pages use `scripts/visualize_bundle.py` and therefore share the same HTML, styling, interaction, security, and Markdown-rendering behavior. Verify that generated files are current with:
 
 ```text
-python scripts/generate_local_docs.py --check
+python scripts/generate_local_docs.py --mermaid --check
 ```
 
 Use `--output-dir <directory>` to generate disposable outputs for tests or review. Use the lower-level renderer when a different bundle or Mermaid output is required:
@@ -31,8 +32,12 @@ python scripts/visualize_bundle.py \
   --bundle examples/visualization/tasks \
   --name "OKF Tasks visualization example" \
   --html local-docs/okf-tasks-visualization.html \
-  --markdown docs/VISUALIZATION.md
+  --mermaid
 ```
+
+With `--html`, a pathless `--mermaid` writes `<html-name>.mermaid.md` beside the interactive workspace. Pass `--mermaid <path>` when the report belongs elsewhere. `--markdown <path>` remains an explicit-path synonym for checked documentation workflows.
+
+The Mermaid report scales by separating concerns: an area-level map shows how connected repository regions relate; manageable connected components render in full; large components split into area diagrams with dashed boundary context; the highest-connectivity concepts receive focused neighbourhood diagrams; and true isolates are listed rather than drawn with equal weight. Every connected node and edge remains represented without forcing the repository into one oversized diagram.
 
 ## Freshness and authority
 
@@ -53,7 +58,7 @@ The viewer is a derived consumer. The source Markdown/YAML bundle remains author
 - The viewer opens in light mode on first use and persists a later light or dark choice locally.
 - Every button exposes a hover label as well as an accessible name, including graph controls whose icons are otherwise ambiguous.
 - Reader renders the selected file at near-full width with a persistent searchable tree on the left and ancestry, connection, metadata, and heading context on the right.
-- Shared search filters Graph, Board, or Reader according to the active view. Graph fitting, Board layout, Board sorting, temporal comparison, and drift review remain independent controls.
+- Shared search filters Graph, Board, or Reader according to the active view. Graph fitting uses node-count-aware bounds and minimum desktop zoom for small bundles; Board layout, Board sorting, temporal comparison, and drift review remain independent controls.
 
 ## GitHub-style Markdown
 

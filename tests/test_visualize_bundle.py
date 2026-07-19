@@ -49,6 +49,7 @@ time:
     elapsed_minutes: 30
     effort_minutes: 30
     method: tracked
+    activity: implementation
 ---
 # Ship viewer
 
@@ -216,13 +217,60 @@ timestamp: 2026-07-17T20:00:00Z
     def test_generates_github_mermaid(self) -> None:
         markdown = visualize_bundle.generate_markdown(self.graph(), "Example", "tasks")
         self.assertIn(chr(96) * 3 + "mermaid", markdown)
+        self.assertIn("## Connected-area overview", markdown)
+        self.assertIn("## Connected component 1", markdown)
+        self.assertIn("## Key concept neighbourhoods", markdown)
         self.assertIn("Build UI · ready", markdown)
         self.assertIn("time:session", markdown)
+
+    def test_visualization_manifest_covers_normative_generation_modes(self) -> None:
+        manifest = json.loads((REPOSITORY / "conformance" / "visualization-manifest.json").read_text(encoding="utf-8"))
+        case_ids = {case["id"] for case in manifest["cases"]}
+        self.assertEqual(
+            {"scalable-mermaid-report", "dynamic-small-graph-framing", "paired-derived-output"},
+            case_ids,
+        )
+
+    def test_mermaid_flag_places_report_beside_html(self) -> None:
+        html = self.root / "review.html"
+        completed = subprocess.run(
+            [sys.executable, str(SCRIPT), "--bundle", str(self.root), "--html", str(html), "--mermaid"],
+            cwd=REPOSITORY,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        report = html.with_suffix(".mermaid.md")
+        self.assertTrue(report.is_file())
+        self.assertIn("## Connected component 1", report.read_text(encoding="utf-8"))
+
+    def test_large_mermaid_component_splits_by_area_with_boundary_context(self) -> None:
+        nodes = []
+        edges = []
+        for index in range(20):
+            area = "alpha" if index < 10 else "beta"
+            node_id = f"{area}/tasks/task-{index}/task"
+            nodes.append({"data": {"id": node_id, "label": f"Task {index}", "type": "Task", "status": "ready"}})
+            if index:
+                previous_area = "alpha" if index - 1 < 10 else "beta"
+                edges.append({"data": {"id": f"e{index}", "source": f"{previous_area}/tasks/task-{index - 1}/task", "target": node_id, "relationship": "depends on"}})
+        markdown = visualize_bundle.generate_markdown({"nodes": nodes, "edges": edges}, "Large", "tasks")
+        self.assertIn("### alpha", markdown)
+        self.assertIn("### beta", markdown)
+        self.assertIn("classDef boundary", markdown)
+        for index in range(20):
+            self.assertIn(f"Task {index} · ready", markdown)
+
+    def test_small_graph_uses_dynamic_layout_and_minimum_zoom(self) -> None:
+        generated = self.generated()
+        self.assertIn("function graphLayoutMetrics(count)", generated)
+        self.assertIn("minimumZoom:count<=3?1.12", generated)
+        self.assertIn("fitGraph();", generated)
 
     def test_local_documentation_generator_builds_all_workspace_pages(self) -> None:
         output = self.root / "local-docs"
         completed = subprocess.run(
-            [sys.executable, str(GENERATE_LOCAL_DOCS), "--output-dir", str(output)],
+            [sys.executable, str(GENERATE_LOCAL_DOCS), "--output-dir", str(output), "--mermaid"],
             cwd=REPOSITORY,
             capture_output=True,
             text=True,
@@ -238,8 +286,12 @@ timestamp: 2026-07-17T20:00:00Z
             self.assertIn('data-view="board"', generated)
             self.assertIn('data-view="reader"', generated)
             self.assertNotIn("__GRAPH__", generated)
+        for name in ("okf-tasks-visualization.mermaid.md", "okf-tasks-examples.mermaid.md"):
+            generated = (output / name).read_text(encoding="utf-8")
+            self.assertIn("## Connected-area overview", generated)
+            self.assertIn(chr(96) * 3 + "mermaid", generated)
         checked = subprocess.run(
-            [sys.executable, str(GENERATE_LOCAL_DOCS), "--output-dir", str(output), "--check"],
+            [sys.executable, str(GENERATE_LOCAL_DOCS), "--output-dir", str(output), "--mermaid", "--check"],
             cwd=REPOSITORY,
             capture_output=True,
             text=True,
