@@ -28,6 +28,9 @@ def arguments(**values: object) -> argparse.Namespace:
 
 
 class ConformanceFixtureTests(unittest.TestCase):
+    def test_cli_version_matches_release(self) -> None:
+        self.assertEqual((REPOSITORY / "VERSION").read_text(encoding="utf-8").strip(), okf_tasks.CLI_VERSION)
+
     def test_schemas_are_valid_json_documents(self) -> None:
         for name in ("task.schema.json", "workstream.schema.json", "tracker-profile.schema.json"):
             with self.subTest(name=name):
@@ -196,6 +199,34 @@ class LifecycleTests(unittest.TestCase):
                     force=False,
                 )
             )
+        self.assertEqual([], okf_tasks.validate_bundle(self.root / "tasks"))
+
+    def test_create_can_join_an_existing_durable_document_graph(self) -> None:
+        guide = self.root / "docs" / "architecture.md"
+        okf_tasks.write_document(
+            guide,
+            {
+                "type": "Architecture Concept",
+                "title": "Architecture",
+                "description": "Defines the implementation boundary.",
+                "timestamp": "2026-07-19T09:00:00Z",
+            },
+            "# Architecture\n",
+        )
+        okf_tasks.create_task(
+            arguments(
+                root=str(self.root),
+                slug="linked-task",
+                title="Linked task",
+                description="Implement the architecture.",
+                owner="agent",
+                depends_on=None,
+                related=["docs/architecture.md"],
+            )
+        )
+
+        _, body = okf_tasks.read_document(self.root / "tasks" / "linked-task" / "task.md")
+        self.assertIn("[Architecture](../../docs/architecture.md)", body)
         self.assertEqual([], okf_tasks.validate_bundle(self.root / "tasks"))
 
     def test_active_workstream_prevents_done(self) -> None:
