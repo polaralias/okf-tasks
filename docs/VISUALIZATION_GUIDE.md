@@ -17,6 +17,28 @@ This creates the ignored local review artefacts:
 - `local-docs/okf-tasks-relationships.html` from the complete `examples/` tree, with stable source-bundle lanes and every explicit relationship retained as a labelled edge.
 - sibling `*.mermaid.md` reports for the primary visualisation and examples workspaces.
 
+The combined stress-test workspace is also committed as a durable review example:
+
+- [`examples/visualization/combined-workspace.html`](../examples/visualization/combined-workspace.html), the native interactive export of 108 connected records;
+- [`docs/COMBINED_WORKSPACE_VISUALIZATION.md`](./COMBINED_WORKSPACE_VISUALIZATION.md), its GitHub-rendered overview and focussed diagrams.
+
+These two files intentionally sit outside both `local-docs/` and the source bundle, preventing a derived Mermaid report from being read back as source content. Regenerate or freshness-check them from the repository root:
+
+```text
+python scripts/visualize_bundle.py \
+  --bundle examples/combined-delivery-architecture \
+  --name "OKF combined delivery and architecture workspace" \
+  --html examples/visualization/combined-workspace.html \
+  --mermaid docs/COMBINED_WORKSPACE_VISUALIZATION.md
+
+python scripts/visualize_bundle.py \
+  --bundle examples/combined-delivery-architecture \
+  --name "OKF combined delivery and architecture workspace" \
+  --html examples/visualization/combined-workspace.html \
+  --mermaid docs/COMBINED_WORKSPACE_VISUALIZATION.md \
+  --check
+```
+
 Use the relationship map when topology is the question: it groups records for spatial orientation but does not infer or replace relationships. The ordinary example page remains the neutral record browser.
 
 All three pages use `scripts/visualize_bundle.py` and therefore share the same HTML, styling, interaction, security, and Markdown-rendering behaviour. Verify that generated files are current with:
