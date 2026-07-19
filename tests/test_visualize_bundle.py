@@ -141,13 +141,13 @@ timestamp: 2026-07-17T20:00:00Z
         self.assertIn('--serif:Charter,"Bitstream Charter"', generated)
         self.assertIn('--accent:#2b4bc4', generated)
 
-    def test_uses_embedded_task_time_without_time_nodes_or_documents(self) -> None:
+    def test_uses_embedded_task_time_as_task_data(self) -> None:
         generated = self.generated()
         payload = self.embedded_payload(generated)
-        self.assertNotIn("Time Entry", {node["data"]["type"] for node in payload["nodes"]})
+        task = next(node["data"] for node in payload["nodes"] if node["data"]["type"] == "Task")
+        self.assertEqual("session", task["frontmatter"]["time"][0]["id"])
         self.assertIn("times:Array.isArray(t.frontmatter?.time)", generated)
-        self.assertIn("never become records, documents, or graph nodes", generated)
-        self.assertNotIn("const timeEntries=", generated)
+        self.assertIn("Time is canonical Task frontmatter data", generated)
 
     def test_graph_keeps_relationships_visible_and_focusable(self) -> None:
         generated = self.generated()

@@ -4,7 +4,7 @@ All notable changes to OKF Tasks are recorded here.
 
 ## Unreleased
 
-- Replace standalone time-entry Markdown concepts with stable, fragment-addressable entries embedded in Task frontmatter; update CLI mutation, validation, schemas, graph payloads, examples, and bundled skills together.
+- Define stable, fragment-addressable time entries in Task frontmatter across CLI mutation, validation, schemas, graph payloads, examples, and bundled skills.
 
 - Add an installable `okf-tasks` console command for the reference lifecycle CLI.
 - Generate the visualization, relationship review, and complete examples browser from one reproducible, checkable script.

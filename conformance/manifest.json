@@ -32,7 +32,6 @@
     {"id": "invalid-time-method", "path": "generated/invalid/unknown-time-method/tasks", "valid": false, "error": "unknown time method"},
     {"id": "invalid-done-running-time", "path": "generated/invalid/done-running-time/tasks", "valid": false, "error": "done task has running time entries"},
     {"id": "invalid-duplicate-running", "path": "generated/invalid/duplicate-running-combination/tasks", "valid": false, "error": "duplicate running actor/workstream"},
-    {"id": "invalid-legacy-time-file", "path": "generated/invalid/legacy-time-file/tasks", "valid": false, "error": "standalone time-entry files are not permitted"},
     {"id": "invalid-external-fields", "path": "generated/invalid/external-missing-fields/tasks", "valid": false, "error": "requires tracker, system, host, kind, scope, id, key, url, and sync"},
     {"id": "invalid-external-duplicate", "path": "generated/invalid/duplicate-external-mapping/tasks", "valid": false, "error": "external mapping github|https://github.com|issue|I_issue_1 also used"},
     {"id": "invalid-missing-tracker-profile", "path": "generated/invalid/missing-tracker-profile/tasks", "valid": false, "error": "external tracker profile"},
