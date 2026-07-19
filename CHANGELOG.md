@@ -9,7 +9,9 @@ All notable changes to OKF Tasks are recorded here.
 - Generate the focused visualization and complete examples browser from one reproducible, checkable script.
 - Make `timestamp` explicitly mean the portable last meaningful change across tasks, workstreams, time entries, skills, and viewer summaries.
 - Consolidate the bundled lifecycle skill metadata, visual review guidance, and upstream RKE parity around derived OKF Visualization concepts.
-- Default graph review to Grid, distinguish record classes by geometry, expose effort and link metrics, and add timestamp-based timeline filtering and possible-drift review.
+- Replace the overloaded graph canvas with a Focus relationship explorer and a separate whole-bundle Topology mode whose compact node labels stay inside their boundaries.
+- Preserve class, status, effort, edited date, document availability, and relationship detail in readable focus cards while keeping every record available in Topology.
+- Redesign the generated viewer as a dark-first Graph, Kanban, and Documents workspace with shared record previews, workstream effort context, edited-date and drift hints, searchable full-width Markdown reading, document outlines, and Apache-2.0 Material Design Icons controls.
 
 ## 0.4.0 — 2026-07-18
 

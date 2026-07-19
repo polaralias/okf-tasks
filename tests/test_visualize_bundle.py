@@ -129,7 +129,7 @@ timestamp: 2026-07-17T20:30:00Z
         graph = visualize_bundle.build_graph(visualize_bundle.read_records(self.root))
         generated = visualize_bundle.generate_html(graph, "Example")
         self.assertNotIn("</script><script>alert(1)</script>", generated)
-        match = re.search(r"window\.OKF_GRAPH=(\{.*\});</script>", generated)
+        match = re.search(r"window\.OKF_GRAPH=(\{.*?\});window\.OKF_NAME=", generated)
         self.assertIsNotNone(match)
         parsed = json.loads(match.group(1))
         self.assertEqual(3, len(parsed["nodes"]))
@@ -141,13 +141,16 @@ timestamp: 2026-07-17T20:30:00Z
         self.assertIn('function renderMarkdown(value,body=$("record-body"))', generated)
         self.assertIn("body.textContent=value", generated)
 
-    def test_html_keeps_relationship_labels_visible_and_legible(self) -> None:
+    def test_html_keeps_focus_relationship_labels_visible_and_topology_labels_contextual(self) -> None:
         graph = visualize_bundle.build_graph(visualize_bundle.read_records(self.root))
         generated = visualize_bundle.generate_html(graph, "Example")
-        self.assertNotIn('label:""', generated)
+        self.assertIn('class="relation-name"', generated)
+        self.assertIn('.textContent=relation.relationship', generated)
+        self.assertIn('label:""', generated)
+        self.assertIn('selector:"edge.neighbour"', generated)
         self.assertIn('label:"data(relationship)"', generated)
         self.assertIn('"font-size":9', generated)
-        self.assertIn('"text-background-opacity":.96', generated)
+        self.assertIn('"text-background-opacity":.98', generated)
 
     def test_html_exposes_a_real_fullscreen_toggle(self) -> None:
         graph = visualize_bundle.build_graph(visualize_bundle.read_records(self.root))
@@ -165,14 +168,14 @@ timestamp: 2026-07-17T20:30:00Z
         self.assertIn('localStorage.getItem("okf-theme")', generated)
         self.assertIn('localStorage.setItem("okf-theme",theme)', generated)
 
-    def test_html_defaults_to_light_and_labels_every_button(self) -> None:
+    def test_html_defaults_to_dark_and_labels_every_button(self) -> None:
         graph = visualize_bundle.build_graph(visualize_bundle.read_records(self.root))
         generated = visualize_bundle.generate_html(graph, "Example")
-        self.assertIn('document.documentElement.dataset.theme=savedTheme||"light"', generated)
+        self.assertIn('document.documentElement.dataset.theme=savedTheme||"dark"', generated)
         self.assertIn('function labelButtons()', generated)
         self.assertIn('button.dataset.tooltip=label', generated)
         self.assertIn('button.title=label', generated)
-        self.assertIn('.icon-button[data-tooltip]:hover:after', generated)
+        self.assertIn('button[data-tooltip]:hover:after', generated)
 
     def test_html_prioritizes_rendered_markdown_and_collapses_raw_sources(self) -> None:
         graph = visualize_bundle.build_graph(visualize_bundle.read_records(self.root))
@@ -191,7 +194,7 @@ timestamp: 2026-07-17T20:30:00Z
         self.assertIn('id="record-finished"', generated)
         self.assertIn('Last meaningful change', generated)
         self.assertIn('function setRecordTime(id,value)', generated)
-        self.assertIn('setRecordTime("record-last-updated",d.frontmatter?.timestamp)', generated)
+        self.assertIn('setRecordTime("record-last-updated",data.frontmatter?.timestamp)', generated)
 
     def test_html_renders_github_flavored_markdown_and_mermaid_safely(self) -> None:
         graph = visualize_bundle.build_graph(visualize_bundle.read_records(self.root))
@@ -213,7 +216,7 @@ timestamp: 2026-07-17T20:30:00Z
         generated = visualize_bundle.generate_html(graph, "Example")
         self.assertIn('id="browse-documents"', generated)
         self.assertIn('id="document-tree"', generated)
-        self.assertIn("function showDocument(path)", generated)
+        self.assertIn("function showReaderDocument(path)", generated)
         self.assertIn(
             "cursor.folders[part]??={folders:{},files:[]};cursor=cursor.folders[part]",
             generated,
@@ -227,25 +230,50 @@ timestamp: 2026-07-17T20:30:00Z
         generated = visualize_bundle.generate_html(graph, "Example")
         self.assertIn('role="tablist"', generated)
         self.assertIn('id="graph-tab"', generated)
+        self.assertIn('id="kanban-tab"', generated)
         self.assertIn('id="documents-tab"', generated)
         self.assertIn('id="documents-view"', generated)
         self.assertIn('id="document-reader"', generated)
         self.assertIn('id="reader-tree"', generated)
-        self.assertIn('grid-template-columns:minmax(0,1fr) 280px', generated)
+        self.assertIn('grid-template-columns:270px minmax(0,1fr) 218px', generated)
         self.assertIn("function switchView(view)", generated)
         self.assertIn("function showReaderDocument(path)", generated)
         self.assertIn('renderTree(tree,$("reader-tree"),showReaderDocument)', generated)
+        self.assertIn('id="document-outline"', generated)
+        self.assertIn('id="reader-fullscreen"', generated)
 
-    def test_html_defaults_to_grid_and_distinguishes_record_classes(self) -> None:
+    def test_html_defaults_to_focus_and_keeps_a_bounded_topology(self) -> None:
         graph = visualize_bundle.build_graph(visualize_bundle.read_records(self.root))
         generated = visualize_bundle.generate_html(graph, "Example")
-        self.assertIn('<option value="grid" selected>Grid</option>', generated)
-        self.assertIn('layout:{name:"grid"', generated)
-        self.assertIn('.selector(\'node[type = "Task"]\')', generated)
-        self.assertIn('.selector(\'node[type = "Workstream"]\')', generated)
-        self.assertIn('.selector(\'node[type = "Time Entry"]\')', generated)
+        self.assertIn('data-graph-mode="focus"', generated)
+        self.assertIn('id="focus-mode"', generated)
+        self.assertIn('id="topology-mode"', generated)
+        self.assertIn('id="focus-incoming"', generated)
+        self.assertIn('id="focus-outgoing"', generated)
+        self.assertIn("function renderFocusGraph(data)", generated)
+        self.assertIn("function setGraphMode(mode)", generated)
+        self.assertIn('window.OKF_DEFAULT_LAYOUT="grid"', generated)
+        self.assertIn('{name:"grid",animate:false', generated)
+        self.assertIn('selector:\'node[type = "Task"]\'', generated)
+        self.assertIn('selector:\'node[type = "Workstream"]\'', generated)
+        self.assertIn('selector:\'node[type = "Time Entry"]\'', generated)
         self.assertIn('width:"data(nodeWidth)"', generated)
         self.assertIn('d.metric=', generated)
+        self.assertIn('shortGraphText(d.label)', generated)
+        self.assertIn('label:""', generated)
+        self.assertIn('selector:"edge.neighbour"', generated)
+
+    def test_html_exposes_a_shared_kanban_preview_and_effort_context(self) -> None:
+        graph = visualize_bundle.build_graph(visualize_bundle.read_records(self.root))
+        generated = visualize_bundle.generate_html(graph, "Example")
+        self.assertIn('id="kanban-view"', generated)
+        self.assertIn('id="kanban-board"', generated)
+        self.assertIn('function renderBoard()', generated)
+        self.assertIn('button.onclick=()=>show(data.id)', generated)
+        self.assertIn('id="allocation-list"', generated)
+        self.assertIn('function renderAllocation()', generated)
+        self.assertIn('id="open-record-document"', generated)
+        self.assertIn('function recordDocumentPath(id)', generated)
 
     def test_html_exposes_temporal_navigation_and_timestamp_drift_review(self) -> None:
         graph = visualize_bundle.build_graph(visualize_bundle.read_records(self.root))
@@ -257,7 +285,7 @@ timestamp: 2026-07-17T20:30:00Z
         self.assertIn('<option value="timeline">Timeline</option>', generated)
         self.assertIn('function temporalValue(data,field=temporalField)', generated)
         self.assertIn('function updateTemporalRange(reset=false)', generated)
-        self.assertIn('function updateDrift()', generated)
+        self.assertIn('function computeDrift()', generated)
         self.assertIn('function runLayout(name)', generated)
         self.assertIn('edge.possible-drift', generated)
         self.assertIn('Timestamp ordering is a review signal, not proof of drift.', generated)
@@ -266,8 +294,8 @@ timestamp: 2026-07-17T20:30:00Z
         records = visualize_bundle.read_records(self.root)
         graph = visualize_bundle.build_graph(records)
         generated = visualize_bundle.generate_relationship_html(graph, "Relationships")
-        self.assertIn('OKF Tasks · relationship map', generated)
-        self.assertIn('<option value="relationship" selected>Relationship layout</option>', generated)
+        self.assertIn('Relationship map with stable source-bundle lanes', generated)
+        self.assertIn('window.OKF_DEFAULT_LAYOUT="relationship"', generated)
         self.assertIn('node[virtual]', generated)
         self.assertIn('Bundle lane', generated)
         self.assertIn('label:"data(relationship)"', generated)
@@ -290,7 +318,7 @@ timestamp: 2026-07-17T20:30:00Z
             self.assertIn('id="browse-documents"', generated)
             self.assertIn('id="theme"', generated)
             self.assertIn('id="fullscreen"', generated)
-        self.assertIn('OKF Tasks · relationship map', relationships)
+        self.assertIn('Relationship map with stable source-bundle lanes', relationships)
         self.assertIn('Bundle lane', relationships)
         checked = subprocess.run(
             [sys.executable, str(GENERATE_LOCAL_DOCS), "--output-dir", str(output), "--check"],
@@ -303,6 +331,18 @@ timestamp: 2026-07-17T20:30:00Z
     def test_repository_skill_bundles_the_same_visualizer(self) -> None:
         bundled = SCRIPT.parents[1] / "skills" / "okf-task-lifecycle" / "scripts" / "visualize_bundle.py"
         self.assertEqual(SCRIPT.read_bytes(), bundled.read_bytes())
+        template = SCRIPT.with_name("visualizer_template.html")
+        bundled_template = bundled.with_name("visualizer_template.html")
+        self.assertEqual(template.read_bytes(), bundled_template.read_bytes())
+
+    def test_html_uses_one_icon_family_and_reduced_motion(self) -> None:
+        graph = visualize_bundle.build_graph(visualize_bundle.read_records(self.root))
+        generated = visualize_bundle.generate_html(graph, "Example")
+        self.assertIn("@mdi/font@7.4.47", generated)
+        self.assertNotIn("@phosphor-icons", generated)
+        self.assertNotIn('class="ph ph-', generated)
+        self.assertNotIn("<svg", generated)
+        self.assertIn("@media(prefers-reduced-motion:reduce)", generated)
 
 
 if __name__ == "__main__":

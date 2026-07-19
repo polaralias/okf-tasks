@@ -109,7 +109,7 @@ Repository-relative links are converted to credential-free GitHub or GitLab link
 
 The optional visualizer follows the consumer pattern demonstrated by Google's [OKF reference visualizer](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf): the Markdown/YAML bundle remains canonical and visualization is a derived view.
 
-Generate both review pages—the focused visualization and the full examples browser—from the shared viewer template:
+Generate the focused bundle, full examples browser, and relationship review page from the shared workspace template:
 
 ```text
 python scripts/generate_local_docs.py
@@ -126,7 +126,7 @@ python scripts/visualize_bundle.py \
   --markdown docs/VISUALIZATION.md
 ```
 
-Open the HTML file locally for search, type filters, switchable layouts, readable relationship labels, a light-first theme with a persistent dark option, labelled graph controls, fullscreen graph review, and separate Graph and Documents tabs. Grid is the default review layout. Task, Workstream, Time Entry, Tracker Profile, Visualization, and generic concept nodes use different geometry; time entries and tasks surface recorded effort and connection counts directly on their cards. The record summary exposes `timestamp` as **Last meaningful change** alongside created, started, and finished times. The Documents tab provides a full-size Markdown reader with a permanent file tree, while the graph inspector retains its quick document drawer, backlinks, and collapsible raw YAML/source. Both views support GitHub-style sanitized Markdown and Mermaid diagrams. Both `local-docs/okf-tasks-visualization.html` and `local-docs/okf-tasks-examples.html` are generated from the same renderer. The HTML loads pinned Cytoscape, Marked, DOMPurify, and Mermaid browser libraries from jsDelivr; task and document data are embedded in the generated file.
+Open the HTML file locally as a three-view workspace. Graph opens as a focused relationship explorer: the selected record sits between readable incoming and outgoing records, and choosing a connected record recentres the view. Topology mode retains the complete spatial overview with compact bounded labels, switchable layouts, fullscreen review, and relationship labels revealed around the active node. Kanban groups Tasks and Workstreams by lifecycle status while preserving the same preview, recorded-effort context, edited dates, and drift hints. Documents provides a near-full-page GitHub-style Markdown reader with a searchable tree, generated heading outline, Mermaid diagrams, internal-link navigation, and document fullscreen. A persistent dark or light theme, shared search and type filters, explicit temporal fields, and workstream effort summaries remain available without changing the canonical records. The HTML loads pinned Cytoscape, Marked, DOMPurify, Mermaid, and Material Design Icons browser libraries from jsDelivr; task and document data are embedded in the generated file.
 
 Temporal controls can order records as a timeline and filter the current graph through the declared `timestamp`, `created`, `started`, or `finished` event. Drift review highlights a linked source whose selected time is newer than its target. That ordering is a prompt to review the relationship, not proof of stale or incorrect content. A current bundle contains current record bodies; historical fact reconstruction requires retained historical concepts or repository history.
 
