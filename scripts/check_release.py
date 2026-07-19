@@ -33,7 +33,7 @@ def main() -> int:
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     if f'version = "{version}"' not in pyproject:
         errors.append("pyproject.toml version does not agree with VERSION")
-    for name in ("task", "workstream", "time-entry", "tracker-profile"):
+    for name in ("task", "workstream", "tracker-profile"):
         schema = json.loads((ROOT / "schemas" / f"{name}.schema.json").read_text(encoding="utf-8"))
         expected = f"https://raw.githubusercontent.com/polaralias/okf-tasks/{tag}/schemas/{name}.schema.json"
         if schema.get("$id") != expected:

@@ -12,8 +12,8 @@ This project is not affiliated with or endorsed by Google Cloud.
 
 ## What is included
 
-- [`SPEC.md`](./SPEC.md) — the OKF Tasks v0.4 profile.
-- [`schemas/`](./schemas/) — versioned JSON Schemas for task, workstream, time-entry, and Tracker Profile frontmatter.
+- [`SPEC.md`](./SPEC.md) — the OKF Tasks v0.5 profile.
+- [`schemas/`](./schemas/) — versioned JSON Schemas for task, workstream, embedded time-entry, and Tracker Profile frontmatter.
 - [`skills/okf-task-lifecycle/`](./skills/okf-task-lifecycle/) — a portable agent skill and deterministic CLI.
 - [`examples/`](./examples/) — standalone, knowledge-linked, and tracker-synchronised bundles.
 - [`docs/VISUALIZATION.md`](./docs/VISUALIZATION.md) — a generated Mermaid task graph that renders directly in GitHub.
@@ -126,7 +126,7 @@ python scripts/visualize_bundle.py \
   --markdown docs/VISUALIZATION.md
 ```
 
-Open the HTML file locally for search, type filters, switchable layouts, readable relationship labels, a light-first theme with a persistent dark option, labelled graph controls, fullscreen graph review, and separate Graph and Documents tabs. Grid is the default review layout. Task, Workstream, Time Entry, Tracker Profile, Visualization, and generic concept nodes use different geometry; time entries and tasks surface recorded effort and connection counts directly on their cards. The record summary exposes `timestamp` as **Last meaningful change** alongside created, started, and finished times. The Documents tab provides a full-size Markdown reader with a permanent file tree, while the graph inspector retains its quick document drawer, backlinks, and collapsible raw YAML/source. Both views support GitHub-style sanitized Markdown and Mermaid diagrams. Both `local-docs/okf-tasks-visualization.html` and `local-docs/okf-tasks-examples.html` are generated from the same renderer. The HTML loads pinned Cytoscape, Marked, DOMPurify, and Mermaid browser libraries from jsDelivr; task and document data are embedded in the generated file.
+Open the HTML file locally for search, type filters, switchable layouts, readable relationship labels, a light-first theme with a persistent dark option, labelled graph controls, fullscreen graph review, and separate Graph and Documents tabs. Grid is the default review layout. Task, Workstream, Tracker Profile, Visualization, and generic concept nodes use different geometry. Embedded time entries surface through their parent Task's effort summary and remain addressable as `#time:<id>` edge fragments instead of becoming equal-weight graph nodes. The record summary exposes `timestamp` as **Last meaningful change** alongside created, started, and finished times. The Documents tab provides a full-size Markdown reader with a permanent file tree, while the graph inspector retains its quick document drawer, backlinks, and collapsible raw YAML/source. Both views support GitHub-style sanitized Markdown and Mermaid diagrams. Both `local-docs/okf-tasks-visualization.html` and `local-docs/okf-tasks-examples.html` are generated from the same renderer. The HTML loads pinned Cytoscape, Marked, DOMPurify, and Mermaid browser libraries from jsDelivr; task and document data are embedded in the generated file.
 
 Temporal controls can order records as a timeline and filter the current graph through the declared `timestamp`, `created`, `started`, or `finished` event. Drift review highlights a linked source whose selected time is newer than its target. That ordering is a prompt to review the relationship, not proof of stale or incorrect content. A current bundle contains current record bodies; historical fact reconstruction requires retained historical concepts or repository history.
 
@@ -152,7 +152,7 @@ python scripts/check_release.py
 
 ## Status
 
-Version 0.4 defines first-class provider setup and scoped external bindings. Normative changes require fixtures and agreement between the Python and TypeScript implementations; see [`GOVERNANCE.md`](./GOVERNANCE.md).
+Version 0.5 embeds addressable time entries in Task frontmatter and retains first-class provider setup and scoped external bindings. Normative changes require fixtures and agreement between the Python and TypeScript implementations; see [`GOVERNANCE.md`](./GOVERNANCE.md).
 
 ## License
 

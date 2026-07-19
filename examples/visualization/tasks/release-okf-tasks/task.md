@@ -8,6 +8,19 @@ created: 2026-07-17T18:00:00Z
 timestamp: 2026-07-17T21:00:00Z
 started: 2026-07-17T19:30:00Z
 effort_minutes: 90
+time:
+  - id: visualization-session
+    status: closed
+    actor: agent
+    workstream: visualization
+    started: 2026-07-17T19:30:00Z
+    finished: 2026-07-17T21:00:00Z
+    elapsed_minutes: 90
+    effort_minutes: 90
+    method: tracked
+    summary: Implemented and validated the visualization consumer.
+    basis: Explicit start and finish around focused implementation work.
+    activity: Added interactive HTML and GitHub Mermaid generation, then added security and relationship tests.
 owner: maintainers
 tags:
   - release
@@ -59,4 +72,4 @@ The profile, reference implementation, examples, and conformance suite are ready
 
 ## Evidence
 
-- [Focused implementation session](./time/visualization-session.md)
+- [Focused implementation session](./task.md#time:visualization-session)
