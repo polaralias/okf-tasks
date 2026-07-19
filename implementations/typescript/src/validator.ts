@@ -337,7 +337,18 @@ export function validateBundle(bundle: string): string[] {
   if (!fs.existsSync(bundle)) return [`${bundle}: bundle does not exist`];
   for (const file of markdownFiles(bundle)) {
     if (["index.md", "log.md"].includes(path.basename(file))) continue;
-    try { if (!parseDocument(file).metadata.type) errors.push(`${file}: non-reserved Markdown concept requires a non-empty type`); }
+    try {
+      const metadata = parseDocument(file).metadata;
+      if (!metadata.type) errors.push(`${file}: non-reserved Markdown concept requires a non-empty type`);
+      if (metadata.navigation !== undefined) {
+        const navigation = metadata.navigation;
+        if (!mapping(navigation) || !Object.keys(navigation).length) errors.push(`${file}: navigation must be a non-empty mapping`);
+        else {
+          if (navigation.role !== undefined && !["entry-point", "foundational", "supporting", "reference"].includes(String(navigation.role))) errors.push(`${file}: navigation.role must be entry-point, foundational, supporting, or reference`);
+          if (navigation.order !== undefined && (!Number.isInteger(navigation.order) || Number(navigation.order) < 0)) errors.push(`${file}: navigation.order must be a non-negative integer`);
+        }
+      }
+    }
     catch (error) { errors.push(String((error as Error).message)); }
   }
   const profiles = new Map<string, RecordValue>();

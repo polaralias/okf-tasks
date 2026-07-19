@@ -1,6 +1,6 @@
 # Tracker-synchronised bundle
 
-This example keeps the repository task canonical and records a Linear issue as an external projection. Provider API behavior is not implied, but any adapter must prepare the exact outbound artifact according to sections 9.1 and 9.2 of the profile.
+This example keeps the repository task canonical and records a Linear issue as an external projection. Provider API behaviour is not implied, but any adapter must prepare the exact outbound artefact according to sections 9.1 and 9.2 of the profile.
 
 From the repository root, a safe body can be staged with:
 

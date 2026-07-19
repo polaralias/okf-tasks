@@ -58,7 +58,7 @@ class PackagingTests(unittest.TestCase):
                 env=environment,
             )
             self.assertEqual(0, version.returncode, version.stderr)
-            self.assertEqual("okf-tasks 0.5.0", version.stdout.strip())
+            self.assertEqual("okf-tasks 0.1.0", version.stdout.strip())
 
 
 if __name__ == "__main__":

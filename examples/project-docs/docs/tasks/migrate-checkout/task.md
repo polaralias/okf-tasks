@@ -2,7 +2,7 @@
 type: Task
 task: migrate-checkout
 title: Migrate checkout traffic
-description: Move checkout traffic to the new service with verified payment and order behavior.
+description: Move checkout traffic to the new service with verified payment and order behaviour.
 status: ready
 created: 2026-07-17T15:00:00Z
 timestamp: 2026-07-17T15:00:00Z
@@ -13,7 +13,7 @@ owner: checkout-team
 
 ## Outcome
 
-The new checkout service handles production traffic without changing observable payment or order behavior.
+The new checkout service handles production traffic without changing observable payment or order behaviour.
 
 ## Scope
 

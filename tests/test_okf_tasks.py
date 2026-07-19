@@ -61,6 +61,7 @@ class ConformanceFixtureTests(unittest.TestCase):
             "visualization": "tasks",
             "complex-task-portfolio": "tasks",
             "architecture-knowledge-base": "tasks",
+            "combined-delivery-architecture": "tasks",
         }
         for name, bundle_path in examples.items():
             with self.subTest(name=name):

@@ -33,7 +33,7 @@ field_map:
     managed_prefix: "okf:"
 discovery:
   observed_at: 2026-07-18T10:00:00Z
-  fingerprint: sha256:visualization-github-main
+  fingerprint: sha256:visualisation-github-main
   capabilities:
     pull_requests: true
 ---

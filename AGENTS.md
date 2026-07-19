@@ -18,6 +18,6 @@
 - treat `SPEC.md` as normative and `VERSION` as the release source of truth
 - preserve unknown YAML fields when modifying task records
 - add manifest fixtures for every machine-testable normative change
-- keep the Python and TypeScript validators behaviorally independent
+- keep the Python and TypeScript validators behaviourally independent
 - regenerate indexes and conformance fixtures rather than editing generated files
 - run the complete release bar before proposing a merge

@@ -1,4 +1,4 @@
-# OKF Tasks visualization example
+# OKF Tasks visualisation example
 
 > Generated from repository-local OKF records. The Markdown/YAML bundle remains canonical.
 
@@ -20,10 +20,10 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    n0["Publish the visualization guide · proposed"]:::task
+    n0["Publish the visualisation guide · proposed"]:::task
     n1["Release OKF Tasks · in-progress"]:::task
     n2["Specification and conformance · validation"]:::workstream
-    n3["Visualization consumer · in-progress"]:::workstream
+    n3["Visualisation consumer · in-progress"]:::workstream
     n0 -->|depends on| n1
     n1 -->|time:visualization-session| n1
     n2 -->|workstream| n1
@@ -41,10 +41,10 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    n0["Publish the visualization guide · proposed"]:::boundary
+    n0["Publish the visualisation guide · proposed"]:::boundary
     n1["Release OKF Tasks · in-progress"]:::task
     n2["Specification and conformance · validation"]:::boundary
-    n3["Visualization consumer · in-progress"]:::boundary
+    n3["Visualisation consumer · in-progress"]:::boundary
     n0 -->|depends on| n1
     n1 -->|time:visualization-session| n1
     n2 -->|workstream| n1

@@ -56,4 +56,4 @@ discovery:
 
 ## Mapping review
 
-Team-scoped workflow and field mappings for the Security team. The distinct state IDs preserve round-trip behavior.
+Team-scoped workflow and field mappings for the Security team. The distinct state IDs preserve round-trip behaviour.

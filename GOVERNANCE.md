@@ -32,4 +32,4 @@ A release is eligible when:
 
 ## Security and conduct
 
-Security-sensitive reports should use GitHub's private vulnerability reporting when enabled rather than a public issue. Contributors are expected to engage constructively, focus criticism on artifacts and decisions, and respect the maintainer's enforcement of repository boundaries.
+Security-sensitive reports should use GitHub's private vulnerability reporting when enabled rather than a public issue. Contributors are expected to engage constructively, focus criticism on artefacts and decisions, and respect the maintainer's enforcement of repository boundaries.

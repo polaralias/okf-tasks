@@ -1,4 +1,4 @@
-# Interactive visualization guide
+# Interactive visualisation guide
 
 The OKF Tasks viewer is a derived, read-only consumer. Markdown/YAML files remain canonical.
 
@@ -10,16 +10,16 @@ From the repository root:
 python scripts/generate_local_docs.py --mermaid
 ```
 
-This creates the ignored local review artifacts:
+This creates the ignored local review artefacts:
 
 - `local-docs/okf-tasks-visualization.html` from `examples/visualization/tasks/`;
 - `local-docs/okf-tasks-examples.html` from the complete `examples/` tree;
 - `local-docs/okf-tasks-relationships.html` from the complete `examples/` tree, with stable source-bundle lanes and every explicit relationship retained as a labelled edge.
-- sibling `*.mermaid.md` reports for the primary visualization and examples workspaces.
+- sibling `*.mermaid.md` reports for the primary visualisation and examples workspaces.
 
 Use the relationship map when topology is the question: it groups records for spatial orientation but does not infer or replace relationships. The ordinary example page remains the neutral record browser.
 
-All three pages use `scripts/visualize_bundle.py` and therefore share the same HTML, styling, interaction, security, and Markdown-rendering behavior. Verify that generated files are current with:
+All three pages use `scripts/visualize_bundle.py` and therefore share the same HTML, styling, interaction, security, and Markdown-rendering behaviour. Verify that generated files are current with:
 
 ```text
 python scripts/generate_local_docs.py --mermaid --check
@@ -37,7 +37,7 @@ python scripts/visualize_bundle.py \
 
 With `--html`, a pathless `--mermaid` writes `<html-name>.mermaid.md` beside the interactive workspace. Pass `--mermaid <path>` when the report belongs elsewhere. `--markdown <path>` remains an explicit-path synonym for checked documentation workflows.
 
-The Mermaid report scales by separating concerns: an area-level map shows how connected repository regions relate; manageable connected components render in full; large components split into area diagrams with dashed boundary context; the highest-connectivity concepts receive focused neighbourhood diagrams; and true isolates are listed rather than drawn with equal weight. Every connected node and edge remains represented without forcing the repository into one oversized diagram.
+The Mermaid report scales by separating concerns: an area-level map shows how connected repository regions relate; manageable connected components render in full; large components split into area diagrams with dashed boundary context; the highest-connectivity concepts receive focussed neighbourhood diagrams; and true isolates are listed rather than drawn with equal weight. Every connected node and edge remains represented without forcing the repository into one oversized diagram.
 
 ## Freshness and authority
 
@@ -45,10 +45,13 @@ The viewer labels each record's `timestamp` as **Last meaningful change** and sh
 
 The viewer is a derived consumer. The source Markdown/YAML bundle remains authoritative, and both generated pages must be regenerated from the shared renderer after a meaningful record or renderer change.
 
-## Viewer behavior
+## Viewer behaviour
 
 - Graph, Board, and Reader are first-class tabs over one embedded bundle.
-- Graph presents the complete document mesh. Compact document chips use class-colored borders, folder trails remain visible beneath them, and selecting a chip fades unrelated documents while revealing labels on its direct relationships.
+- Graph presents the complete document mesh. Compact document chips use class-coloured borders, Architecture Decisions have a distinct class, folder trails remain visible beneath them, and selecting a chip fades unrelated documents while revealing labels on its direct relationships.
+- The type key is interactive: selecting Tasks, Workstreams, ADRs/decisions, trackers, or knowledge documents highlights that class without removing surrounding context. The reading-role selector similarly highlights `entry-point`, `foundational`, `supporting`, or `reference` concepts.
+- Opening or changing the graph selection centres the selected record in the relationship panel. Compact controls immediately above and below it indicate and navigate to incoming and outgoing relationships, so a long neighbourhood never displaces the current focus.
+- `navigation.role` and sparse `navigation.order` values are optional retrieval metadata for prominence and first-reading order. They do not replace relationship links, Task dependencies, or Task `priority`; use `priority` only for execution urgency.
 - The Graph panel presents those direct relationships vertically as Incoming → Selected → Outgoing. Connected cards recenter the graph; the selected summary includes concise temporal and effort context plus a Reader shortcut, without duplicating the full Markdown document.
 - The temporal selector compares Last meaningful change, Created, Started, or Finished. Drift review highlights relationships whose source has a newer selected value than its target. Treat every highlight as a review prompt only; timestamp order cannot prove semantic drift.
 - Board groups Tasks into lifecycle columns or compact rows, nests their Workstreams, and displays estimates, recorded effort, embedded-time evidence, tracker context, link counts, and the selected temporal value.
@@ -62,7 +65,7 @@ The viewer is a derived consumer. The source Markdown/YAML bundle remains author
 
 ## GitHub-style Markdown
 
-The viewer enables Marked's GitHub-flavored Markdown mode for autolinks, tables, strikethrough, and task lists. It preserves sanitized HTML disclosure elements such as `<details>` and `<summary>`, and converts fenced `mermaid` blocks into diagrams.
+The viewer enables Marked's GitHub-flavoured Markdown mode for autolinks, tables, strikethrough, and task lists. It preserves sanitised HTML disclosure elements such as `<details>` and `<summary>`, and converts fenced `mermaid` blocks into diagrams.
 
 All rendered HTML passes through DOMPurify. Mermaid runs with `securityLevel: strict`. If Marked or DOMPurify cannot load, the viewer displays the Markdown source as plain text rather than leaving the inspector empty. If Mermaid cannot load, its fenced source remains readable.
 
