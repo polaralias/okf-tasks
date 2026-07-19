@@ -17,6 +17,7 @@ time:
   elapsed_minutes: 60
   effort_minutes: 30
   method: manual
+  activity: implementation
   basis: Explicit fixture values.
 - id: adjusted-entry
   status: closed
@@ -26,6 +27,7 @@ time:
   elapsed_minutes: 60
   effort_minutes: 60
   method: tracked-adjusted
+  activity: implementation
   basis: Explicit fixture values.
 - id: commit-review
   status: closed
@@ -35,6 +37,7 @@ time:
   elapsed_minutes: 60
   effort_minutes: 90
   method: estimated-commit-review
+  activity: implementation
   basis: Explicit fixture values.
   confidence: medium
   source_commits:

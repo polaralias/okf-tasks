@@ -10,6 +10,9 @@ const syncModes = new Set(["push", "pull", "bidirectional", "manual"]);
 const trackerSystems = new Set(["github", "gitlab", "linear", "clickup"]);
 const labelStrategies = new Set(["replace", "managed-subset", "read-only", "ignore"]);
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const linkGraphExcludedTypes = new Set(["tracker profile", "log"]);
+const linkGraphExcludedTypeMarkers = ["runbook", "handoff", "session", "temporary", "scratch"];
+const linkGraphExcludedDirectories = new Set([".git", ".venv", "build", "dist", "generated", "node_modules", "runbooks", "scratch", "temp", "temporary", "vendor"]);
 
 type RecordValue = Record<string, unknown>;
 type Parsed = { metadata: RecordValue; body: string };
@@ -44,6 +47,61 @@ function parseDocument(file: string): Parsed {
   try { metadata = YAML.parse(match[1]); } catch (error) { throw new Error(`Invalid YAML frontmatter in ${file}: ${String(error)}`); }
   if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) throw new Error(`Frontmatter must be a mapping in ${file}`);
   return { metadata: metadata as RecordValue, body: source.slice(match[0].length).replace(/^\r?\n/, "") };
+}
+
+function linkGraphRoot(bundle: string): string {
+  const resolved = path.resolve(bundle);
+  return path.basename(resolved) === "tasks" && path.basename(path.dirname(resolved)) === "docs"
+    ? path.dirname(path.dirname(resolved)) : path.dirname(resolved);
+}
+
+function durableLinkGraphErrors(bundle: string): string[] {
+  const root = linkGraphRoot(bundle);
+  const concepts = new Map<string, Parsed>();
+  for (const file of markdownFiles(root)) {
+    if (["index.md", "log.md"].includes(path.basename(file))) continue;
+    const relativeParts = path.relative(root, file).split(path.sep).slice(0, -1).map((part) => part.toLowerCase());
+    if (relativeParts.some((part) => linkGraphExcludedDirectories.has(part))) continue;
+    try {
+      const parsed = parseDocument(file); const type = String(parsed.metadata.type ?? "").trim().toLowerCase();
+      if (type && !linkGraphExcludedTypes.has(type) && !linkGraphExcludedTypeMarkers.some((marker) => type.includes(marker))) concepts.set(path.resolve(file), parsed);
+    } catch { /* structural parser reports malformed bundle documents separately */ }
+  }
+  if (concepts.size < 2) return [];
+  const adjacency = new Map([...concepts.keys()].map((file) => [file, new Set<string>()]));
+  const connect = (source: string, candidate: string): void => {
+    const target = path.resolve(candidate);
+    if (target !== source && concepts.has(target)) { adjacency.get(source)!.add(target); adjacency.get(target)!.add(source); }
+  };
+  for (const [source, parsed] of concepts) {
+    for (const match of parsed.body.matchAll(/(!)?\[[^\]\n]*\]\(([^)\s]+)[^)]*\)/g)) {
+      if (match[1]) continue;
+      const target = match[2].replace(/^<|>$/g, "");
+      if (target.startsWith("#") || /^[a-z][a-z0-9+.-]*:/i.test(target)) continue;
+      const local = decodeURIComponent(target.split("#", 1)[0].split("?", 1)[0]).replaceAll("\\", "/");
+      if (local) connect(source, local.startsWith("/") ? path.join(root, local.replace(/^\/+/, "")) : path.join(path.dirname(source), local));
+    }
+    const type = String(parsed.metadata.type ?? "");
+    if (type === "Task") {
+      const structured = [typeof parsed.metadata.parent === "string" ? parsed.metadata.parent : "",
+        ...(Array.isArray(parsed.metadata.depends_on) ? parsed.metadata.depends_on.map(String) : [])];
+      for (const target of structured) {
+        const clean = target.split("#", 1)[0].trim().replace(/^\.\//, "");
+        if (!clean || /^[a-z][a-z0-9+.-]*:/i.test(clean)) continue;
+        const candidate = path.join(bundle, clean); connect(source, path.extname(candidate) ? candidate : `${candidate}.md`);
+      }
+    } else if (type === "Workstream" && parsed.metadata.task) connect(source, path.join(bundle, String(parsed.metadata.task), "task.md"));
+  }
+  const errors = [...adjacency].filter(([, links]) => links.size === 0)
+    .map(([file]) => `${root}: durable link graph contains orphan concept ${path.relative(root, file).replaceAll(path.sep, "/")}`);
+  const remaining = new Set(adjacency.keys()); const components: Set<string>[] = [];
+  while (remaining.size) {
+    const first = remaining.values().next().value as string; const pending = [first]; const component = new Set<string>();
+    while (pending.length) { const current = pending.pop()!; if (component.has(current)) continue; component.add(current); pending.push(...adjacency.get(current)!); }
+    component.forEach((file) => remaining.delete(file)); components.push(component);
+  }
+  if (components.length > 1) errors.push(`${root}: durable link graph has ${components.length} disconnected components`);
+  return errors;
 }
 
 export function egressFindings(text: string, root: string): string[] {
@@ -223,9 +281,6 @@ function validateTrackerProfile(file: string, profile: RecordValue, errors: stri
 }
 
 function validateTime(taskFile: string, task: RecordValue, errors: string[]): void {
-  const timeDir = path.join(path.dirname(taskFile), "time");
-  const legacyFiles = fs.existsSync(timeDir) ? fs.readdirSync(timeDir).filter((name) => name.endsWith(".md")).map((name) => path.join(timeDir, name)).sort() : [];
-  legacyFiles.forEach((file) => errors.push(`${file}: standalone time-entry files are not permitted; embed the entry in task.md time[]`));
   if (task.time !== undefined && !Array.isArray(task.time)) { errors.push(`${taskFile}: time must be a list`); return; }
   const rawEntries = Array.isArray(task.time) ? task.time : [];
   const entries: RecordValue[] = [];
@@ -235,7 +290,7 @@ function validateTime(taskFile: string, task: RecordValue, errors: string[]): vo
     const value = rawEntries[index]; const indexed = `${taskFile}#time[${index}]`;
     if (!mapping(value)) { errors.push(`${indexed}: time entry must be a mapping`); continue; }
     const entry = value; entries.push(entry);
-    const required = ["id", "status", "actor", "started", "method"];
+    const required = ["id", "status", "actor", "started", "method", "activity"];
     const missing = required.filter((key) => entry[key] === undefined || entry[key] === "");
     if (missing.length) { errors.push(`${indexed}: missing required fields: ${missing.join(", ")}`); continue; }
     const label = `${taskFile}#time:${String(entry.id)}`;
@@ -243,6 +298,7 @@ function validateTime(taskFile: string, task: RecordValue, errors: string[]): vo
     if (ids.has(String(entry.id))) errors.push(`${label}: duplicate time entry id`); else ids.add(String(entry.id));
     if (!["running", "closed"].includes(String(entry.status))) errors.push(`${label}: time status must be running or closed`);
     if (!["tracked", "tracked-adjusted", "manual", "estimated-commit-review"].includes(String(entry.method))) errors.push(`${label}: unknown time method`);
+    if (!["implementation", "review", "validation", "knowledge-maintenance", "research", "planning", "coordination", "other"].includes(String(entry.activity))) errors.push(`${label}: unknown time activity`);
     if (!rfc3339(entry.started)) errors.push(`${label}: started must be an RFC 3339 datetime`);
     if (entry.status === "running") {
       if (entry.method !== "tracked") errors.push(`${label}: running entries must use method tracked`);
@@ -281,7 +337,18 @@ export function validateBundle(bundle: string): string[] {
   if (!fs.existsSync(bundle)) return [`${bundle}: bundle does not exist`];
   for (const file of markdownFiles(bundle)) {
     if (["index.md", "log.md"].includes(path.basename(file))) continue;
-    try { if (!parseDocument(file).metadata.type) errors.push(`${file}: non-reserved Markdown concept requires a non-empty type`); }
+    try {
+      const metadata = parseDocument(file).metadata;
+      if (!metadata.type) errors.push(`${file}: non-reserved Markdown concept requires a non-empty type`);
+      if (metadata.navigation !== undefined) {
+        const navigation = metadata.navigation;
+        if (!mapping(navigation) || !Object.keys(navigation).length) errors.push(`${file}: navigation must be a non-empty mapping`);
+        else {
+          if (navigation.role !== undefined && !["entry-point", "foundational", "supporting", "reference"].includes(String(navigation.role))) errors.push(`${file}: navigation.role must be entry-point, foundational, supporting, or reference`);
+          if (navigation.order !== undefined && (!Number.isInteger(navigation.order) || Number(navigation.order) < 0)) errors.push(`${file}: navigation.order must be a non-negative integer`);
+        }
+      }
+    }
     catch (error) { errors.push(String((error as Error).message)); }
   }
   const profiles = new Map<string, RecordValue>();
@@ -340,5 +407,6 @@ export function validateBundle(bundle: string): string[] {
   const index = path.join(bundle, "index.md");
   if (!fs.existsSync(index)) errors.push(`${index}: generated index is missing`);
   else if (!fs.readFileSync(index, "utf8").includes("<!-- Generated by okf-task-lifecycle. Do not edit by hand. -->")) errors.push(`${index}: generated index is stale`);
+  errors.push(...durableLinkGraphErrors(bundle));
   return errors;
 }

@@ -28,4 +28,4 @@ Produce the stated outcome.
 
 ## Related knowledge
 
-Diagnostic source: C:\Users\james\private\trace.log
+Diagnostic source: C:\Users\example-user\private\trace.log

@@ -51,6 +51,14 @@ class PackagingTests(unittest.TestCase):
             self.assertEqual(0, invoked.returncode, invoked.stderr)
             self.assertIn("init-bundle", invoked.stdout)
             self.assertIn("tracker", invoked.stdout)
+            version = subprocess.run(
+                [str(launchers[0]), "--version"],
+                capture_output=True,
+                text=True,
+                env=environment,
+            )
+            self.assertEqual(0, version.returncode, version.stderr)
+            self.assertEqual("okf-tasks 0.1.0", version.stdout.strip())
 
 
 if __name__ == "__main__":

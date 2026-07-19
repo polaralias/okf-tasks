@@ -266,9 +266,110 @@ def mermaid_label(value: str) -> str:
     return value.replace("\\", "\\\\").replace('"', "\\\"").replace("\n", " ")
 
 
+def mermaid_class(data: dict[str, Any]) -> str:
+    return {"Task": "task", "Workstream": "workstream", "Tracker Profile": "tracker"}.get(
+        str(data.get("type")), "knowledge"
+    )
+
+
+def concept_area(record_id: str) -> str:
+    parts = [part for part in record_id.split("/") if part]
+    if "tasks" in parts:
+        index = parts.index("tasks")
+        return "/".join(parts[:index]) or "tasks"
+    return parts[0] if len(parts) > 1 else "repository root"
+
+
+def connected_components(graph: dict[str, Any]) -> list[list[str]]:
+    node_ids = [str(node["data"]["id"]) for node in graph["nodes"] if not node["data"].get("virtual")]
+    neighbours = {node_id: set() for node_id in node_ids}
+    for edge in graph["edges"]:
+        source, target = str(edge["data"]["source"]), str(edge["data"]["target"])
+        if source in neighbours and target in neighbours:
+            neighbours[source].add(target)
+            neighbours[target].add(source)
+    remaining, components = set(node_ids), []
+    while remaining:
+        start = min(remaining)
+        remaining.remove(start)
+        stack, component = [start], []
+        while stack:
+            current = stack.pop()
+            component.append(current)
+            for neighbour in sorted(neighbours[current], reverse=True):
+                if neighbour in remaining:
+                    remaining.remove(neighbour)
+                    stack.append(neighbour)
+        components.append(sorted(component))
+    return sorted(components, key=lambda component: (-len(component), component[0]))
+
+
+def mermaid_diagram(
+    graph: dict[str, Any], node_ids: set[str], *, boundary_ids: set[str] | None = None
+) -> list[str]:
+    boundary_ids = boundary_ids or set()
+    nodes = [node for node in graph["nodes"] if str(node["data"]["id"]) in node_ids]
+    id_map = {str(node["data"]["id"]): f"n{index}" for index, node in enumerate(nodes)}
+    lines = ["flowchart LR"]
+    for node in nodes:
+        data = node["data"]
+        detail = f" · {data['status']}" if data.get("status") else ""
+        class_name = "boundary" if str(data["id"]) in boundary_ids else mermaid_class(data)
+        lines.append(f'    {id_map[str(data["id"])]}["{mermaid_label(str(data["label"]) + detail)}"]:::{class_name}')
+    for edge in graph["edges"]:
+        data = edge["data"]
+        source, target = str(data["source"]), str(data["target"])
+        if source in id_map and target in id_map:
+            relationship = str(data.get("fragment") or data["relationship"])
+            lines.append(f'    {id_map[source]} -->|{mermaid_label(relationship)}| {id_map[target]}')
+    lines.extend([
+        "    classDef task fill:#dbeafe,stroke:#2563eb,color:#172554",
+        "    classDef workstream fill:#ede9fe,stroke:#7c3aed,color:#2e1065",
+        "    classDef tracker fill:#ffedd5,stroke:#ea580c,color:#431407",
+        "    classDef knowledge fill:#dcfce7,stroke:#16a34a,color:#052e16",
+        "    classDef boundary fill:#f8fafc,stroke:#64748b,color:#0f172a,stroke-dasharray:4 3",
+    ])
+    return lines
+
+
+def area_overview_diagram(graph: dict[str, Any], connected_ids: set[str]) -> list[str]:
+    areas: dict[str, set[str]] = {}
+    for node_id in connected_ids:
+        areas.setdefault(concept_area(node_id), set()).add(node_id)
+    area_ids = {area: f"a{index}" for index, area in enumerate(sorted(areas))}
+    relations: dict[tuple[str, str], set[str]] = {}
+    for edge in graph["edges"]:
+        data = edge["data"]
+        source, target = str(data["source"]), str(data["target"])
+        if source not in connected_ids or target not in connected_ids:
+            continue
+        source_area, target_area = concept_area(source), concept_area(target)
+        if source_area != target_area:
+            relations.setdefault((source_area, target_area), set()).add(str(data["relationship"]))
+    lines = ["flowchart LR"]
+    for area in sorted(areas):
+        lines.append(f'    {area_ids[area]}["{mermaid_label(area)} · {len(areas[area])} concepts"]')
+    for (source, target), labels in sorted(relations.items()):
+        lines.append(f'    {area_ids[source]} -->|{mermaid_label(", ".join(sorted(labels)))}| {area_ids[target]}')
+    lines.append("    classDef default fill:#eef2ff,stroke:#4f46e5,color:#1e1b4b")
+    return lines
+
+
 def generate_markdown(graph: dict[str, Any], name: str, source: str) -> str:
-    nodes = graph["nodes"]
-    id_map = {node["data"]["id"]: f"n{index}" for index, node in enumerate(nodes)}
+    nodes_by_id = {str(node["data"]["id"]): node for node in graph["nodes"] if not node["data"].get("virtual")}
+    components = connected_components(graph)
+    connected = [component for component in components if len(component) > 1]
+    isolated = [component[0] for component in components if len(component) == 1]
+    connected_ids = {node_id for component in connected for node_id in component}
+    degrees = {node_id: 0 for node_id in nodes_by_id}
+    neighbours = {node_id: set() for node_id in nodes_by_id}
+    for edge in graph["edges"]:
+        source_id, target_id = str(edge["data"]["source"]), str(edge["data"]["target"])
+        if source_id in degrees and target_id in degrees:
+            degrees[source_id] += 1
+            degrees[target_id] += 1
+            neighbours[source_id].add(target_id)
+            neighbours[target_id].add(source_id)
     tick = chr(96)
     lines = [
         f"# {name}",
@@ -277,38 +378,35 @@ def generate_markdown(graph: dict[str, Any], name: str, source: str) -> str:
         "",
         f"Source: {tick}{source}{tick}",
         "",
-        f"{tick * 3}mermaid",
-        "flowchart LR",
+        "The report separates the connected repository map from detailed component and key-concept views so large bundles remain reviewable.",
+        "",
     ]
-    for node in nodes:
-        data = node["data"]
-        detail = f" · {data['status']}" if data.get("status") else ""
-        class_name = data["type"].lower().replace(" ", "_")
-        if class_name not in {"task", "workstream"}:
-            class_name = "unknown"
-        lines.append(f'    {id_map[data["id"]]}["{mermaid_label(data["label"] + detail)}"]:::{class_name}')
-    for edge in graph["edges"]:
-        data = edge["data"]
-        relationship_label = str(data.get("fragment") or data["relationship"])
-        lines.append(
-            f'    {id_map[data["source"]]} -->|{mermaid_label(relationship_label)}| {id_map[data["target"]]}'
-        )
-    lines.extend(
-        [
-            "    classDef task fill:#dbeafe,stroke:#2563eb,color:#172554",
-            "    classDef workstream fill:#ede9fe,stroke:#7c3aed,color:#2e1065",
-            "    classDef unknown fill:#e2e8f0,stroke:#64748b,color:#0f172a",
-            tick * 3,
-            "",
-            "## Legend",
-            "",
-            "- Blue: task",
-            "- Purple: workstream",
-            "- Time references: edges to addressable `Task.time[]` fragments",
-            "- Arrows: structured relationships or repository-local Markdown links",
-            "",
-        ]
-    )
+    if connected_ids:
+        lines.extend(["## Connected-area overview", "", f"{tick * 3}mermaid", *area_overview_diagram(graph, connected_ids), tick * 3, ""])
+    for component_index, component in enumerate(connected, 1):
+        lines.extend([f"## Connected component {component_index}", ""])
+        if len(component) <= 18:
+            lines.extend([f"{tick * 3}mermaid", *mermaid_diagram(graph, set(component)), tick * 3, ""])
+            continue
+        component_set = set(component)
+        for area in sorted({concept_area(node_id) for node_id in component}):
+            area_ids = {node_id for node_id in component if concept_area(node_id) == area}
+            boundary = {neighbour for node_id in area_ids for neighbour in neighbours[node_id] if neighbour in component_set - area_ids}
+            lines.extend([f"### {area}", "", f"{tick * 3}mermaid", *mermaid_diagram(graph, area_ids | boundary, boundary_ids=boundary), tick * 3, ""])
+    key_ids = [node_id for node_id in sorted(connected_ids, key=lambda value: (-degrees[value], value)) if degrees[node_id] >= 2][:6]
+    if key_ids:
+        lines.extend(["## Key concept neighbourhoods", ""])
+        for node_id in key_ids:
+            data = nodes_by_id[node_id]["data"]
+            neighbourhood = {node_id, *neighbours[node_id]}
+            lines.extend([f"### {data['label']}", "", f"{tick * 3}mermaid", *mermaid_diagram(graph, neighbourhood, boundary_ids=neighbourhood - {node_id}), tick * 3, ""])
+    if isolated:
+        lines.extend(["## Unconnected concepts", "", "These records are listed instead of receiving equal visual weight in the connected graph.", ""])
+        for node_id in isolated:
+            data = nodes_by_id[node_id]["data"]
+            lines.append(f"- **{data['label']}** — `{node_id}` ({data['type']})")
+        lines.append("")
+    lines.extend(["## Legend", "", "- Blue: task", "- Purple: workstream", "- Orange: tracker profile", "- Green: durable knowledge", "- Dashed neutral nodes: neighbouring context repeated from another area or key-concept view", "- Time references: edges to addressable `Task.time[]` fragments", "- Arrows: structured relationships or repository-local Markdown links", ""])
     return "\n".join(lines)
 
 
@@ -414,31 +512,25 @@ cy.on("tap","node",e=>show(e.target.id()));cy.on("mouseover","node",e=>e.target.
 """
 
 
+VISUALIZER_TEMPLATE = Path(__file__).with_name("visualizer_template.html")
+
+
+def render_html_workspace(
+    graph: dict[str, Any],
+    name: str,
+    subtitle: str = "Derived visual workspace",
+    default_layout: str = "grid",
+) -> str:
+    template = VISUALIZER_TEMPLATE.read_text(encoding="utf-8")
+    payload = deepcopy(graph)
+    payload["name"] = name
+    payload["subtitle"] = subtitle
+    payload["default_layout"] = default_layout
+    return template.replace("__GRAPH__", safe_json(payload))
+
+
 def generate_html(graph: dict[str, Any], name: str) -> str:
-    rendered = HTML_TEMPLATE.replace("__NAME__", safe_json(name)).replace("__GRAPH__", safe_json(graph))
-    temporal_controls = (
-        '<div class="temporal-rail" aria-label="Temporal graph controls">'
-        '<span class="temporal-label">Time field</span><select id="temporal-field" aria-label="Temporal field">'
-        '<option value="timestamp">Last meaningful change</option><option value="created">Created</option>'
-        '<option value="started">Started</option><option value="finished">Finished</option></select>'
-        '<input id="time-range" type="range" min="0" value="0" aria-label="Show records through date">'
-        '<output id="time-output" class="temporal-output">All dated records</output>'
-        '<button id="drift-review" class="drift-button" type="button" aria-pressed="false" '
-        'aria-label="Review possible timestamp drift">Review drift</button>'
-        '<span id="drift-count" class="drift-count">Drift review off</span></div>'
-        '<div class="temporal-note">Timestamp ordering is a review signal, not proof of drift.</div>'
-    )
-    rendered = rendered.replace(
-        '<div class="filter-rail" id="type-filters" aria-label="Filter by record type"></div>',
-        '<div class="filter-rail" id="type-filters" aria-label="Filter by record type"></div>' + temporal_controls,
-    )
-    return (
-        rendered.replace('<option value="grid">Grid</option>', '<option value="grid" selected>Grid</option><option value="timeline">Timeline</option>')
-        .replace('layout:{name:"cose"', 'layout:{name:"grid"')
-        .replace('$("layout").onchange=e=>cy.layout({name:e.target.value,animate:true,animationDuration:650,animationEasing:"ease-out",padding:74}).run()', '$("layout").onchange=e=>runLayout(e.target.value)')
-        .replace('$("reset").onclick=()=>{$("search").value="";activeType="";for(const item of filters.children)item.setAttribute("aria-pressed",String(!item.dataset.type));filter();cy.animate({fit:{eles:cy.elements(),padding:72},duration:560,easing:"ease-out"})}', '$("reset").onclick=()=>{$("search").value="";activeType="";temporalField="timestamp";driftReview=false;$("temporal-field").value="timestamp";$("drift-review").setAttribute("aria-pressed","false");$("layout").value="grid";for(const item of filters.children)item.setAttribute("aria-pressed",String(!item.dataset.type));updateTemporalRange(true);runLayout("grid")}')
-        .replace('setTheme(document.documentElement.dataset.theme);filter();if(graph.nodes[0])', 'setTheme(document.documentElement.dataset.theme);updateTemporalRange(true);if(graph.nodes[0])')
-    )
+    return render_html_workspace(graph, name)
 
 
 def build_relationship_view(graph: dict[str, Any]) -> dict[str, Any]:
@@ -491,60 +583,12 @@ def build_relationship_view(graph: dict[str, Any]) -> dict[str, Any]:
 
 def generate_relationship_html(graph: dict[str, Any], name: str) -> str:
     """Render an edge-first review page with records grouped by source bundle."""
-    rendered = generate_html(build_relationship_view(graph), name)
-    rendered = rendered.replace("OKF Tasks · derived bundle view", "OKF Tasks · relationship map")
-    rendered = rendered.replace("#graph{position:absolute;inset:0}", "#graph{position:absolute;inset:165px 0 0}")
-    rendered = rendered.replace(
-        '<option value="cose">Force layout</option>',
-        '<option value="relationship" selected>Relationship layout</option><option value="cose">Force layout</option>',
-    ).replace('<option value="grid" selected>Grid</option>', '<option value="grid">Grid</option>')
-    rendered = rendered.replace(
-        'layout:{name:"grid",animate:true,animationDuration:520,animationEasing:"ease-out",padding:88,nodeRepulsion:24000,idealEdgeLength:170,edgeElasticity:.15,nestingFactor:1.1}',
-        'layout:{name:"preset",positions:node=>node.data("relationshipPosition"),fit:false}',
+    return render_html_workspace(
+        build_relationship_view(graph),
+        name,
+        subtitle="Relationship map with stable source-bundle lanes",
+        default_layout="relationship",
     )
-    rendered = rendered.replace(
-        'function runLayout(name){if(name!=="timeline")',
-        'function runLayout(name){if(name==="relationship"){cy.layout({name:"preset",positions:node=>node.data("relationshipPosition")||node.position(),fit:false,animate:true,animationDuration:650,animationEasing:"ease-out"}).run();cy.zoom(1);cy.pan({x:0,y:0});return}if(name!=="timeline")',
-    )
-    rendered = rendered.replace(
-        '$("layout").value="grid";for(const item',
-        '$("layout").value="relationship";for(const item',
-    ).replace('runLayout("grid")', 'runLayout("relationship")')
-    rendered = rendered.replace(
-        '$("record-count").textContent=graph.nodes.length;',
-        '$("record-count").textContent=graph.nodes.filter(node=>!node.data.virtual).length;',
-    )
-    rendered = rendered.replace(
-        'for(const n of graph.nodes)index[n.data.id]=n.data;',
-        'for(const n of graph.nodes)if(!n.data.virtual)index[n.data.id]=n.data;',
-    )
-    rendered = rendered.replace(
-        'if(graph.nodes[0])show(graph.nodes[0].data.id)',
-        'const firstRecord=graph.nodes.find(node=>!node.data.virtual);if(firstRecord)show(firstRecord.data.id)',
-    )
-    rendered = rendered.replace(
-        'if(!dim)visible++',
-        'if(!dim&&!d.virtual)visible++',
-    ).replace(
-        '${visible} of ${graph.nodes.length} records',
-        '${visible} of ${graph.nodes.filter(node=>!node.data.virtual).length} records',
-    )
-    rendered = rendered.replace(
-        '.selector("edge.possible-drift")',
-        '.selector(\'node[virtual]\').style({width:1,height:1,"background-image":"none","background-opacity":0,"border-width":0,label:"data(label)",color:"#64748b","font-family":"JetBrains Mono","font-size":12,"font-weight":500,"text-valign":"center","text-halign":"left","text-margin-x":8,"text-transform":"uppercase","overlay-opacity":0}).selector("edge.possible-drift")',
-    )
-    rendered = rendered.replace(
-        '<span class="legend-item"><i class="legend-dot" style="background:#059669"></i>Time</span>',
-        '<span class="legend-item"><i class="legend-dot" style="background:#059669"></i>Time</span><span class="legend-item"><i class="legend-boundary"></i>Bundle lane</span>',
-    )
-    rendered = rendered.replace(
-        "</style>",
-        ".legend-boundary{width:12px;height:8px;border:1px dashed var(--line-strong)}\n"
-        ".graph-core.relationship-map #graph{inset:0}\n"
-        "</style>",
-        1,
-    )
-    return rendered
 
 
 def write_or_check(path: Path, content: str, check: bool) -> None:
@@ -563,6 +607,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--name", help="Display name (default: bundle directory name)")
     parser.add_argument("--html", help="Interactive HTML output path")
     parser.add_argument("--markdown", help="GitHub-rendered Mermaid Markdown output path")
+    parser.add_argument(
+        "--mermaid",
+        nargs="?",
+        const="__AUTO__",
+        help="Scalable Mermaid report; omit the path to write <html-name>.mermaid.md beside --html",
+    )
     parser.add_argument("--check", action="store_true", help="Fail when requested outputs are stale")
     return parser
 
@@ -572,8 +622,8 @@ def main() -> int:
     root = Path(args.bundle).resolve()
     if not root.is_dir():
         raise SystemExit(f"Bundle directory not found: {root}")
-    if not args.html and not args.markdown:
-        raise SystemExit("Select at least one output with --html or --markdown.")
+    if not args.html and not args.markdown and not args.mermaid:
+        raise SystemExit("Select at least one output with --html, --mermaid, or --markdown.")
     records = read_records(root)
     if not records:
         raise SystemExit(f"No OKF records found under: {root}")
@@ -583,6 +633,12 @@ def main() -> int:
         write_or_check(Path(args.html), generate_html(graph, name), args.check)
     if args.markdown:
         write_or_check(Path(args.markdown), generate_markdown(graph, name, args.bundle), args.check)
+    if args.mermaid:
+        if args.mermaid == "__AUTO__":
+            mermaid_path = Path(args.html).with_suffix(".mermaid.md") if args.html else Path(f"{root.name}.mermaid.md")
+        else:
+            mermaid_path = Path(args.mermaid)
+        write_or_check(mermaid_path, generate_markdown(graph, name, args.bundle), args.check)
     print(f"Visualized {len(graph['nodes'])} records and {len(graph['edges'])} relationships.")
     return 0
 

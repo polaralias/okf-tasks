@@ -1,6 +1,6 @@
 # OKF Tasks Profile
 
-Version 0.5
+Version 0.1
 
 OKF Tasks is an independent profile of Open Knowledge Format (OKF) v0.1 for representing trackable work as portable Markdown concepts. It adds task lifecycle, workstream, evidence, relationship, and tracker-mapping conventions without changing the OKF base format.
 
@@ -8,7 +8,7 @@ Normative terms **MUST**, **MUST NOT**, **SHOULD**, **SHOULD NOT**, and **MAY** 
 
 ## 1. Scope
 
-The profile standardizes:
+The profile standardises:
 
 - task and workstream concept types;
 - stable repository-local identity;
@@ -18,13 +18,13 @@ The profile standardizes:
 - live, manual, and estimated effort records;
 - task-bundle indexes and conformance.
 
-It does not standardize product requirements, architecture, sprint membership, comments, attachments, credentials, webhook deployment, or user-interface views. It standardizes portable tracker configuration and adapter behavior while provider authentication and transport remain adapter concerns. Effort estimates and sprint points are portable values; the planning method that produces them remains local.
+It does not standardise product requirements, architecture, sprint membership, comments, attachments, credentials, webhook deployment, or user-interface views. It standardises portable tracker configuration and adapter behaviour while provider authentication and transport remain adapter concerns. Effort estimates and sprint points are portable values; the planning method that produces them remains local.
 
 ## 2. Relationship to OKF
 
 An OKF Tasks bundle MUST conform to [OKF v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/ee67a5ca27044ebe7c38385f5b6cffc2305a9c1a/okf/SPEC.md). Requirements in this profile are additional constraints. The commit-pinned link identifies the exact upstream text used by this version.
 
-The published identity of this profile version is `https://github.com/polaralias/okf-tasks/blob/v0.5.0/SPEC.md`. Producers SHOULD include that identity in the bundle root index as described in section 10.
+The published identity of this profile version is `https://github.com/polaralias/okf-tasks/blob/v0.1.0/SPEC.md`. Producers SHOULD include that identity in the bundle root index as described in section 10.
 
 Each non-reserved Markdown file in the bundle MUST be an OKF concept with parseable YAML frontmatter and a non-empty `type`. Producers MAY add fields. Consumers MUST preserve unknown fields when round-tripping a record and MUST tolerate unknown task-adjacent concept types.
 
@@ -61,6 +61,20 @@ The `docs/tasks/` placement does not make task records canonical product require
 
 `index.md` and `log.md` retain their OKF-reserved meanings. Any additional Markdown file, including session or coordination records, MUST be an OKF concept with a descriptive `type`.
 
+### 3.1 Navigation prominence extension
+
+Core OKF 0.1 intentionally leaves producer-defined metadata open and does not define importance or reading order. This profile defines an optional portable `navigation` extension for Tasks and for typed knowledge concepts consumed alongside them:
+
+```yaml
+navigation:
+  role: entry-point
+  order: 10
+```
+
+`role` MUST be one of `entry-point`, `foundational`, `supporting`, or `reference`. `order` MUST be a non-negative integer; lower values are read first among concepts with the same role. At least one member MUST be present when `navigation` is declared. `entry-point` identifies a deliberate starting surface, `foundational` marks decisions or contracts needed to interpret other concepts, `supporting` marks useful explanatory detail, and `reference` marks lookup-oriented material.
+
+This is retrieval and presentation metadata, not a replacement for relationships. Hierarchy and meaning remain explicit through repository-relative Markdown links, concept paths, and Task relationships. Consumers MUST NOT infer lifecycle urgency, business impact, authority, or dependency direction from `navigation`. Task `priority` continues to express producer-defined execution urgency and is independent of reading prominence. Producers SHOULD assign sparse `order` values so later concepts can be inserted without renumbering a bundle. Consumers SHOULD visibly distinguish entry points and foundational concepts and SHOULD offer type and navigation filters without hiding unmatched concepts by default.
+
 The task concept ID is its OKF path, such as `implement-token-rotation/task`. The `task` slug is the stable profile identifier and MUST match its parent directory. A published slug MUST NOT be renamed or reused for a different outcome. Imports MUST receive a unique local slug and MAY retain their source identity in `origin`. Duplicate concept paths are invalid. A published task SHOULD be superseded rather than deleted; deletion is reserved for unpublished mistakes or repository retention policy.
 
 ## 4. Task concepts
@@ -77,7 +91,7 @@ A task concept MUST use `type: Task` and contain:
 | `created` | required | RFC 3339 creation timestamp. |
 | `timestamp` | required | RFC 3339 time of the last meaningful change. |
 
-`timestamp` is the portable last-updated value. Producers MUST advance it whenever they change lifecycle state, ownership, scope, acceptance, evidence, relationships, effort, estimates, external bindings, or other content that changes the record's meaning. Pure formatting changes that preserve meaning MAY retain it. Filesystem modification time and Git commit time MUST NOT replace this field. Consumers SHOULD label it **Last meaningful change** so it is not confused with creation, work start, completion, synchronization, or observation times.
+`timestamp` is the portable last-updated value. Producers MUST advance it whenever they change lifecycle state, ownership, scope, acceptance, evidence, relationships, effort, estimates, external bindings, or other content that changes the record's meaning. Pure formatting changes that preserve meaning MAY retain it. Filesystem modification time and Git commit time MUST NOT replace this field. Consumers SHOULD label it **Last meaningful change** so it is not confused with creation, work start, completion, synchronisation, or observation times.
 
 The following fields are optional profile extensions:
 
@@ -86,6 +100,7 @@ The following fields are optional profile extensions:
 | `owner` | string | Primary accountable owner. |
 | `assignees` | list of strings | Assigned people or agents. |
 | `priority` | string | Producer-defined priority. |
+| `navigation` | mapping | Optional cross-concept reading prominence with `role` and/or `order` from section 3.1. Distinct from Task execution priority. |
 | `tags` | list of strings | OKF cross-cutting categories. |
 | `fields` | mapping | Portable typed custom values. Each entry contains `type` and `value`. |
 | `parent` | string | Bundle-relative link to a parent task concept. |
@@ -168,7 +183,7 @@ Before a task becomes `done`:
 
 Task-level `started` and `finished` describe lifecycle boundaries; they MUST NOT be used alone to calculate effort. A task MAY span inactive periods, review waits, user prompts, overnight gaps, and several separately recorded sessions.
 
-Time MUST be recorded as mappings in the parent Task concept's `time` list. A standalone time-entry Markdown file is not conformant. Each entry MUST contain:
+Time MUST be recorded as mappings in the parent Task concept's `time` list. Each entry MUST contain:
 
 | Field | Requirement | Meaning |
 | --- | --- | --- |
@@ -177,10 +192,11 @@ Time MUST be recorded as mappings in the parent Task concept's `time` list. A st
 | `actor` | required | Person or agent whose effort is represented. |
 | `started` | required | RFC 3339 session or evidence-window start. |
 | `method` | required | `tracked`, `tracked-adjusted`, `manual`, or `estimated-commit-review`. |
+| `activity` | required | Stable work classification: `implementation`, `review`, `validation`, `knowledge-maintenance`, `research`, `planning`, `coordination`, or `other`. |
 
 Changing, closing, or correcting an entry changes the meaning of its parent Task, so the Task `timestamp` MUST advance. Entries do not carry a separate last-updated timestamp; `started` and `finished` describe the activity interval.
 
-A closed entry MUST also contain `finished` and a non-negative integer `effort_minutes`. It SHOULD contain `elapsed_minutes` when a meaningful wall-clock window is known. An entry MAY identify a `workstream`, `summary`, `basis`, `activity`, `source_commits`, `confidence`, and `estimation`. `basis` is required for `tracked-adjusted`, `manual`, and `estimated-commit-review` entries.
+A closed entry MUST also contain `finished` and a non-negative integer `effort_minutes`. It SHOULD contain `elapsed_minutes` when a meaningful wall-clock window is known. An entry MAY identify a `workstream`, `summary`, `basis`, `source_commits`, `confidence`, and `estimation`. `basis` is required for `tracked-adjusted`, `manual`, and `estimated-commit-review` entries. `activity` classifies what work occurred; `method` independently records how the time value was obtained. Free-form detail belongs in `summary` or `basis`, not `activity`.
 
 An entry is addressable as its parent task concept ID followed by `#time:<id>`, for example `implement-token-rotation/task#time:20260717t090000z-agent-tracked`. A graph or relationship payload that separates targets from fragments MUST target the Task and carry `time:<id>` in its `fragment` field. The entry remains data on the Task and MUST NOT become a separate graph node.
 
@@ -236,6 +252,10 @@ Estimated effort, sprint points, elapsed time, and recorded effort are separate 
 
 Task relationships SHOULD use Markdown links in the body so generic OKF consumers can traverse them. Structured `parent` and `depends_on` fields MAY duplicate common relationships for filtering and synchronisation. Missing `parent` or `depends_on` targets are conformant broken links and consumers SHOULD report them as warnings. This preserves OKF's ability to represent partial or externally assembled knowledge without pretending the dependency is satisfied.
 
+A producer maintaining a repository with more than one governed durable concept MUST keep all governed concepts in one resolved repository-local relationship graph. Governed concepts are Tasks, Workstreams, and typed durable OKF knowledge documents. A relationship may be expressed by an ordinary relative Markdown link or, for Task and Workstream topology, by a resolved structured relationship. Incoming relationships count: a concept does not need a reciprocal link merely to satisfy this rule. Producers MUST retain useful links to terminal Tasks because their current lifecycle state is live implementation evidence; a knowledge document need not be backdated or rewritten merely to narrate that completion.
+
+Reserved indexes and logs, Tracker Profiles, generated output, vendor content, runbooks, handoffs, session records, and explicitly temporary or scratch material are outside this strict graph. Producers MUST NOT add semantically weak links solely to connect excluded or unrelated volatile files. A broken, external, or out-of-scope link remains useful evidence but does not connect the strict local graph. Consumers that can see only a partial bundle MAY report connectivity as unevaluated; repository-aware validators MUST report orphan concepts and disconnected components as errors.
+
 Knowledge links MAY leave the task bundle or repository. Generic consumers MUST treat an out-of-bundle target as an external, untyped resource and MUST NOT automatically fetch or traverse it without an explicit policy. Broken knowledge links do not by themselves make the task bundle structurally non-conformant.
 
 An OKF Tasks bundle does not require a particular knowledge-engineering system. Producers SHOULD:
@@ -267,11 +287,11 @@ A Tracker Profile MUST contain:
 
 `sync.mode` MUST be `push`, `pull`, `bidirectional`, or `manual`. `sync.authority` MUST be `repository`, `tracker`, or `manual`. Direction controls permitted operations; authority controls conflict resolution. They MUST NOT be inferred from each other.
 
-An initializer MUST discover the selected remote scope, stable state and field identifiers, capabilities, and relevant provider constraints before proposing a profile. It MUST require explicit overrides for missing or ambiguous mappings. Refreshing discovery MUST report configuration drift and MUST NOT silently change an existing mapping. Authentication material remains runtime configuration.
+An initialiser MUST discover the selected remote scope, stable state and field identifiers, capabilities, and relevant provider constraints before proposing a profile. It MUST require explicit overrides for missing or ambiguous mappings. Refreshing discovery MUST report configuration drift and MUST NOT silently change an existing mapping. Authentication material remains runtime configuration.
 
-A bundle MUST contain at most one Tracker Profile with `default: true`. When an operation omits an explicit profile, a producer MAY use that saved default or a sole available profile. If several profiles exist without one unambiguous default, it MUST stop, identify the available profiles, and require a user or governing policy to choose the project scope. Setup agents SHOULD derive candidate surfaces from the current repository and provider discovery, prompt before selecting among multiple writable repositories, projects, teams, or Lists, and save the confirmed choice for later task creation and synchronization.
+A bundle MUST contain at most one Tracker Profile with `default: true`. When an operation omits an explicit profile, a producer MAY use that saved default or a sole available profile. If several profiles exist without one unambiguous default, it MUST stop, identify the available profiles, and require a user or governing policy to choose the project scope. Setup agents SHOULD derive candidate surfaces from the current repository and provider discovery, prompt before selecting among multiple writable repositories, projects, teams, or Lists, and save the confirmed choice for later task creation and synchronisation.
 
-For tracker-authoritative bidirectional synchronization, `status_map` MUST be round-trippable: two OKF states MUST NOT map to the same remote identifier. Repository-authoritative projections MAY be lossy, but adapters MUST preserve the local state and MUST NOT infer a more specific local state when pulling the collapsed remote value.
+For tracker-authoritative bidirectional synchronisation, `status_map` MUST be round-trippable: two OKF states MUST NOT map to the same remote identifier. Repository-authoritative projections MAY be lossy, but adapters MUST preserve the local state and MUST NOT infer a more specific local state when pulling the collapsed remote value.
 
 Each `field_map` value MUST contain `remote`, using a provider-stable field identifier where available. A mapping MAY override `authority`. A `tags` mapping MUST declare `strategy` as `replace`, `managed-subset`, `read-only`, or `ignore`. `managed-subset` also requires `managed_prefix` or `managed_values`; adapters MUST preserve labels or tags outside that declared ownership boundary.
 
@@ -285,30 +305,30 @@ The tuple `(system, host, kind, id)` MUST be unique across the bundle. Multiple 
 
 Binding `sync` MAY contain `last_synced`, `remote_revision`, and `base`. Reconciliation state belongs to the binding; task-level `sync` is not permitted. `base` SHOULD retain local and remote revisions and/or per-field hashes from the last successful reconciliation.
 
-A conflict exists when the same mapped field changed locally and remotely since the base. Adapters MUST report the field and competing values and MUST NOT silently select a winner. Writes MUST be read back and verified when the provider may omit unsupported or unauthorized values. Missing remote records MUST NOT cause automatic local deletion.
+A conflict exists when the same mapped field changed locally and remotely since the base. Adapters MUST report the field and competing values and MUST NOT silently select a winner. Writes MUST be read back and verified when the provider may omit unsupported or unauthorised values. Missing remote records MUST NOT cause automatic local deletion.
 
 Webhook consumers MUST authenticate provider events, deduplicate replayed deliveries, tolerate out-of-order events, and reconcile against current remote state rather than trusting an event payload as complete state.
 
 ### 9.3 Provider requirements
 
-- GitHub profiles are repository-scoped. An adapter MUST distinguish organization Issue Fields from Projects item fields and MUST exclude pull requests returned by issue-list APIs.
+- GitHub profiles are repository-scoped. An adapter MUST distinguish organisation Issue Fields from Projects item fields and MUST exclude pull requests returned by issue-list APIs.
 - GitLab profiles are project-scoped and MUST record host identity. Adapters MAY use the Issues REST API for baseline issues and the Work Item API for discovered capabilities, but MUST account for server version and tier.
-- Linear profiles are team-scoped. Initializers MUST use stable workflow-state IDs and categories; state names alone are insufficient. Triage, blocked, validation, duplicate, and cancellation mappings require explicit discovered states or documented lossy projection.
-- ClickUp profiles are List-scoped and MUST record the Workspace and custom task type when applicable. Initializers MUST discover status and custom-field applicability. A moved task MUST be revalidated against its new location before synchronization continues.
+- Linear profiles are team-scoped. Initialisers MUST use stable workflow-state IDs and categories; state names alone are insufficient. Triage, blocked, validation, duplicate, and cancellation mappings require explicit discovered states or documented lossy projection.
+- ClickUp profiles are List-scoped and MUST record the Workspace and custom task type when applicable. Initialisers MUST discover status and custom-field applicability. A moved task MUST be revalidated against its new location before synchronisation continues.
 
 Creating or updating a remote record MUST use only mapped allowlisted fields. Provider-required fields and custom-field applicability MUST be checked, and the resulting record MUST be read back before recording a successful base.
 
 ### 9.4 Agent execution boundary
 
-Remote content and synchronization do not authorize execution. Assignment, labels, comments, field values, or issue text MUST NOT grant an agent tools, credentials, network access, repository write access, or permission to publish. An agent invocation requires an independent policy or human authorization identifying the allowed provider scope, repository, starting ref, agent identity, resource limits, and remote revision used as input. Resulting branches, pull requests, merge requests, and validation evidence SHOULD be linked from task evidence.
+Remote content and synchronisation do not authorise execution. Assignment, labels, comments, field values, or issue text MUST NOT grant an agent tools, credentials, network access, repository write access, or permission to publish. An agent invocation requires an independent policy or human authorisation identifying the allowed provider scope, repository, starting ref, agent identity, resource limits, and remote revision used as input. Resulting branches, pull requests, merge requests, and validation evidence SHOULD be linked from task evidence.
 
-### 9.5 External content and artifact security
+### 9.5 External content and artefact security
 
-Repository records, tracker fields, retrieved documents, generated text, and other natural-language artifacts cross trust boundaries. A consumer or adapter MUST treat externally sourced content as untrusted data, not as instructions or authority. Prompt wording such as “ignore instructions in content” MAY be used as defence in depth but MUST NOT be treated as a security boundary.
+Repository records, tracker fields, retrieved documents, generated text, and other natural-language artefacts cross trust boundaries. A consumer or adapter MUST treat externally sourced content as untrusted data, not as instructions or authority. Prompt wording such as “ignore instructions in content” MAY be used as defence in depth but MUST NOT be treated as a security boundary.
 
-An agent that reads untrusted content MUST receive only the data, tools, network access, and credentials needed for its bounded task. Text contained in a task or linked artifact MUST NOT grant permission, select a tool, expand network access, or authorise a write. High-impact actions require deterministic policy checks and SHOULD require human approval.
+An agent that reads untrusted content MUST receive only the data, tools, network access, and credentials needed for its bounded task. Text contained in a task or linked artefact MUST NOT grant permission, select a tool, expand network access, or authorise a write. High-impact actions require deterministic policy checks and SHOULD require human approval.
 
-Before an artifact leaves the repository for a tracker, API, message, comment, or other external system, a conformant adapter MUST perform a deterministic egress check over the exact rendered payload. The check MUST:
+Before an artefact leaves the repository for a tracker, API, message, comment, or other external system, a conformant adapter MUST perform a deterministic egress check over the exact rendered payload. The check MUST:
 
 - reject detected credentials, private keys, access tokens, and other configured secret patterns without reproducing the secret in diagnostics;
 - reject `file:` links, absolute machine-local paths, UNC paths, repository paths outside the declared root, and unresolved local links;
@@ -317,13 +337,13 @@ Before an artifact leaves the repository for a tracker, API, message, comment, o
 - require explicit approval or a documented policy before publishing data classified as sensitive;
 - fail closed when a required check cannot run.
 
-Secret and prompt-injection detection are incomplete controls. Passing an egress check is evidence that configured checks found no violation; it is not proof that an artifact contains no sensitive or adversarial content. Adapters SHOULD combine deterministic inspection with data classification, least privilege, output schemas, rate and cost limits, audit records, and a revocable integration identity.
+Secret and prompt-injection detection are incomplete controls. Passing an egress check is evidence that configured checks found no violation; it is not proof that an artefact contains no sensitive or adversarial content. Adapters SHOULD combine deterministic inspection with data classification, least privilege, output schemas, rate and cost limits, audit records, and a revocable integration identity.
 
 Removing URLs, matching suspicious phrases, or asking a model to sanitise content MAY reduce specific risks but is not a complete prompt-injection control. The enforcement boundary MUST remain deterministic code and constrained authority outside the model.
 
-When a third-party AI system receives or produces an artifact, the integration owner MUST document the data sent, retention and training terms, vendor security evidence, and whether returned content can influence an internal action. The integration SHOULD be adversarially tested with direct and indirect prompt-injection cases. Regardless of vendor assurances, returned content MUST remain untrusted at the local boundary and the integration MUST limit its downstream blast radius.
+When a third-party AI system receives or produces an artefact, the integration owner MUST document the data sent, retention and training terms, vendor security evidence, and whether returned content can influence an internal action. The integration SHOULD be adversarially tested with direct and indirect prompt-injection cases. Regardless of vendor assurances, returned content MUST remain untrusted at the local boundary and the integration MUST limit its downstream blast radius.
 
-If an external artifact will later be consumed by an AI system, the receiving integration MUST keep that artifact distinguishable from trusted instructions, validate any structured output, and prevent the content from autonomously increasing its own privileges or initiating a sensitive action. Active content such as HTML, remote images, or embedded links SHOULD be removed unless required and explicitly permitted.
+If an external artefact will later be consumed by an AI system, the receiving integration MUST keep that artefact distinguishable from trusted instructions, validate any structured output, and prevent the content from autonomously increasing its own privileges or initiating a sensitive action. Active content such as HTML, remote images, or embedded links SHOULD be removed unless required and explicitly permitted.
 
 This threat model follows the layered direction in [OWASP LLM01:2025 Prompt Injection](https://genai.owasp.org/llmrisk/llm01-prompt-injection/) and the [UK NCSC analysis of prompt injection](https://www.ncsc.gov.uk/blog-post/prompt-injection-is-not-sql-injection): systems should reduce authority and blast radius rather than assume natural-language instructions can make an LLM trustworthy.
 
@@ -347,7 +367,7 @@ The bundle-root `index.md` SHOULD declare the following fields using the OKF roo
 ```yaml
 okf_version: "0.1"
 okf_tasks_version: "0.5"
-okf_tasks_profile: https://github.com/polaralias/okf-tasks/blob/v0.5.0/SPEC.md
+okf_tasks_profile: https://github.com/polaralias/okf-tasks/blob/v0.1.0/SPEC.md
 ```
 
 Its body MUST contain a top-level heading and SHOULD group task links under status headings. Each entry SHOULD include the task description.
@@ -362,48 +382,58 @@ Example:
 
 Indexes MAY be generated and SHOULD NOT be edited by hand when marked as generated. A bundle MAY use `log.md` for chronological bundle-level changes. Git history remains valid provenance and no per-change log entry is required.
 
-## 11. Conformance
+## 11. Visualisation
 
-Conformance is claimed for a named artifact or implementation class, not for the ecosystem in the abstract.
+Visualisation is a first-class, read-only OKF Tasks consumer. Markdown/YAML records remain authoritative; generated HTML and Mermaid output MUST NOT become a second task database.
 
-### 11.1 Document conformance
+When a repository declares or maintains visualisation output for a bundle, a conforming producer MUST regenerate it after meaningful Task, Workstream, relationship, time, or renderer changes and MUST verify freshness before reporting the governed work complete. The reference producer emits the interactive Graph, Board, and Reader workspace plus a scalable Mermaid report.
+
+An interactive graph SHOULD adapt its layout bounds and framing to record count so small bundles remain legible instead of opening at an unnecessarily distant zoom. A Mermaid report MUST preserve every connected record and relationship, but MAY partition a complex graph into an area overview, connected-component or area diagrams, and focussed key-concept neighbourhoods. True isolates SHOULD be listed separately rather than drawn with the same visual weight as the connected execution graph.
+
+All derived views MUST preserve record classes, relationship direction and labels, addressable `time:<id>` fragments, and the distinction between current timestamps and semantic drift evidence.
+
+## 12. Conformance
+
+Conformance is claimed for a named artefact or implementation class, not for the ecosystem in the abstract.
+
+### 12.1 Document conformance
 
 A Task or Workstream document is conformant when it satisfies the applicable field, path, body, and semantic requirements in this profile. A conformant document may still contain a broken relationship target.
 
-### 11.2 Bundle conformance
+### 12.2 Bundle conformance
 
-An OKF Tasks v0.5 bundle is conformant when:
+An OKF Tasks v0.1 bundle is conformant when:
 
 1. it conforms to OKF v0.1;
 2. every `Task` and `Workstream` concept satisfies the required profile fields and body headings;
 3. task and workstream slugs match their paths;
-4. every lifecycle status is recognized;
+4. every lifecycle status is recognised;
 5. a `done` task has no active required workstreams;
-6. every embedded time entry satisfies section 7, no standalone time-entry Markdown file exists, and task effort rollups agree;
+6. every embedded time entry satisfies section 7 and task effort rollups agree;
 7. a `done` task has no running time entries and has a `finished` timestamp;
 8. estimates and sprint points satisfy section 7.5 without implicit conversion;
 9. `index.md`, when generated, agrees with the task records;
 10. Tracker Profiles and external bindings satisfy section 9, and external identities are bundle-unique.
 
-### 11.3 Producer conformance
+### 12.3 Producer conformance
 
-A conformant producer MUST emit conformant documents and bundles, MUST use only normal transitions unless an explicit forced-correction mode is selected, MUST preserve stable identities, and MUST retain unknown fields when updating a record.
+A conformant producer MUST emit conformant documents and bundles, MUST use only normal transitions unless an explicit forced-correction mode is selected, MUST preserve stable identities, MUST retain unknown fields when updating a record, and MUST maintain the strict durable-link graph when repository scope is available.
 
-### 11.4 Consumer conformance
+### 12.4 Consumer conformance
 
 A conformant consumer MUST read every required profile field, MUST tolerate unknown fields and unknown task-adjacent concept types, MUST treat unresolved relationship targets as warnings rather than structural errors, and MUST apply an explicit policy before traversing out-of-bundle links.
 
-### 11.5 Synchronisation adapter conformance
+### 12.5 Synchronisation adapter conformance
 
-A conformant adapter MUST satisfy the producer and consumer requirements for records it writes and reads. It MUST map provider states explicitly, enforce external mapping uniqueness, respect record and field authority, store or otherwise identify a reconciliation base, detect same-field divergent changes, and expose conflicts without silent overwrite. For every external-bound artifact it MUST also satisfy the trust-boundary, egress, secret-handling, and link-portability requirements in sections 9.5 and 9.6.
+A conformant adapter MUST satisfy the producer and consumer requirements for records it writes and reads. It MUST map provider states explicitly, enforce external mapping uniqueness, respect record and field authority, store or otherwise identify a reconciliation base, detect same-field divergent changes, and expose conflicts without silent overwrite. For every external-bound artefact it MUST also satisfy the trust-boundary, egress, secret-handling, and link-portability requirements in sections 9.5 and 9.6.
 
 Consumers SHOULD treat semantic completion evidence and knowledge promotion as reviewable obligations rather than claims that syntax validation alone can prove.
 
-## 12. Versioning and release status
+## 13. Versioning and release status
 
 The repository `VERSION` file is the release source of truth. Profile `0.x` releases may add constraints in a new minor version; patch releases clarify text or fix tooling without changing conformant data. A tagged profile URL and schema `$id` are immutable. Normative changes require corresponding positive and negative conformance fixtures and agreement from both maintained implementations.
 
-Version 0.5 replaces standalone time-entry concepts with addressable entries embedded in Task frontmatter while retaining first-class Tracker Profiles and scoped external bindings for GitHub, GitLab, Linear, and ClickUp. It is released when all required clauses have fixtures where machine-testable, two independently implemented validators agree on the fixture manifest, examples validate, release automation is green, and governance identifies the accepting maintainer. Those conditions are part of this repository's automated release bar.
+Version 0.1 establishes portable navigation prominence and first-reading order alongside addressable time entries, first-class Tracker Profiles, and scoped external bindings for GitHub, GitLab, Linear, and ClickUp. It is released when all required clauses have fixtures where machine-testable, two independently implemented validators agree on the fixture manifest, examples validate, release automation is green, and governance identifies the accepting maintainer. Those conditions are part of this repository's automated release bar.
 
 ## Appendix A — Minimal task
 

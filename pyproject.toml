@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "okf-tasks"
-version = "0.5.0"
+version = "0.1.0"
 description = "An OKF profile and reference implementation for portable task records"
 requires-python = ">=3.10"
 dependencies = ["PyYAML>=6.0"]

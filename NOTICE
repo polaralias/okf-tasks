@@ -1,3 +1,8 @@
 Copyright (c) 2026 James Whelan / Polaralias
 
 This product includes software originally developed by James Whelan / Polaralias.
+
+Generated visualizer pages reference Material Design Icons Webfont
+(@mdi/font 7.4.47) by Pictogrammers. The font and icons are distributed under
+the Apache License 2.0. The visualizer loads this pinned package from jsDelivr
+at runtime and does not embed the font in generated files.

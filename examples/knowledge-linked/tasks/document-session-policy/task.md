@@ -2,7 +2,7 @@
 type: Task
 task: document-session-policy
 title: Document the session rotation policy
-description: Establish a canonical session rotation policy from verified implementation behavior.
+description: Establish a canonical session rotation policy from verified implementation behaviour.
 status: validation
 created: 2026-07-17T09:00:00Z
 timestamp: 2026-07-17T11:00:00Z
@@ -19,12 +19,12 @@ time:
     method: manual
     summary: Manual entry for policy review and documentation work.
     basis: The contributor supplied 45 minutes of effort. Exact session boundaries were unavailable, so the timestamps are an approximate attribution point.
-    activity: Reviewed verified session behavior and updated the architecture document.
+    activity: knowledge-maintenance
 estimate:
   effort_minutes: 60
   method: manual
   confidence: high
-  basis: One focused review and documentation pass against verified behavior.
+  basis: One focussed review and documentation pass against verified behaviour.
   actor: james
   timestamp: 2026-07-17T09:55:00Z
 sprint_points:
@@ -48,7 +48,7 @@ The repository has an evidence-backed policy describing when and how sessions ro
 
 ## Acceptance
 
-- [x] Verify current behavior in tests.
+- [x] Verify current behaviour in tests.
 - [x] Update the canonical architecture document.
 
 ## Dependencies and risks

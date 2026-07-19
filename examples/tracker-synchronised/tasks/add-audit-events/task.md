@@ -42,7 +42,7 @@ time:
             - 4444444444444444444444444444444444444444
     summary: Effort backfilled from four task-related commits.
     basis: Commits separated by no more than 90 minutes were grouped, with a 30-minute allowance per group; the 750-minute evidence window is not treated as active effort.
-    activity: Two plausible work sessions covering implementation, tests, review feedback, and pipeline validation.
+    activity: implementation
 estimate:
   effort_minutes: 240
   method: agent

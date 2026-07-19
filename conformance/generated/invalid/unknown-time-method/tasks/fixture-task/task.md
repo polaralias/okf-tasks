@@ -17,6 +17,7 @@ time:
   elapsed_minutes: 60
   effort_minutes: 60
   method: automatic
+  activity: implementation
   basis: Explicit fixture values.
 ---
 

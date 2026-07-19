@@ -28,6 +28,9 @@ def arguments(**values: object) -> argparse.Namespace:
 
 
 class ConformanceFixtureTests(unittest.TestCase):
+    def test_cli_version_matches_release(self) -> None:
+        self.assertEqual((REPOSITORY / "VERSION").read_text(encoding="utf-8").strip(), okf_tasks.CLI_VERSION)
+
     def test_schemas_are_valid_json_documents(self) -> None:
         for name in ("task.schema.json", "workstream.schema.json", "tracker-profile.schema.json"):
             with self.subTest(name=name):
@@ -56,6 +59,9 @@ class ConformanceFixtureTests(unittest.TestCase):
             "tracker-synchronised": "tasks",
             "project-docs": "docs/tasks",
             "visualization": "tasks",
+            "complex-task-portfolio": "tasks",
+            "architecture-knowledge-base": "tasks",
+            "combined-delivery-architecture": "tasks",
         }
         for name, bundle_path in examples.items():
             with self.subTest(name=name):
@@ -196,6 +202,34 @@ class LifecycleTests(unittest.TestCase):
                     force=False,
                 )
             )
+        self.assertEqual([], okf_tasks.validate_bundle(self.root / "tasks"))
+
+    def test_create_can_join_an_existing_durable_document_graph(self) -> None:
+        guide = self.root / "docs" / "architecture.md"
+        okf_tasks.write_document(
+            guide,
+            {
+                "type": "Architecture Concept",
+                "title": "Architecture",
+                "description": "Defines the implementation boundary.",
+                "timestamp": "2026-07-19T09:00:00Z",
+            },
+            "# Architecture\n",
+        )
+        okf_tasks.create_task(
+            arguments(
+                root=str(self.root),
+                slug="linked-task",
+                title="Linked task",
+                description="Implement the architecture.",
+                owner="agent",
+                depends_on=None,
+                related=["docs/architecture.md"],
+            )
+        )
+
+        _, body = okf_tasks.read_document(self.root / "tasks" / "linked-task" / "task.md")
+        self.assertIn("[Architecture](../../docs/architecture.md)", body)
         self.assertEqual([], okf_tasks.validate_bundle(self.root / "tasks"))
 
     def test_active_workstream_prevents_done(self) -> None:
@@ -640,6 +674,7 @@ class LifecycleTests(unittest.TestCase):
                 workstream=None,
                 entry=None,
                 started="2026-07-17T08:00:00Z",
+                activity="implementation",
                 note="Implementation started.",
             )
         )
@@ -657,6 +692,7 @@ class LifecycleTests(unittest.TestCase):
                 workstream=None,
                 finished="2026-07-17T20:00:00Z",
                 effort_minutes=150,
+                activity=None,
                 note="The interval included user review waits and unrelated work.",
             )
         )
@@ -689,6 +725,7 @@ class LifecycleTests(unittest.TestCase):
                 workstream=None,
                 entry=None,
                 started="2026-07-17T08:00:00Z",
+                activity="validation",
                 note=None,
             )
         )
@@ -716,12 +753,14 @@ class LifecycleTests(unittest.TestCase):
                 finished="2026-07-17T09:30:00Z",
                 workstream=None,
                 entry=None,
+                activity="review",
             )
         )
         task, _ = okf_tasks.read_document(self.root / "tasks" / "first-task" / "task.md")
         self.assertEqual(45, task["effort_minutes"])
         self.assertEqual("2026-07-17T09:00:00Z", task["started"])
         self.assertEqual("manual", task["time"][0]["method"])
+        self.assertEqual("review", task["time"][0]["activity"])
         self.assertEqual("Manual review and acceptance checks.", task["time"][0]["basis"])
         self.assertEqual([], okf_tasks.validate_bundle(self.root / "tasks"))
 
@@ -807,12 +846,14 @@ class LifecycleTests(unittest.TestCase):
                 entry=None,
                 effort_minutes=None,
                 confidence="medium",
+                activity="implementation",
                 note=None,
             )
         )
         task, _ = okf_tasks.read_document(self.root / "tasks" / "first-task" / "task.md")
         self.assertEqual(180, task["effort_minutes"])
         self.assertEqual("estimated-commit-review", task["time"][0]["method"])
+        self.assertEqual("implementation", task["time"][0]["activity"])
         self.assertEqual(hashes, task["time"][0]["source_commits"])
         self.assertEqual([], okf_tasks.validate_bundle(self.root / "tasks"))
 

@@ -1,4 +1,4 @@
-# Interactive visualization guide
+# Interactive visualisation guide
 
 The OKF Tasks viewer is a derived, read-only consumer. Markdown/YAML files remain canonical.
 
@@ -7,21 +7,22 @@ The OKF Tasks viewer is a derived, read-only consumer. Markdown/YAML files remai
 From the repository root:
 
 ```text
-python scripts/generate_local_docs.py
+python scripts/generate_local_docs.py --mermaid
 ```
 
-This creates the ignored local review artifacts:
+This creates the ignored local review artefacts:
 
 - `local-docs/okf-tasks-visualization.html` from `examples/visualization/tasks/`;
 - `local-docs/okf-tasks-examples.html` from the complete `examples/` tree;
 - `local-docs/okf-tasks-relationships.html` from the complete `examples/` tree, with stable source-bundle lanes and every explicit relationship retained as a labelled edge.
+- sibling `*.mermaid.md` reports for the primary visualisation and examples workspaces.
 
 Use the relationship map when topology is the question: it groups records for spatial orientation but does not infer or replace relationships. The ordinary example page remains the neutral record browser.
 
-All three pages use `scripts/visualize_bundle.py` and therefore share the same HTML, styling, interaction, security, and Markdown-rendering behavior. Verify that generated files are current with:
+All three pages use `scripts/visualize_bundle.py` and therefore share the same HTML, styling, interaction, security, and Markdown-rendering behaviour. Verify that generated files are current with:
 
 ```text
-python scripts/generate_local_docs.py --check
+python scripts/generate_local_docs.py --mermaid --check
 ```
 
 Use `--output-dir <directory>` to generate disposable outputs for tests or review. Use the lower-level renderer when a different bundle or Mermaid output is required:
@@ -31,8 +32,12 @@ python scripts/visualize_bundle.py \
   --bundle examples/visualization/tasks \
   --name "OKF Tasks visualization example" \
   --html local-docs/okf-tasks-visualization.html \
-  --markdown docs/VISUALIZATION.md
+  --mermaid
 ```
+
+With `--html`, a pathless `--mermaid` writes `<html-name>.mermaid.md` beside the interactive workspace. Pass `--mermaid <path>` when the report belongs elsewhere. `--markdown <path>` remains an explicit-path synonym for checked documentation workflows.
+
+The Mermaid report scales by separating concerns: an area-level map shows how connected repository regions relate; manageable connected components render in full; large components split into area diagrams with dashed boundary context; the highest-connectivity concepts receive focussed neighbourhood diagrams; and true isolates are listed rather than drawn with equal weight. Every connected node and edge remains represented without forcing the repository into one oversized diagram.
 
 ## Freshness and authority
 
@@ -40,24 +45,27 @@ The viewer labels each record's `timestamp` as **Last meaningful change** and sh
 
 The viewer is a derived consumer. The source Markdown/YAML bundle remains authoritative, and both generated pages must be regenerated from the shared renderer after a meaningful record or renderer change.
 
-## Viewer behavior
+## Viewer behaviour
 
-- Grid is the default layout for routine review. Timeline lays record types into lanes and orders them by the selected temporal field.
-- The temporal rail can filter the current graph through Last meaningful change, Created, Started, or Finished. Exact RFC 3339 values remain available in titles while the control uses friendly local dates.
-- Drift review highlights relationships whose source has a newer selected timestamp than its target. Treat these as possible review signals only; timestamp order cannot prove semantic drift.
-- Task, Workstream, Tracker Profile, Visualization, and fallback records use distinct node geometry. Embedded `Task.time[]` entries contribute to the Task effort card and remain individually addressable through `#time:<id>` edge fragments; they are not rendered as equal-weight nodes.
-- Relationship labels remain visible without selecting a node and gain stronger emphasis around the selected record.
-- The inspector presents summarized record metadata, rendered Markdown, backlinks, then collapsed raw YAML and complete-source disclosures.
+- Graph, Board, and Reader are first-class tabs over one embedded bundle.
+- Graph presents the complete document mesh. Compact document chips use class-coloured borders, Architecture Decisions have a distinct class, folder trails remain visible beneath them, and selecting a chip fades unrelated documents while revealing labels on its direct relationships.
+- The type key is interactive: selecting Tasks, Workstreams, ADRs/decisions, trackers, or knowledge documents highlights that class without removing surrounding context. The reading-role selector similarly highlights `entry-point`, `foundational`, `supporting`, or `reference` concepts.
+- Opening or changing the graph selection centres the selected record in the relationship panel. Compact controls immediately above and below it indicate and navigate to incoming and outgoing relationships, so a long neighbourhood never displaces the current focus.
+- `navigation.role` and sparse `navigation.order` values are optional retrieval metadata for prominence and first-reading order. They do not replace relationship links, Task dependencies, or Task `priority`; use `priority` only for execution urgency.
+- The Graph panel presents those direct relationships vertically as Incoming → Selected → Outgoing. Connected cards recenter the graph; the selected summary includes concise temporal and effort context plus a Reader shortcut, without duplicating the full Markdown document.
+- The temporal selector compares Last meaningful change, Created, Started, or Finished. Drift review highlights relationships whose source has a newer selected value than its target. Treat every highlight as a review prompt only; timestamp order cannot prove semantic drift.
+- Board groups Tasks into lifecycle columns or compact rows, nests their Workstreams, and displays estimates, recorded effort, embedded-time evidence, tracker context, link counts, and the selected temporal value.
+- Embedded `Task.time[]` entries remain individually addressable through `#time:<id>` fragments and appear within their Task's evidence surfaces.
+- Board selections use the detailed record pane with identity, status, description, temporal fields, Workstream and time evidence, connections, rendered Markdown, and collapsed raw source.
 - The document browser includes every Markdown file below the selected source tree, including files that are not OKF records.
 - The viewer opens in light mode on first use and persists a later light or dark choice locally.
 - Every button exposes a hover label as well as an accessible name, including graph controls whose icons are otherwise ambiguous.
-- The top-level Graph and Documents tabs separate relationship exploration from sustained reading. The Documents view renders the selected file at full width with a permanent repository tree on the right.
-- The fullscreen control uses the browser Fullscreen API and resizes/refits the graph when entering or leaving fullscreen.
-- Search, type filters, layout selection, graph fitting, and reset remain independent controls in the Graph tab.
+- Reader renders the selected file at near-full width with a persistent searchable tree on the left and ancestry, connection, metadata, and heading context on the right.
+- Shared search filters Graph, Board, or Reader according to the active view. Graph fitting uses node-count-aware bounds and minimum desktop zoom for small bundles; Board layout, Board sorting, temporal comparison, and drift review remain independent controls.
 
 ## GitHub-style Markdown
 
-The viewer enables Marked's GitHub-flavored Markdown mode for autolinks, tables, strikethrough, and task lists. It preserves sanitized HTML disclosure elements such as `<details>` and `<summary>`, and converts fenced `mermaid` blocks into diagrams.
+The viewer enables Marked's GitHub-flavoured Markdown mode for autolinks, tables, strikethrough, and task lists. It preserves sanitised HTML disclosure elements such as `<details>` and `<summary>`, and converts fenced `mermaid` blocks into diagrams.
 
 All rendered HTML passes through DOMPurify. Mermaid runs with `securityLevel: strict`. If Marked or DOMPurify cannot load, the viewer displays the Markdown source as plain text rather than leaving the inspector empty. If Mermaid cannot load, its fenced source remains readable.
 
@@ -72,4 +80,4 @@ Internet access is therefore needed for the interactive libraries when opening a
 
 ## Temporal interpretation limits
 
-The viewer operates on the current bundle. Moving the time control earlier shows which current records have a selected event at or before that point; it does not reconstruct the body or frontmatter that existed then. Historical facts require retained superseded/versioned concepts or repository history. Plain Markdown documents without OKF temporal metadata remain available in Documents view but cannot participate in timestamp drift comparison.
+The viewer operates on the current bundle. Selecting a temporal field compares the current values attached to records; it does not reconstruct the body or frontmatter that existed at an earlier time. Historical facts require retained superseded/versioned concepts or repository history. Plain Markdown documents without OKF temporal metadata remain available in Reader but cannot participate in timestamp drift comparison.

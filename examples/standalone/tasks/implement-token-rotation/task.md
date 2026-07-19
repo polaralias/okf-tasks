@@ -19,12 +19,12 @@ time:
     method: tracked-adjusted
     summary: Initial implementation and integration-test preparation.
     basis: The 90-minute wall-clock interval included a 15-minute unrelated interruption, leaving 75 minutes of active effort.
-    activity: Inspected session storage behavior, drafted the rotation implementation, and prepared integration cases.
+    activity: implementation
 estimate:
   effort_minutes: 120
   method: agent
   confidence: medium
-  basis: Implementation, integration tests, and review of session-storage behavior.
+  basis: Implementation, integration tests, and review of session-storage behaviour.
   actor: planning-agent
   timestamp: 2026-07-17T08:45:00Z
 sprint_points:
@@ -53,11 +53,11 @@ Authenticated sessions receive a newly rotated token without interrupting valid 
 
 - [ ] Replace the pre-authentication token after login.
 - [ ] Preserve the active request through rotation.
-- [ ] Cover success and failure behavior with integration tests.
+- [ ] Cover success and failure behaviour with integration tests.
 
 ## Dependencies and risks
 
-- Confirm current session storage behavior before implementation.
+- Confirm current session storage behaviour before implementation.
 
 ## Related knowledge
 

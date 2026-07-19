@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reference CLI for OKF Tasks v0.5 bundles."""
+"""Reference CLI for OKF Tasks v0.1 bundles."""
 
 from __future__ import annotations
 
@@ -56,13 +56,29 @@ LABEL_STRATEGIES = {"replace", "managed-subset", "read-only", "ignore"}
 PORTABLE_FIELD_TYPES = {"text", "number", "date", "boolean", "single-select", "multi-select", "user", "url"}
 TIME_STATUSES = {"running", "closed"}
 TIME_METHODS = {"tracked", "tracked-adjusted", "manual", "estimated-commit-review"}
+TIME_ACTIVITIES = {
+    "implementation",
+    "review",
+    "validation",
+    "knowledge-maintenance",
+    "research",
+    "planning",
+    "coordination",
+    "other",
+}
 ESTIMATE_CONFIDENCE = {"low", "medium", "high"}
 ESTIMATE_METHODS = {"agent", "manual", "historical"}
 LIVE_TIME_STATUSES = {"ready", "in-progress", "blocked", "validation"}
-PROFILE_VERSION = "0.5"
-PROFILE_URL = "https://github.com/polaralias/okf-tasks/blob/v0.5.0/SPEC.md"
+PROFILE_VERSION = "0.1"
+PROFILE_URL = "https://github.com/polaralias/okf-tasks/blob/v0.1.0/SPEC.md"
+CLI_VERSION = "0.1.0"
 BUNDLE_PLACEMENTS = {"root": "tasks", "docs": "docs/tasks"}
 MARKDOWN_LINK_PATTERN = re.compile(r"(?P<image>!)?(?P<label>\[[^\]\n]*\])\((?P<target>[^)\s]+)(?P<suffix>[^)]*)\)")
+LINK_GRAPH_EXCLUDED_TYPES = {"tracker profile", "log"}
+LINK_GRAPH_EXCLUDED_TYPE_MARKERS = {"runbook", "handoff", "session", "temporary", "scratch"}
+LINK_GRAPH_EXCLUDED_DIRECTORIES = {
+    ".git", ".venv", "build", "dist", "generated", "node_modules", "runbooks", "scratch", "temp", "temporary", "vendor"
+}
 SECRET_PATTERNS = {
     "private key": re.compile(r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----"),
     "GitHub token": re.compile(r"\bgh[pousr]_[A-Za-z0-9_]{20,}\b"),
@@ -1082,11 +1098,31 @@ def create_task(args: argparse.Namespace) -> int:
     }
     if args.owner:
         metadata["owner"] = args.owner
+    if getattr(args, "depends_on", None):
+        metadata["depends_on"] = list(dict.fromkeys(args.depends_on))
     body = load_body_template(
         "task-body.md.template",
         {"title": args.title, "description": args.description},
     )
-    write_new_document(task_path(bundle, slug), metadata, body)
+    destination = task_path(bundle, slug)
+    related_links: list[str] = []
+    for value in getattr(args, "related", None) or []:
+        target = (root / value).resolve()
+        try:
+            target.relative_to(root)
+        except ValueError:
+            fail(f"Related document must remain inside the repository root: {value}")
+        if not target.is_file() or target.suffix.lower() != ".md":
+            fail(f"Related document must be an existing Markdown file: {value}")
+        relative_target = os.path.relpath(target, destination.parent).replace("\\", "/")
+        label = target.stem.replace("-", " ").replace("_", " ").strip().title()
+        related_links.append(f"- [{label}]({relative_target})")
+    if related_links:
+        body = body.replace(
+            "- Link established product, architecture, decision, or other canonical sources.",
+            "\n".join(related_links),
+        )
+    write_new_document(destination, metadata, body)
     (bundle / slug / "workstreams").mkdir(parents=True, exist_ok=True)
     (bundle / slug / "time").mkdir(parents=True, exist_ok=True)
     build_index(bundle)
@@ -1287,10 +1323,12 @@ def start_time(args: argparse.Namespace) -> int:
         "actor": args.actor,
         "started": started,
         "method": "tracked",
+        "activity": args.activity,
         "summary": "Live effort session started.",
         "basis": "Started explicitly by an agent or user; effort is not final until the session is stopped.",
-        "activity": args.note or "Work is active.",
     }
+    if args.note:
+        metadata["summary"] = args.note
     if args.workstream:
         metadata["workstream"] = args.workstream
     status_changed = task_metadata.get("status") == "ready"
@@ -1359,9 +1397,9 @@ def stop_time(args: argparse.Namespace) -> int:
             "elapsed_minutes": elapsed,
             "effort_minutes": effort,
             "method": "tracked-adjusted" if adjusted else "tracked",
-            "summary": "Live effort session closed.",
+            "activity": args.activity or metadata["activity"],
+            "summary": args.note or "Live effort session closed.",
             "basis": basis,
-            "activity": args.note or "Session completed.",
         }
     )
     update_time_rollup(task_metadata)
@@ -1397,9 +1435,9 @@ def add_time(args: argparse.Namespace) -> int:
         "elapsed_minutes": elapsed,
         "effort_minutes": args.effort_minutes,
         "method": "manual",
-        "summary": "Manual effort entry added.",
+        "activity": args.activity,
+        "summary": args.note,
         "basis": args.note,
-        "activity": f"Recorded {args.effort_minutes} effort minutes manually.",
     }
     if args.workstream:
         metadata["workstream"] = args.workstream
@@ -1551,6 +1589,7 @@ def backfill_from_commits(args: argparse.Namespace) -> int:
         "elapsed_minutes": duration_minutes(started, finished),
         "effort_minutes": effort,
         "method": "estimated-commit-review",
+        "activity": args.activity,
         "confidence": args.confidence,
         "source_commits": [commit["commit"] for commit in commits],
         "estimation": {
@@ -1562,9 +1601,6 @@ def backfill_from_commits(args: argparse.Namespace) -> int:
     }
     if args.workstream:
         metadata["workstream"] = args.workstream
-    activity = "\n".join(
-        f"- `{commit['commit'][:12]}` {commit['timestamp']} — {commit['subject']}" for commit in commits
-    )
     adjustment = f" Manual adjustment: {args.note}" if args.note else ""
     basis = (
         f"Reviewed {len(commits)} commits and grouped them at gaps over {args.session_gap_minutes} minutes. "
@@ -1574,7 +1610,6 @@ def backfill_from_commits(args: argparse.Namespace) -> int:
     metadata.update(
         summary="Effort backfilled from a review of repository commits.",
         basis=basis,
-        activity=activity,
     )
     append_time_entry(bundle, task, metadata)
     print(f"Added commit-review entry {entry!r}: {effort} effort minutes ({args.confidence} confidence).")
@@ -1774,9 +1809,6 @@ def validate_time_entries(
     errors: list[str],
 ) -> None:
     task = str(task_metadata.get("task", task_path_value.parent.name))
-    legacy_files = sorted(task_path_value.parent.joinpath("time").glob("*.md"))
-    for legacy in legacy_files:
-        errors.append(f"{legacy}: standalone time-entry files are not permitted; embed the entry in task.md time[]")
     raw_entries = task_metadata.get("time", [])
     if raw_entries is None:
         raw_entries = []
@@ -1792,7 +1824,7 @@ def validate_time_entries(
             errors.append(f"{label}: time entry must be a mapping")
             continue
         entries.append(metadata)
-        required = {"id", "status", "actor", "started", "method"}
+        required = {"id", "status", "actor", "started", "method", "activity"}
         missing = [key for key in sorted(required) if metadata.get(key) in (None, "")]
         if missing:
             errors.append(f"{label}: missing required fields: {', '.join(missing)}")
@@ -1808,6 +1840,8 @@ def validate_time_entries(
             errors.append(f"{label}: time status must be running or closed")
         if metadata["method"] not in TIME_METHODS:
             errors.append(f"{label}: unknown time method {metadata['method']!r}")
+        if metadata["activity"] not in TIME_ACTIVITIES:
+            errors.append(f"{label}: unknown time activity {metadata['activity']!r}")
         if not is_rfc3339(metadata["started"]):
             errors.append(f"{label}: started must be an RFC 3339 datetime with timezone")
         workstream = metadata.get("workstream")
@@ -1895,6 +1929,15 @@ def validate_bundle(bundle: Path) -> list[str]:
             continue
         if not metadata.get("type"):
             errors.append(f"{path}: non-reserved Markdown concept requires a non-empty type")
+        navigation = metadata.get("navigation")
+        if navigation is not None:
+            if not isinstance(navigation, dict) or not navigation:
+                errors.append(f"{path}: navigation must be a non-empty mapping")
+            else:
+                if navigation.get("role") is not None and navigation.get("role") not in {"entry-point", "foundational", "supporting", "reference"}:
+                    errors.append(f"{path}: navigation.role must be entry-point, foundational, supporting, or reference")
+                if navigation.get("order") is not None and (type(navigation.get("order")) is not int or navigation["order"] < 0):
+                    errors.append(f"{path}: navigation.order must be a non-negative integer")
 
     tracker_profiles: dict[str, dict[str, Any]] = {}
     default_tracker_profiles: list[str] = []
@@ -2036,6 +2079,7 @@ def validate_bundle(bundle: Path) -> list[str]:
             expected_index = None
         if expected_index is not None and index.read_text(encoding="utf-8") != expected_index:
             errors.append(f"{index}: generated index is stale")
+    errors.extend(durable_link_graph_errors(bundle))
     return errors
 
 
@@ -2066,10 +2110,110 @@ def bundle_warnings(bundle: Path) -> list[str]:
     return warnings
 
 
+def link_graph_root(bundle: Path) -> Path:
+    """Infer the repository scope used by the CLI's strict durable-link audit."""
+    resolved = bundle.resolve()
+    if resolved.name == "tasks" and resolved.parent.name == "docs":
+        return resolved.parent.parent
+    return resolved.parent
+
+
+def link_graph_concept(path: Path, metadata: dict[str, Any], root: Path) -> bool:
+    try:
+        relative = path.resolve().relative_to(root.resolve())
+    except ValueError:
+        return False
+    if path.name in {"index.md", "log.md"}:
+        return False
+    if any(part.lower() in LINK_GRAPH_EXCLUDED_DIRECTORIES for part in relative.parts[:-1]):
+        return False
+    concept_type = str(metadata.get("type", "")).strip().lower()
+    return (
+        bool(concept_type)
+        and concept_type not in LINK_GRAPH_EXCLUDED_TYPES
+        and not any(marker in concept_type for marker in LINK_GRAPH_EXCLUDED_TYPE_MARKERS)
+    )
+
+
+def durable_link_graph_errors(bundle: Path, root: Path | None = None) -> list[str]:
+    """Require durable typed concepts to form one resolved local relationship graph."""
+    root = (root or link_graph_root(bundle)).resolve()
+    concepts: dict[Path, tuple[dict[str, Any], str]] = {}
+    for path in sorted(root.rglob("*.md")):
+        try:
+            metadata, body = read_document(path)
+        except SystemExit:
+            continue
+        if link_graph_concept(path, metadata, root):
+            concepts[path.resolve()] = (metadata, body)
+    if len(concepts) < 2:
+        return []
+
+    adjacency: dict[Path, set[Path]] = {path: set() for path in concepts}
+
+    def connect(source: Path, candidate: Path) -> None:
+        target = candidate.resolve()
+        if target in concepts and target != source:
+            adjacency[source].add(target)
+            adjacency[target].add(source)
+
+    for source, (metadata, body) in concepts.items():
+        for match in MARKDOWN_LINK_PATTERN.finditer(body):
+            if match.group("image"):
+                continue
+            target = match.group("target").strip("<>")
+            if target.startswith("#") or re.match(r"^[a-z][a-z0-9+.-]*:", target, re.IGNORECASE):
+                continue
+            local = unquote(target.split("#", 1)[0].split("?", 1)[0]).replace("\\", "/")
+            if not local:
+                continue
+            connect(source, root / local.lstrip("/") if local.startswith("/") else source.parent / local)
+
+        concept_type = str(metadata.get("type", ""))
+        if concept_type == "Task":
+            structured: list[str] = []
+            if isinstance(metadata.get("parent"), str):
+                structured.append(str(metadata["parent"]))
+            if isinstance(metadata.get("depends_on"), list):
+                structured.extend(str(value) for value in metadata["depends_on"])
+            for target in structured:
+                clean = target.split("#", 1)[0].strip().lstrip("./")
+                if not clean or re.match(r"^[a-z][a-z0-9+.-]*:", clean, re.IGNORECASE):
+                    continue
+                candidate = bundle / clean
+                connect(source, candidate if candidate.suffix == ".md" else candidate.with_suffix(".md"))
+        elif concept_type == "Workstream" and metadata.get("task"):
+            connect(source, bundle / str(metadata["task"]) / "task.md")
+
+    orphans = sorted(path.relative_to(root).as_posix() for path, links in adjacency.items() if not links)
+    errors = [f"{root}: durable link graph contains orphan concept {path}" for path in orphans]
+    remaining = set(adjacency)
+    components: list[set[Path]] = []
+    while remaining:
+        pending = [next(iter(remaining))]
+        component: set[Path] = set()
+        while pending:
+            current = pending.pop()
+            if current in component:
+                continue
+            component.add(current)
+            pending.extend(adjacency[current] - component)
+        remaining -= component
+        components.append(component)
+    if len(components) > 1:
+        summaries = [", ".join(sorted(path.relative_to(root).as_posix() for path in component)[:3]) for component in components]
+        errors.append(f"{root}: durable link graph has {len(components)} disconnected components: {' | '.join(summaries)}")
+    return errors
+
+
 def validate_command(args: argparse.Namespace) -> int:
     root = repository_root(args.root)
     bundle = bundle_root(root, args.bundle)
     errors = validate_bundle(bundle)
+    inferred_root = link_graph_root(bundle)
+    if inferred_root != root.resolve():
+        errors = [error for error in errors if "durable link graph" not in error]
+        errors.extend(durable_link_graph_errors(bundle, root))
     if errors:
         print("\n".join(errors), file=sys.stderr)
         return 1
@@ -2103,7 +2247,8 @@ def add_commit_review_arguments(parser: argparse.ArgumentParser) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Maintain OKF Tasks v0.5 bundles.")
+    parser = argparse.ArgumentParser(description="Maintain OKF Tasks v0.1 bundles.")
+    parser.add_argument("--version", action="version", version=f"%(prog)s {CLI_VERSION}")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     initialize = subparsers.add_parser("init-bundle", help="Initialize a generated task index")
@@ -2194,6 +2339,8 @@ def build_parser() -> argparse.ArgumentParser:
     create.add_argument("--title", required=True)
     create.add_argument("--description", required=True)
     create.add_argument("--owner")
+    create.add_argument("--depends-on", action="append", help="Resolved task concept path such as other-task/task; repeatable")
+    create.add_argument("--related", action="append", help="Existing repository-relative Markdown document to link; repeatable")
     create.set_defaults(func=create_task)
 
     workstream = subparsers.add_parser("add-workstream", help="Add a ready workstream")
@@ -2260,6 +2407,7 @@ def build_parser() -> argparse.ArgumentParser:
     start.add_argument("--workstream")
     start.add_argument("--entry")
     start.add_argument("--started", help="RFC 3339 override, primarily for recovery and testing")
+    start.add_argument("--activity", choices=sorted(TIME_ACTIVITIES), default="implementation")
     start.add_argument("--note")
     start.set_defaults(func=start_time)
 
@@ -2271,6 +2419,7 @@ def build_parser() -> argparse.ArgumentParser:
     stop.add_argument("--workstream")
     stop.add_argument("--finished", help="RFC 3339 override, primarily for recovery and testing")
     stop.add_argument("--effort-minutes", type=int)
+    stop.add_argument("--activity", choices=sorted(TIME_ACTIVITIES), help="Override the activity selected at start")
     stop.add_argument("--note")
     stop.set_defaults(func=stop_time)
 
@@ -2284,6 +2433,7 @@ def build_parser() -> argparse.ArgumentParser:
     manual.add_argument("--finished")
     manual.add_argument("--workstream")
     manual.add_argument("--entry")
+    manual.add_argument("--activity", choices=sorted(TIME_ACTIVITIES), default="implementation")
     manual.set_defaults(func=add_time)
 
     review = subparsers.add_parser("review-commits", help="Estimate effort sessions from commit evidence")
@@ -2299,6 +2449,7 @@ def build_parser() -> argparse.ArgumentParser:
     backfill.add_argument("--entry")
     backfill.add_argument("--effort-minutes", type=int, help="Override the transparent heuristic")
     backfill.add_argument("--confidence", choices=sorted(ESTIMATE_CONFIDENCE), default="medium")
+    backfill.add_argument("--activity", choices=sorted(TIME_ACTIVITIES), default="implementation")
     backfill.add_argument("--note")
     backfill.set_defaults(func=backfill_from_commits)
 
