@@ -42,18 +42,23 @@ The viewer is a derived consumer. The source Markdown/YAML bundle remains author
 
 ## Viewer behavior
 
-- Grid is the default layout for routine review. Timeline lays record types into lanes and orders them by the selected temporal field.
-- The temporal rail can filter the current graph through Last meaningful change, Created, Started, or Finished. Exact RFC 3339 values remain available in titles while the control uses friendly local dates.
+- Graph, Kanban, and Documents are first-class tabs over one embedded bundle. Selecting a connected record, Topology node, or Kanban card opens the same detailed preview.
+- Graph opens in Focus mode with the selected record between readable incoming and outgoing relationship cards. Selecting a connected card recentres the explorer without losing the shared preview.
+- Topology mode retains the complete bundle overview. Grid is its initial layout for routine review, while Timeline lays record types into lanes and orders them by the selected temporal field.
+- The temporal rail can filter the current Graph and Kanban records through Last meaningful change, Created, Started, or Finished. Exact RFC 3339 values remain available in titles while the control uses friendly local dates.
 - Drift review highlights relationships whose source has a newer selected timestamp than its target. Treat these as possible review signals only; timestamp order cannot prove semantic drift.
-- Task, Workstream, Time Entry, Tracker Profile, Visualization, and fallback records use distinct node geometry. Cards expose connection counts, and records with `effort_minutes` expose their recorded duration.
-- Relationship labels remain visible without selecting a node and gain stronger emphasis around the selected record.
-- The inspector presents summarized record metadata, rendered Markdown, backlinks, then collapsed raw YAML and complete-source disclosures.
+- The Kanban view groups Tasks and Workstreams by lifecycle status, includes edited dates and recorded effort, and carries timestamp-drift hints into the board when drift review is active.
+- The shared context rail summarizes recorded time by Workstream so commitment across concurrent work remains visible while Graph or Kanban is active.
+- Focus cards expose type, lifecycle status, edited date, effort, connection count, description, document availability, and the complete record identifier without forcing that detail into topology labels.
+- Topology uses one bounded node shape with a class-colored border. Its compact title and type/status label are truncated before rendering so text cannot escape node boundaries.
+- Topology relationship labels are revealed for the selected record and its neighbours. Focus mode keeps the same labels readable at all times on direct relationship cards.
+- The shared preview presents summarized record metadata, rendered Markdown, incoming and outgoing relationships, then collapsed raw YAML and complete-source disclosures.
 - The document browser includes every Markdown file below the selected source tree, including files that are not OKF records.
-- The viewer opens in light mode on first use and persists a later light or dark choice locally.
+- The viewer opens in dark mode on first use and persists a later light or dark choice locally.
 - Every button exposes a hover label as well as an accessible name, including graph controls whose icons are otherwise ambiguous.
-- The top-level Graph and Documents tabs separate relationship exploration from sustained reading. The Documents view renders the selected file at full width with a permanent repository tree on the right.
-- The fullscreen control uses the browser Fullscreen API and resizes/refits the graph when entering or leaving fullscreen.
-- Search, type filters, layout selection, graph fitting, and reset remain independent controls in the Graph tab.
+- The Documents view renders the selected file at near-full width with a persistent searchable tree on the left and a generated heading outline on the right.
+- Graph and Documents expose separate fullscreen controls through the browser Fullscreen API. Graph resizes and refits when fullscreen changes.
+- Search, type filters, Focus/Topology switching, topology layout selection, graph fitting, and reset remain independent controls in the Graph tab.
 
 ## GitHub-style Markdown
 
@@ -67,6 +72,7 @@ The generated HTML currently loads pinned browser builds from jsDelivr:
 - Marked `16.1.2` using `lib/marked.umd.js`;
 - DOMPurify `3.2.6`;
 - Mermaid `11.10.1`.
+- Material Design Icons Webfont `@mdi/font` `7.4.47`, licensed Apache-2.0 by Pictogrammers.
 
 Internet access is therefore needed for the interactive libraries when opening a generated file. The embedded repository content itself remains local.
 

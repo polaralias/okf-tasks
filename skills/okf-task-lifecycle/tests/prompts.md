@@ -40,7 +40,9 @@ Expected:
 
 - uses the selected Tracker Profile and runtime-only credentials;
 - reconciles the local record, external binding, timestamp, and generated index;
-- regenerates the same light-first Graph and Documents viewer shipped by the reference repository.
+- regenerates the same dark-first Graph, Kanban, and Documents viewer shipped by the reference repository;
+- opens Graph in a readable Focus explorer with click-to-recenter incoming and outgoing records;
+- keeps every record available in a bounded Topology mode and uses the pinned Apache-2.0 Material Design Icons family for controls.
 
 ## Untrusted tracker content
 
