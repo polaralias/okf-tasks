@@ -1,0 +1,8 @@
+{
+  "profile": "https://github.com/polaralias/okf-tasks/blob/v0.5.0/SPEC.md#11-visualization",
+  "cases": [
+    {"id": "scalable-mermaid-report", "source": "examples", "requires": ["connected-area-overview", "connected-components", "key-concept-neighbourhoods", "isolates-listed"]},
+    {"id": "dynamic-small-graph-framing", "source": "examples/visualization/tasks", "requires": ["node-count-layout-bounds", "minimum-desktop-zoom"]},
+    {"id": "paired-derived-output", "source": "examples/visualization/tasks", "requires": ["interactive-html", "sibling-mermaid-report", "freshness-check"]}
+  ]
+}

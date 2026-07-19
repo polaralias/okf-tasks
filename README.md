@@ -114,13 +114,13 @@ Repository-relative links are converted to credential-free GitHub or GitLab link
 
 ## Visualize a bundle
 
-The optional visualizer follows the consumer pattern demonstrated by Google's [OKF reference visualizer](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf): the Markdown/YAML bundle remains canonical and visualization is a derived view.
+The first-class visualizer follows the consumer pattern demonstrated by Google's [OKF reference visualizer](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf): the Markdown/YAML bundle remains canonical and visualization is a derived view.
 
 Generate the focused bundle, full examples browser, and relationship review page from the shared workspace template:
 
 ```text
-python scripts/generate_local_docs.py
-python scripts/generate_local_docs.py --check
+python scripts/generate_local_docs.py --mermaid
+python scripts/generate_local_docs.py --mermaid --check
 ```
 
 Generate a custom interactive HTML graph and a GitHub-rendered Mermaid graph:
@@ -130,10 +130,12 @@ python scripts/visualize_bundle.py \
   --bundle examples/visualization/tasks \
   --name "OKF Tasks visualization example" \
   --html local-docs/okf-tasks-visualization.html \
-  --markdown docs/VISUALIZATION.md
+  --mermaid
 ```
 
-Open the HTML file locally as the definitive three-view OKF workspace. Graph presents the complete document relationship mesh and isolates a selected document's neighbourhood without hiding the surrounding repository context. Its right panel turns that neighbourhood into a compact vertical Incoming → Selected → Outgoing focus view with clickable relationship cards, temporal and effort context, and a Reader shortcut instead of a full document rendering. Board provides lifecycle columns or compact rows for Tasks, with nested Workstreams, embedded effort evidence, estimates, tracker context, and exact temporal values. Reader provides a searchable repository tree, full Markdown document surface, contextual ancestry, connections, and heading navigation. Light mode is the default, dark mode persists locally, and timestamp comparison can flag possible drift across existing relationships without claiming that older content is stale. Embedded `Task.time[]` entries contribute evidence and effort to their Task. The generated file embeds pinned Cytoscape, Marked, and DOMPurify builds and loads pinned Mermaid for strict diagram rendering; task and document data are embedded as a sanitized JSON payload.
+Open the HTML file locally as the definitive three-view OKF workspace. Graph presents the complete document relationship mesh and isolates a selected document's neighbourhood without hiding the surrounding repository context. Its right panel turns that neighbourhood into a compact vertical Incoming → Selected → Outgoing focus view with clickable relationship cards, temporal and effort context, and a Reader shortcut instead of a full document rendering. Board provides lifecycle columns or compact rows for Tasks, with nested Workstreams, embedded effort evidence, estimates, tracker context, and exact temporal values. Reader provides a searchable repository tree, full Markdown document surface, contextual ancestry, connections, and heading navigation. Light mode is the default, dark mode persists locally, and timestamp comparison can flag possible drift across existing relationships without claiming that older content is stale. Embedded `Task.time[]` entries contribute evidence and effort to their Task. Small graphs use compact layout bounds and a minimum desktop zoom so they fill the review surface naturally. The generated file embeds pinned Cytoscape, Marked, and DOMPurify builds and loads pinned Mermaid for strict diagram rendering; task and document data are embedded as a sanitized JSON payload.
+
+`--mermaid` without a path writes `<html-name>.mermaid.md` beside the HTML. The report avoids a single unbounded chart: it generates a connected-area overview, complete diagrams for manageable components, area slices with boundary context for large components, focused neighbourhoods for high-connectivity concepts, and a lower-weight list of true isolates.
 
 Temporal controls compare relationships through the declared `timestamp`, `created`, `started`, or `finished` event. Drift review highlights a linked source whose selected time is newer than its target and carries that signal into Board cards and rows. That ordering is a prompt to review the relationship, not proof of stale or incorrect content. A current bundle contains current record bodies; historical fact reconstruction requires retained historical concepts or repository history.
 

@@ -16,13 +16,21 @@ This skill produces chat output. Include this proof line in the response: `okf-t
 
 Maintain execution truth as an OKF-conformant task bundle without imposing a knowledge-engineering system or external tracker.
 
-Read [references/okf-tasks-profile.md](./references/okf-tasks-profile.md) before creating, changing, or publishing records. Read [references/cli-setup.md](./references/cli-setup.md) when the `okf-tasks` command is missing or its compatibility is unknown. Prefer a compatible installed command for deterministic creation, transition, indexing, external mapping, egress preparation, and validation. When the distribution is unavailable, [scripts/okf_tasks.py](./scripts/okf_tasks.py) remains the portable fallback with the same command surface. Use [scripts/visualize_bundle.py](./scripts/visualize_bundle.py) with its sibling `scripts/visualizer_template.html` to generate the definitive light-first Graph, Board, and Reader workspace when a bundle needs local visual review. Its relationship rendering keeps the complete document mesh visible while explicit OKF edges and their labels remain authoritative.
+Read [references/okf-tasks-profile.md](./references/okf-tasks-profile.md) before creating, changing, or publishing records. Read [references/cli-setup.md](./references/cli-setup.md) when the `okf-tasks` command is missing or its compatibility is unknown. Prefer a compatible installed command for deterministic creation, transition, indexing, external mapping, egress preparation, and validation. When the distribution is unavailable, [scripts/okf_tasks.py](./scripts/okf_tasks.py) remains the portable fallback with the same command surface. Use [scripts/visualize_bundle.py](./scripts/visualize_bundle.py) with its sibling `scripts/visualizer_template.html` to generate the definitive light-first Graph, Board, and Reader workspace and scalable Mermaid report whenever a repository uses OKF visualization. Its relationship rendering keeps the complete document mesh visible while explicit OKF edges and their labels remain authoritative.
 
 Keep every Task, Workstream, and typed durable OKF knowledge concept in one resolved repository-local relationship graph whenever more than one governed concept exists. Use ordinary relative Markdown links for task-to-task, document-to-document, and task-to-document relationships; resolved structured task/workstream relationships also count. Incoming links count, so add reciprocal links only when they are useful in both directions. Keep links to terminal tasks because their live state is implementation evidence. Exclude reserved indexes and logs, Tracker Profiles, runbooks, generated/vendor output, handoffs, sessions, and temporary or scratch files. Never invent a weak link to connect volatile material; stop and report a genuine governed orphan or disconnected component.
 
 Every meaningful Task or Workstream edit must advance its RFC 3339 `timestamp`. Embedded `Task.time[]` mutations are meaningful Task edits and therefore advance the Task timestamp; entries do not have their own timestamp. Treat that field as the portable **Last meaningful change** value; never substitute filesystem modification time, Git commit time, provider observation time, `created`, `started`, or `finished`. Tracker Profile discovery uses its separate `discovery.observed_at` contract. The viewer surfaces these values separately and remains a derived consumer of the Markdown/YAML bundle.
 
 The viewer preserves the definitive Graph, Board, and Reader interface. Graph shows the complete relationship mesh, uses class-colored document chips, and fades unrelated records when one is selected without hiding repository context. Its right panel presents direct relationships vertically as Incoming → Selected → Outgoing; connected cards recenter the graph, while the selected summary stays concise and links to Reader for the full document. Board groups Tasks into lifecycle columns or compact rows, nests Workstreams, and surfaces estimates, effort, tracker context, link counts, and embedded time evidence. Reader provides a searchable repository tree, full GitHub-flavoured Markdown with strict Mermaid rendering, and contextual navigation. Reference an embedded time entry as `<task-concept-id>#time:<id>` and represent it in graph payloads as an edge to the Task with a `time:<id>` fragment. The compact temporal control compares `timestamp`, `created`, `started`, or `finished`; drift review highlights timestamp ordering only across existing links. Report every highlight as a possible review signal, never proof that an older target is stale or a reconstruction of historical content.
+
+When visualization outputs are present or requested, regenerate them after every meaningful record, relationship, time, or renderer change and run the matching `--check` before completion. Generate interactive HTML and the Mermaid report together:
+
+```text
+python scripts/visualize_bundle.py --bundle <bundle> --html <output>.html --mermaid
+```
+
+For this repository's maintained review set, use `python scripts/generate_local_docs.py --mermaid` and then the same command with `--check`. The Mermaid report must avoid one unbounded chart: preserve the connected-area overview, complete manageable components, area slices with boundary context for large components, key-concept neighbourhoods, and a separate isolate list.
 
 ## Boundaries
 
@@ -180,6 +188,8 @@ Before `done`, close running time entries and confirm acceptance, terminal works
 okf-tasks validate --root <repo>
 ```
 
+If the repository uses OKF visualization, regenerate both HTML and Mermaid outputs and verify their freshness before reporting completion.
+
 ## Output
 
 Report:
@@ -190,6 +200,7 @@ Report:
 - planned effort, sprint points, and actual-versus-estimate comparison when available;
 - changed task artifacts;
 - index and validation result;
+- generated HTML/Mermaid paths and freshness result when visualization is in use;
 - unresolved knowledge-promotion obligations;
 - external tracker reconciliation still required.
 - external publication result and any blocked egress findings.

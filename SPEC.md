@@ -367,15 +367,25 @@ Example:
 
 Indexes MAY be generated and SHOULD NOT be edited by hand when marked as generated. A bundle MAY use `log.md` for chronological bundle-level changes. Git history remains valid provenance and no per-change log entry is required.
 
-## 11. Conformance
+## 11. Visualization
+
+Visualization is a first-class, read-only OKF Tasks consumer. Markdown/YAML records remain authoritative; generated HTML and Mermaid output MUST NOT become a second task database.
+
+When a repository declares or maintains visualization output for a bundle, a conforming producer MUST regenerate it after meaningful Task, Workstream, relationship, time, or renderer changes and MUST verify freshness before reporting the governed work complete. The reference producer emits the interactive Graph, Board, and Reader workspace plus a scalable Mermaid report.
+
+An interactive graph SHOULD adapt its layout bounds and framing to record count so small bundles remain legible instead of opening at an unnecessarily distant zoom. A Mermaid report MUST preserve every connected record and relationship, but MAY partition a complex graph into an area overview, connected-component or area diagrams, and focused key-concept neighbourhoods. True isolates SHOULD be listed separately rather than drawn with the same visual weight as the connected execution graph.
+
+All derived views MUST preserve record classes, relationship direction and labels, addressable `time:<id>` fragments, and the distinction between current timestamps and semantic drift evidence.
+
+## 12. Conformance
 
 Conformance is claimed for a named artifact or implementation class, not for the ecosystem in the abstract.
 
-### 11.1 Document conformance
+### 12.1 Document conformance
 
 A Task or Workstream document is conformant when it satisfies the applicable field, path, body, and semantic requirements in this profile. A conformant document may still contain a broken relationship target.
 
-### 11.2 Bundle conformance
+### 12.2 Bundle conformance
 
 An OKF Tasks v0.5 bundle is conformant when:
 
@@ -390,21 +400,21 @@ An OKF Tasks v0.5 bundle is conformant when:
 9. `index.md`, when generated, agrees with the task records;
 10. Tracker Profiles and external bindings satisfy section 9, and external identities are bundle-unique.
 
-### 11.3 Producer conformance
+### 12.3 Producer conformance
 
 A conformant producer MUST emit conformant documents and bundles, MUST use only normal transitions unless an explicit forced-correction mode is selected, MUST preserve stable identities, MUST retain unknown fields when updating a record, and MUST maintain the strict durable-link graph when repository scope is available.
 
-### 11.4 Consumer conformance
+### 12.4 Consumer conformance
 
 A conformant consumer MUST read every required profile field, MUST tolerate unknown fields and unknown task-adjacent concept types, MUST treat unresolved relationship targets as warnings rather than structural errors, and MUST apply an explicit policy before traversing out-of-bundle links.
 
-### 11.5 Synchronisation adapter conformance
+### 12.5 Synchronisation adapter conformance
 
 A conformant adapter MUST satisfy the producer and consumer requirements for records it writes and reads. It MUST map provider states explicitly, enforce external mapping uniqueness, respect record and field authority, store or otherwise identify a reconciliation base, detect same-field divergent changes, and expose conflicts without silent overwrite. For every external-bound artifact it MUST also satisfy the trust-boundary, egress, secret-handling, and link-portability requirements in sections 9.5 and 9.6.
 
 Consumers SHOULD treat semantic completion evidence and knowledge promotion as reviewable obligations rather than claims that syntax validation alone can prove.
 
-## 12. Versioning and release status
+## 13. Versioning and release status
 
 The repository `VERSION` file is the release source of truth. Profile `0.x` releases may add constraints in a new minor version; patch releases clarify text or fix tooling without changing conformant data. A tagged profile URL and schema `$id` are immutable. Normative changes require corresponding positive and negative conformance fixtures and agreement from both maintained implementations.
 
