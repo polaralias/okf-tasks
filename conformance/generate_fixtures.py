@@ -105,6 +105,7 @@ def time_entry(slug: str, **updates: Any) -> dict[str, Any]:
         "elapsed_minutes": 60,
         "effort_minutes": 60,
         "method": "manual",
+        "activity": "implementation",
         "basis": "Explicit fixture values.",
     }
     value.update(updates)
@@ -229,6 +230,8 @@ def build(root: Path) -> None:
         "running-with-closed-fields": time_entry("bad-entry", status="running", method="tracked"),
         "closed-missing-effort": {k: v for k, v in time_entry("bad-entry").items() if k != "effort_minutes"},
         "unknown-time-method": time_entry("bad-entry", method="automatic"),
+        "unknown-time-activity": time_entry("bad-entry", activity="typing"),
+        "missing-time-activity": {k: v for k, v in time_entry("bad-entry").items() if k != "activity"},
     }
     for name, entry in time_cases.items():
         bundle = fixture(root, "invalid", name, task(started=STAMP, effort_minutes=0, time=[entry])); finalize(bundle)

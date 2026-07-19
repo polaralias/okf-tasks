@@ -19,7 +19,7 @@ time:
     method: tracked-adjusted
     summary: Initial implementation and integration-test preparation.
     basis: The 90-minute wall-clock interval included a 15-minute unrelated interruption, leaving 75 minutes of active effort.
-    activity: Inspected session storage behavior, drafted the rotation implementation, and prepared integration cases.
+    activity: implementation
 estimate:
   effort_minutes: 120
   method: agent

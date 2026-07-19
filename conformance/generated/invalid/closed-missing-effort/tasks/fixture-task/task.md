@@ -16,6 +16,7 @@ time:
   finished: '2026-07-17T10:00:00Z'
   elapsed_minutes: 60
   method: manual
+  activity: implementation
   basis: Explicit fixture values.
 ---
 

@@ -15,6 +15,7 @@ time:
   actor: agent
   started: '2026-07-17T09:00:00Z'
   method: tracked
+  activity: implementation
   basis: Explicit fixture values.
 ---
 

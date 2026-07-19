@@ -111,7 +111,7 @@
   "$defs": {
     "timeEntry": {
       "type": "object",
-      "required": ["id", "status", "actor", "started", "method"],
+      "required": ["id", "status", "actor", "started", "method", "activity"],
       "properties": {
         "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
         "status": { "enum": ["running", "closed"] },
@@ -124,7 +124,7 @@
         "method": { "enum": ["tracked", "tracked-adjusted", "manual", "estimated-commit-review"] },
         "summary": { "type": "string" },
         "basis": { "type": "string" },
-        "activity": { "type": "string" },
+        "activity": { "enum": ["implementation", "review", "validation", "knowledge-maintenance", "research", "planning", "coordination", "other"] },
         "confidence": { "enum": ["low", "medium", "high"] },
         "source_commits": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
         "estimation": {

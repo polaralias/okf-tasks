@@ -671,6 +671,7 @@ class LifecycleTests(unittest.TestCase):
                 workstream=None,
                 entry=None,
                 started="2026-07-17T08:00:00Z",
+                activity="implementation",
                 note="Implementation started.",
             )
         )
@@ -688,6 +689,7 @@ class LifecycleTests(unittest.TestCase):
                 workstream=None,
                 finished="2026-07-17T20:00:00Z",
                 effort_minutes=150,
+                activity=None,
                 note="The interval included user review waits and unrelated work.",
             )
         )
@@ -720,6 +722,7 @@ class LifecycleTests(unittest.TestCase):
                 workstream=None,
                 entry=None,
                 started="2026-07-17T08:00:00Z",
+                activity="validation",
                 note=None,
             )
         )
@@ -747,12 +750,14 @@ class LifecycleTests(unittest.TestCase):
                 finished="2026-07-17T09:30:00Z",
                 workstream=None,
                 entry=None,
+                activity="review",
             )
         )
         task, _ = okf_tasks.read_document(self.root / "tasks" / "first-task" / "task.md")
         self.assertEqual(45, task["effort_minutes"])
         self.assertEqual("2026-07-17T09:00:00Z", task["started"])
         self.assertEqual("manual", task["time"][0]["method"])
+        self.assertEqual("review", task["time"][0]["activity"])
         self.assertEqual("Manual review and acceptance checks.", task["time"][0]["basis"])
         self.assertEqual([], okf_tasks.validate_bundle(self.root / "tasks"))
 
@@ -838,12 +843,14 @@ class LifecycleTests(unittest.TestCase):
                 entry=None,
                 effort_minutes=None,
                 confidence="medium",
+                activity="implementation",
                 note=None,
             )
         )
         task, _ = okf_tasks.read_document(self.root / "tasks" / "first-task" / "task.md")
         self.assertEqual(180, task["effort_minutes"])
         self.assertEqual("estimated-commit-review", task["time"][0]["method"])
+        self.assertEqual("implementation", task["time"][0]["activity"])
         self.assertEqual(hashes, task["time"][0]["source_commits"])
         self.assertEqual([], okf_tasks.validate_bundle(self.root / "tasks"))
 

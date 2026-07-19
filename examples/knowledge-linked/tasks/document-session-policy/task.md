@@ -19,7 +19,7 @@ time:
     method: manual
     summary: Manual entry for policy review and documentation work.
     basis: The contributor supplied 45 minutes of effort. Exact session boundaries were unavailable, so the timestamps are an approximate attribution point.
-    activity: Reviewed verified session behavior and updated the architecture document.
+    activity: knowledge-maintenance
 estimate:
   effort_minutes: 60
   method: manual
