@@ -8,6 +8,18 @@ created: 2026-07-17T09:00:00Z
 timestamp: 2026-07-17T11:00:00Z
 started: 2026-07-17T10:00:00Z
 effort_minutes: 45
+time:
+  - id: 20260717t100000z-james-manual
+    status: closed
+    actor: james
+    started: 2026-07-17T10:00:00Z
+    finished: 2026-07-17T10:00:00Z
+    elapsed_minutes: 0
+    effort_minutes: 45
+    method: manual
+    summary: Manual entry for policy review and documentation work.
+    basis: The contributor supplied 45 minutes of effort. Exact session boundaries were unavailable, so the timestamps are an approximate attribution point.
+    activity: Reviewed verified session behavior and updated the architecture document.
 estimate:
   effort_minutes: 60
   method: manual
@@ -56,3 +68,4 @@ The repository has an evidence-backed policy describing when and how sessions ro
 - Validation: session integration suite passed.
 - Promotion: [Session architecture](../../docs/architecture/sessions.md) now records the verified policy.
 - Effort: 45 manually recorded minutes covering policy review and documentation.
+- Entry: [policy review session](./task.md#time:20260717t100000z-james-manual).

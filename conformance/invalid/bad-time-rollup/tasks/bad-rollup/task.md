@@ -8,6 +8,18 @@ created: 2026-07-17T09:00:00Z
 timestamp: 2026-07-17T10:00:00Z
 started: 2026-07-17T09:00:00Z
 effort_minutes: 120
+time:
+- id: 20260717t090000z-agent-tracked
+  status: closed
+  actor: agent
+  started: 2026-07-17T09:00:00Z
+  finished: 2026-07-17T10:00:00Z
+  elapsed_minutes: 60
+  effort_minutes: 60
+  method: tracked
+  summary: Valid time entry paired with an invalid parent rollup.
+  basis: The explicit start and stop interval represents active work.
+  activity: Completed one hour of work.
 ---
 
 # Bad time rollup
@@ -26,4 +38,4 @@ This fixture must fail validation.
 
 ## Evidence
 
-- The task claims 120 minutes while its entry records 60.
+- The task claims 120 minutes while its embedded entry records 60.
