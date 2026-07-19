@@ -1,5 +1,18 @@
 # Test prompts
 
+## Strict durable links
+
+Prompt: "Add these tasks and durable design documents, then generate the relationship view."
+
+Expected:
+
+- leaves every governed Task, Workstream, and typed durable OKF concept in one resolved repository-local graph;
+- uses ordinary relative Markdown links across task-to-task, document-to-document, and task-to-document relationships;
+- accepts a meaningful incoming link without adding a redundant reciprocal link;
+- retains links to terminal tasks as live implementation-state evidence;
+- excludes runbooks, handoffs, temporary files, reserved logs/indexes, and generated or vendor content;
+- reports genuine orphans or disconnected components instead of inventing weak links.
+
 ## Meaningful task update
 
 Prompt: "Update the acceptance evidence for this task and refresh the local visual review page."

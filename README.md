@@ -29,8 +29,11 @@ Install the project in editable mode to expose the `okf-tasks` command:
 
 ```text
 python -m pip install -e .
+okf-tasks --version
 okf-tasks --help
 ```
+
+The console command is provided by this repository's Python package. Agent skills also bundle the same `scripts/okf_tasks.py` implementation as a zero-install fallback; they do not silently install or upgrade the package. See [`docs/CLI_SETUP.md`](./docs/CLI_SETUP.md) for the supported setup and verification contract.
 
 Create, track time, and validate a task bundle:
 
@@ -43,6 +46,10 @@ okf-tasks start-time --root . --task first-task --actor agent
 okf-tasks stop-time --root . --task first-task --actor agent
 okf-tasks validate --root .
 ```
+
+When the repository already contains governed concepts, connect a new task as part of creation with repeatable `--depends-on <task-concept-path>` and `--related <repository-relative-markdown-path>` arguments. `--related` validates that the target exists inside the repository and writes the correct source-relative Markdown link.
+
+Validation also audits the repository's governed Tasks, Workstreams, and typed durable OKF knowledge documents as one resolved local link graph. Incoming links count, while runbooks, handoffs, temporary material, generated output, and Tracker Profiles are excluded.
 
 The default bundle location is `tasks/`. Use `--bundle <path>` to select another repository-relative bundle root.
 

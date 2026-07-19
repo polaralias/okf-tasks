@@ -33,6 +33,9 @@ def main() -> int:
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     if f'version = "{version}"' not in pyproject:
         errors.append("pyproject.toml version does not agree with VERSION")
+    cli = (ROOT / "skills" / "okf-task-lifecycle" / "scripts" / "okf_tasks.py").read_text(encoding="utf-8")
+    if f'CLI_VERSION = "{version}"' not in cli:
+        errors.append("reference CLI version does not agree with VERSION")
     for name in ("task", "workstream", "tracker-profile"):
         schema = json.loads((ROOT / "schemas" / f"{name}.schema.json").read_text(encoding="utf-8"))
         expected = f"https://raw.githubusercontent.com/polaralias/okf-tasks/{tag}/schemas/{name}.schema.json"

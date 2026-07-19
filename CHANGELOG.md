@@ -4,6 +4,9 @@ All notable changes to OKF Tasks are recorded here.
 
 ## Unreleased
 
+- Require governed tasks and durable OKF knowledge concepts to form one resolved repository-local link graph while excluding volatile operational and generated material.
+- Add `okf-tasks --version` and document the authoritative package installation plus bundled zero-install skill fallback.
+
 - Define stable, fragment-addressable time entries in Task frontmatter across CLI mutation, validation, schemas, graph payloads, examples, and bundled skills.
 
 - Add an installable `okf-tasks` console command for the reference lifecycle CLI.

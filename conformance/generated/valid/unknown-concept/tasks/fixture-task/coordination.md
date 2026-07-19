@@ -6,4 +6,4 @@ extension: retained
 
 # Coordination
 
-An unknown adjacent concept.
+This note is connected to the [task](./task.md).
