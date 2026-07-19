@@ -1,7 +1,7 @@
 ---
 type: Workstream
 task: release-okf-tasks
-workstream: visualisation
+workstream: visualization
 title: Visualisation consumer
 description: Render task relationships without becoming a source of truth.
 status: in-progress

@@ -9,10 +9,10 @@ timestamp: 2026-07-17T21:00:00Z
 started: 2026-07-17T19:30:00Z
 effort_minutes: 90
 time:
-  - id: visualisation-session
+  - id: visualization-session
     status: closed
     actor: agent
-    workstream: visualisation
+    workstream: visualization
     started: 2026-07-17T19:30:00Z
     finished: 2026-07-17T21:00:00Z
     elapsed_minutes: 90
