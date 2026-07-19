@@ -264,7 +264,10 @@ timestamp: 2026-07-17T20:00:00Z
     def test_small_graph_uses_dynamic_layout_and_minimum_zoom(self) -> None:
         generated = self.generated()
         self.assertIn("function graphLayoutMetrics(count)", generated)
-        self.assertIn("minimumZoom:count<=3?1.12", generated)
+        self.assertIn(
+            "minimumZoom:count<=3?1.75:count<=6?1.5:count<=8?1.2:0",
+            generated,
+        )
         self.assertIn("fitGraph();", generated)
 
     def test_local_documentation_generator_builds_all_workspace_pages(self) -> None:
