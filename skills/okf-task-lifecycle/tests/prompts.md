@@ -42,6 +42,7 @@ Expected:
 - reconciles the local record, external binding, timestamp, and generated index;
 - regenerates the same light-first Graph, Board, and Reader workspace shipped by the reference repository;
 - keeps the full relationship mesh visible and fades unrelated records when a selected document is focused;
+- presents direct relationships as a compact vertical Incoming → Selected → Outgoing focus in the Graph panel, with linked cards that recenter the graph and no duplicated full document body;
 - keeps embedded `Task.time[]` entries addressable as Task evidence through `#time:<id>` fragments.
 
 ## Untrusted tracker content

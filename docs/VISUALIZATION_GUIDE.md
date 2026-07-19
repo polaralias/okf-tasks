@@ -42,12 +42,13 @@ The viewer is a derived consumer. The source Markdown/YAML bundle remains author
 
 ## Viewer behavior
 
-- Graph, Board, and Reader are first-class tabs over one embedded bundle. Graph and Board selections open the same detailed preview.
+- Graph, Board, and Reader are first-class tabs over one embedded bundle.
 - Graph presents the complete document mesh. Compact document chips use class-colored borders, folder trails remain visible beneath them, and selecting a chip fades unrelated documents while revealing labels on its direct relationships.
+- The Graph panel presents those direct relationships vertically as Incoming → Selected → Outgoing. Connected cards recenter the graph; the selected summary includes concise temporal and effort context plus a Reader shortcut, without duplicating the full Markdown document.
 - The temporal selector compares Last meaningful change, Created, Started, or Finished. Drift review highlights relationships whose source has a newer selected value than its target. Treat every highlight as a review prompt only; timestamp order cannot prove semantic drift.
 - Board groups Tasks into lifecycle columns or compact rows, nests their Workstreams, and displays estimates, recorded effort, embedded-time evidence, tracker context, link counts, and the selected temporal value.
 - Embedded `Task.time[]` entries remain individually addressable through `#time:<id>` fragments and appear within their Task's evidence surfaces.
-- The shared detail pane presents record identity, status, description, temporal fields, Workstream and time evidence, connections, rendered Markdown, and collapsed raw source.
+- Board selections use the detailed record pane with identity, status, description, temporal fields, Workstream and time evidence, connections, rendered Markdown, and collapsed raw source.
 - The document browser includes every Markdown file below the selected source tree, including files that are not OKF records.
 - The viewer opens in light mode on first use and persists a later light or dark choice locally.
 - Every button exposes a hover label as well as an accessible name, including graph controls whose icons are otherwise ambiguous.

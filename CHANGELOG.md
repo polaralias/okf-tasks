@@ -11,6 +11,7 @@ All notable changes to OKF Tasks are recorded here.
 - Make `timestamp` explicitly mean the portable last meaningful change across tasks, workstreams, skills, and viewer summaries; embedded time mutations advance their Task timestamp.
 - Consolidate the bundled lifecycle skill metadata, visual review guidance, and upstream RKE parity around derived OKF Visualization concepts.
 - Adopt the definitive light-first Graph, Board, and Reader workspace with a visible relationship mesh, selection focus, shared record previews, workstream effort context, GitHub-style Markdown and Mermaid, temporal comparison and cautious drift hints, searchable full-width reading, and embedded Task time evidence.
+- Add a compact vertical Incoming → Selected → Outgoing relationship focus to the Graph panel while keeping full document reading in Reader.
 
 ## 0.4.0 — 2026-07-18
 
