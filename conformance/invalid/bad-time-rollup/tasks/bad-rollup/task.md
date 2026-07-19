@@ -17,9 +17,9 @@ time:
   elapsed_minutes: 60
   effort_minutes: 60
   method: tracked
+  activity: implementation
   summary: Valid time entry paired with an invalid parent rollup.
   basis: The explicit start and stop interval represents active work.
-  activity: Completed one hour of work.
 ---
 
 # Bad time rollup

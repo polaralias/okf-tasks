@@ -99,7 +99,7 @@ Use the CLI for lifecycle mutations so timestamps, rollups, history, indexes, an
 Check for a running entry whenever resuming a task. Start a live entry immediately before material implementation or review work:
 
 ```text
-okf-tasks start-time --root <repo> --task <task-slug> --actor <actor>
+okf-tasks start-time --root <repo> --task <task-slug> --actor <actor> --activity implementation
 ```
 
 Stop it when the work session ends, the task blocks, or control returns for an extended wait:
@@ -110,17 +110,19 @@ okf-tasks stop-time --root <repo> --task <task-slug> --actor <actor>
 
 If the wall interval contains material inactivity, set `--effort-minutes` and explain the adjustment with `--note`. Never report a long prompt, review, or overnight gap as active effort merely because the entry remained open.
 
+Choose an `activity` for what the session does independently of the measurement `method`. Use `knowledge-maintenance` when RKE work creates, corrects, or promotes durable repository knowledge; use `review` or `validation` when those are the primary activity. A stop preserves the activity selected at start unless `--activity` explicitly corrects it.
+
 Add user-supplied effort explicitly:
 
 ```text
-okf-tasks add-time --root <repo> --task <task-slug> --actor <actor> --effort-minutes 45 --note "Pair review and acceptance checks"
+okf-tasks add-time --root <repo> --task <task-slug> --actor <actor> --activity review --effort-minutes 45 --note "Pair review and acceptance checks"
 ```
 
 For historical work, first review commit evidence, then backfill the estimate:
 
 ```text
 okf-tasks review-commits --root <repo> --task <task-slug> --commit <hash> --commit <hash>
-okf-tasks backfill-from-commits --root <repo> --task <task-slug> --actor <actor> --commit <hash> --commit <hash> --confidence medium
+okf-tasks backfill-from-commits --root <repo> --task <task-slug> --actor <actor> --activity implementation --commit <hash> --commit <hash> --confidence medium
 ```
 
 Treat the commit heuristic as a proposal. Consider relevant prompting, testing, review, and non-commit work; adjust with a documented note when evidence supports it.

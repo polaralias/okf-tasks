@@ -41,7 +41,7 @@ Create, track time, and validate a task bundle:
 okf-tasks init-bundle --root .
 okf-tasks create --root . --slug first-task --title "First task" --description "Deliver the first observable result."
 okf-tasks set-status --root . --task first-task --status ready
-okf-tasks start-time --root . --task first-task --actor agent
+okf-tasks start-time --root . --task first-task --actor agent --activity implementation
 # Perform the work, then close the session:
 okf-tasks stop-time --root . --task first-task --actor agent
 okf-tasks validate --root .
@@ -139,6 +139,8 @@ Temporal controls compare relationships through the declared `timestamp`, `creat
 
 The visualization is derived, never a second task database. Markdown/YAML records remain authoritative, every meaningful record edit advances `timestamp`, and the generated pages are rebuilt through the checked-in script rather than hand-edited.
 
+The visualizer remains in this repository while its payload, CLI, and rendering semantics are evolving with the Tasks profile. A future `okf-visualizer` extraction is reasonable when it serves multiple OKF profiles, has an independently versioned payload/renderer contract, needs a separate release cadence, or gains consumers that should not depend on OKF Tasks. Until one of those thresholds is met, the in-repository implementation and release checks are the authoritative visualization process.
+
 GitHub renders the Mermaid diagram directly in [`docs/VISUALIZATION.md`](./docs/VISUALIZATION.md). For a hosted interactive graph, publish the generated HTML through GitHub Pages; ordinary GitHub file views do not execute committed HTML.
 
 ## Design boundary
@@ -159,7 +161,7 @@ python scripts/check_release.py
 
 ## Status
 
-Version 0.5 embeds addressable time entries in Task frontmatter and retains first-class provider setup and scoped external bindings. Normative changes require fixtures and agreement between the Python and TypeScript implementations; see [`GOVERNANCE.md`](./GOVERNANCE.md).
+Version 0.5 embeds addressable, activity-classified time entries in Task frontmatter and retains first-class provider setup and scoped external bindings. Normative changes require fixtures and agreement between the Python and TypeScript implementations; see [`GOVERNANCE.md`](./GOVERNANCE.md).
 
 ## License
 

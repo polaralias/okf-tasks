@@ -20,7 +20,7 @@ time:
     method: tracked
     summary: Implemented and validated the visualization consumer.
     basis: Explicit start and finish around focused implementation work.
-    activity: Added interactive HTML and GitHub Mermaid generation, then added security and relationship tests.
+    activity: implementation
 owner: maintainers
 tags:
   - release

@@ -290,7 +290,7 @@ function validateTime(taskFile: string, task: RecordValue, errors: string[]): vo
     const value = rawEntries[index]; const indexed = `${taskFile}#time[${index}]`;
     if (!mapping(value)) { errors.push(`${indexed}: time entry must be a mapping`); continue; }
     const entry = value; entries.push(entry);
-    const required = ["id", "status", "actor", "started", "method"];
+    const required = ["id", "status", "actor", "started", "method", "activity"];
     const missing = required.filter((key) => entry[key] === undefined || entry[key] === "");
     if (missing.length) { errors.push(`${indexed}: missing required fields: ${missing.join(", ")}`); continue; }
     const label = `${taskFile}#time:${String(entry.id)}`;
@@ -298,6 +298,7 @@ function validateTime(taskFile: string, task: RecordValue, errors: string[]): vo
     if (ids.has(String(entry.id))) errors.push(`${label}: duplicate time entry id`); else ids.add(String(entry.id));
     if (!["running", "closed"].includes(String(entry.status))) errors.push(`${label}: time status must be running or closed`);
     if (!["tracked", "tracked-adjusted", "manual", "estimated-commit-review"].includes(String(entry.method))) errors.push(`${label}: unknown time method`);
+    if (!["implementation", "review", "validation", "knowledge-maintenance", "research", "planning", "coordination", "other"].includes(String(entry.activity))) errors.push(`${label}: unknown time activity`);
     if (!rfc3339(entry.started)) errors.push(`${label}: started must be an RFC 3339 datetime`);
     if (entry.status === "running") {
       if (entry.method !== "tracked") errors.push(`${label}: running entries must use method tracked`);
