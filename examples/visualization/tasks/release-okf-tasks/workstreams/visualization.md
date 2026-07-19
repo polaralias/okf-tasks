@@ -1,8 +1,8 @@
 ---
 type: Workstream
 task: release-okf-tasks
-workstream: visualization
-title: Visualization consumer
+workstream: visualisation
+title: Visualisation consumer
 description: Render task relationships without becoming a source of truth.
 status: in-progress
 created: 2026-07-17T20:00:00Z
@@ -11,7 +11,7 @@ owner: tooling-maintainer
 branch: feat/visualization
 ---
 
-# Visualization consumer
+# Visualisation consumer
 
 ## Assigned outcome
 
@@ -25,7 +25,7 @@ Users can inspect OKF Tasks as interactive HTML or GitHub-rendered Mermaid.
 ## Acceptance and validation
 
 - [ ] Render structured and Markdown relationships.
-- [ ] Sanitize rendered task bodies.
+- [ ] Sanitise rendered task bodies.
 - [ ] Keep generated views reproducible.
 
 ## Evidence

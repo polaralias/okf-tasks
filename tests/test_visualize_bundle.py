@@ -160,6 +160,18 @@ timestamp: 2026-07-17T20:00:00Z
         self.assertIn('cy.on("tap","node.main"', generated)
         self.assertIn('id="fit-btn"', generated)
 
+    def test_graph_filters_types_and_reading_prominence_without_hiding_context(self) -> None:
+        generated = self.generated()
+        self.assertIn('id="reading-filter"', generated)
+        self.assertIn('data-kind="${k}"', generated)
+        self.assertIn('state.graphKind===button.dataset.kind', generated)
+        self.assertIn('function applyGraphFilters()', generated)
+        self.assertIn('selector:".filterdim"', generated)
+        self.assertIn('decision:"ADR / decision"', generated)
+        self.assertIn('readingRole:navigation.role||""', generated)
+        self.assertIn('displayLabel', generated)
+        self.assertIn('Reading prominence', generated)
+
     def test_graph_uses_a_compact_vertical_relationship_focus_panel(self) -> None:
         generated = self.generated()
         self.assertIn("function renderGraphFocus(host)", generated)
@@ -172,6 +184,10 @@ timestamp: 2026-07-17T20:00:00Z
         )[0]
         self.assertNotIn("renderMd(", focus)
         self.assertIn("Open in Reader", focus)
+        self.assertIn('function centerGraphFocus(host,anchor)', generated)
+        self.assertIn('graphScrollCue("up",incoming.length,incomingLane)', generated)
+        self.assertIn('graphScrollCue("down",outgoing.length,outgoingLane)', generated)
+        self.assertIn('host.scrollTop=Math.max(0', generated)
 
     def test_board_supports_columns_rows_effort_and_embedded_time_evidence(self) -> None:
         generated = self.generated()
@@ -228,7 +244,7 @@ timestamp: 2026-07-17T20:00:00Z
         manifest = json.loads((REPOSITORY / "conformance" / "visualization-manifest.json").read_text(encoding="utf-8"))
         case_ids = {case["id"] for case in manifest["cases"]}
         self.assertEqual(
-            {"scalable-mermaid-report", "dynamic-small-graph-framing", "paired-derived-output"},
+            {"scalable-mermaid-report", "dynamic-small-graph-framing", "paired-derived-output", "prominence-and-type-filtering"},
             case_ids,
         )
 
@@ -282,6 +298,7 @@ timestamp: 2026-07-17T20:00:00Z
         expectations = {
             "complex-task-portfolio": (50, 45),
             "architecture-knowledge-base": (57, 55),
+            "combined-delivery-architecture": (108, 100),
         }
         for name, (minimum_records, minimum_edges) in expectations.items():
             source = REPOSITORY / "examples" / name
@@ -304,6 +321,7 @@ timestamp: 2026-07-17T20:00:00Z
             "okf-tasks-visualization.html",
             "okf-tasks-complex-task-portfolio.html",
             "okf-tasks-architecture-knowledge-base.html",
+            "okf-tasks-combined-workspace.html",
             "okf-tasks-examples.html",
             "okf-tasks-relationships.html",
         ):
@@ -316,6 +334,7 @@ timestamp: 2026-07-17T20:00:00Z
             "okf-tasks-visualization.mermaid.md",
             "okf-tasks-complex-task-portfolio.mermaid.md",
             "okf-tasks-architecture-knowledge-base.mermaid.md",
+            "okf-tasks-combined-workspace.mermaid.md",
             "okf-tasks-examples.mermaid.md",
         ):
             generated = (output / name).read_text(encoding="utf-8")

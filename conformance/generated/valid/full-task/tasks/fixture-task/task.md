@@ -11,6 +11,9 @@ assignees:
 - agent
 - reviewer
 priority: high
+navigation:
+  role: entry-point
+  order: 10
 tags:
 - spec
 estimate:

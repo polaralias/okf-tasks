@@ -9,17 +9,17 @@ timestamp: 2026-07-17T21:00:00Z
 started: 2026-07-17T19:30:00Z
 effort_minutes: 90
 time:
-  - id: visualization-session
+  - id: visualisation-session
     status: closed
     actor: agent
-    workstream: visualization
+    workstream: visualisation
     started: 2026-07-17T19:30:00Z
     finished: 2026-07-17T21:00:00Z
     elapsed_minutes: 90
     effort_minutes: 90
     method: tracked
-    summary: Implemented and validated the visualization consumer.
-    basis: Explicit start and finish around focused implementation work.
+    summary: Implemented and validated the visualisation consumer.
+    basis: Explicit start and finish around focussed implementation work.
     activity: implementation
 owner: maintainers
 tags:
@@ -55,7 +55,7 @@ The profile, reference implementation, examples, and conformance suite are ready
 
 - [ ] Validate the profile and both independent implementations.
 - [ ] Publish human- and agent-readable examples.
-- [ ] Provide derived visualization without changing task truth.
+- [ ] Provide derived visualisation without changing task truth.
 
 ## Dependencies and risks
 
@@ -68,8 +68,8 @@ The profile, reference implementation, examples, and conformance suite are ready
 ## Workstreams
 
 - [Specification and conformance](./workstreams/specification.md)
-- [Visualization consumer](./workstreams/visualization.md)
+- [Visualisation consumer](./workstreams/visualization.md)
 
 ## Evidence
 
-- [Focused implementation session](./task.md#time:visualization-session)
+- [Focussed implementation session](./task.md#time:visualization-session)

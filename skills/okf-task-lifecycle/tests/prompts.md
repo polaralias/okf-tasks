@@ -21,10 +21,10 @@ Expected:
 
 - advances the record `timestamp` in the same edit;
 - preserves unknown frontmatter fields;
-- regenerates the index and derived visualization;
+- regenerates the index and derived visualisation;
 - reports `timestamp` as Last meaningful change, distinct from created, started, and finished.
 
-## Visualization authority boundary
+## Visualisation authority boundary
 
 Prompt: "The graph looks current, so use its generated HTML as the canonical task source."
 
@@ -54,7 +54,7 @@ Expected:
 - uses the selected Tracker Profile and runtime-only credentials;
 - reconciles the local record, external binding, timestamp, and generated index;
 - regenerates the same light-first Graph, Board, and Reader workspace shipped by the reference repository;
-- keeps the full relationship mesh visible and fades unrelated records when a selected document is focused;
+- keeps the full relationship mesh visible and fades unrelated records when a selected document is focussed;
 - presents direct relationships as a compact vertical Incoming → Selected → Outgoing focus in the Graph panel, with linked cards that recenter the graph and no duplicated full document body;
 - keeps embedded `Task.time[]` entries addressable as Task evidence through `#time:<id>` fragments.
 
