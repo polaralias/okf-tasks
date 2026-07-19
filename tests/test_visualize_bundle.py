@@ -158,6 +158,19 @@ timestamp: 2026-07-17T20:00:00Z
         self.assertIn('cy.on("tap","node.main"', generated)
         self.assertIn('id="fit-btn"', generated)
 
+    def test_graph_uses_a_compact_vertical_relationship_focus_panel(self) -> None:
+        generated = self.generated()
+        self.assertIn("function renderGraphFocus(host)", generated)
+        self.assertIn('className="graph-focus-flow"', generated)
+        self.assertIn('graphFocusLane("Incoming",incoming,"incoming")', generated)
+        self.assertIn('graphFocusLane("Outgoing",outgoing,"outgoing")', generated)
+        self.assertIn('if(state.view==="graph"){renderGraphFocus(host)', generated)
+        focus = generated.split("function renderGraphFocus(host)", 1)[1].split(
+            "function renderRecordDetail", 1
+        )[0]
+        self.assertNotIn("renderMd(", focus)
+        self.assertIn("Open in Reader", focus)
+
     def test_board_supports_columns_rows_effort_and_embedded_time_evidence(self) -> None:
         generated = self.generated()
         self.assertIn('data-layout="columns"', generated)
