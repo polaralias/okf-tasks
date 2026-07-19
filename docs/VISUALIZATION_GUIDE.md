@@ -66,10 +66,9 @@ The generated HTML currently loads pinned browser builds from jsDelivr:
 - Marked `16.1.2` using `lib/marked.umd.js`;
 - DOMPurify `3.2.6`;
 - Mermaid `11.10.1`.
-- Material Design Icons Webfont `@mdi/font` `7.4.47`, licensed Apache-2.0 by Pictogrammers.
 
 Internet access is therefore needed for the interactive libraries when opening a generated file. The embedded repository content itself remains local.
 
 ## Temporal interpretation limits
 
-The viewer operates on the current bundle. Moving the time control earlier shows which current records have a selected event at or before that point; it does not reconstruct the body or frontmatter that existed then. Historical facts require retained superseded/versioned concepts or repository history. Plain Markdown documents without OKF temporal metadata remain available in Documents view but cannot participate in timestamp drift comparison.
+The viewer operates on the current bundle. Selecting a temporal field compares the current values attached to records; it does not reconstruct the body or frontmatter that existed at an earlier time. Historical facts require retained superseded/versioned concepts or repository history. Plain Markdown documents without OKF temporal metadata remain available in Reader but cannot participate in timestamp drift comparison.

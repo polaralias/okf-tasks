@@ -7,13 +7,10 @@ All notable changes to OKF Tasks are recorded here.
 - Replace standalone time-entry Markdown concepts with stable, fragment-addressable entries embedded in Task frontmatter; update CLI mutation, validation, schemas, graph payloads, examples, and bundled skills together.
 
 - Add an installable `okf-tasks` console command for the reference lifecycle CLI.
-- Polish the interactive viewer with a light-first persisted theme, labelled controls, working fullscreen, always-readable relationship labels, GitHub-style Markdown and Mermaid rendering, collapsible raw sources, and separate Graph and full-page Documents views.
-- Generate the focused visualization and complete examples browser from one reproducible, checkable script.
-- Make `timestamp` explicitly mean the portable last meaningful change across tasks, workstreams, time entries, skills, and viewer summaries.
+- Generate the visualization, relationship review, and complete examples browser from one reproducible, checkable script.
+- Make `timestamp` explicitly mean the portable last meaningful change across tasks, workstreams, skills, and viewer summaries; embedded time mutations advance their Task timestamp.
 - Consolidate the bundled lifecycle skill metadata, visual review guidance, and upstream RKE parity around derived OKF Visualization concepts.
-- Replace the overloaded graph canvas with a Focus relationship explorer and a separate whole-bundle Topology mode whose compact node labels stay inside their boundaries.
-- Preserve class, status, effort, edited date, document availability, and relationship detail in readable focus cards while keeping every record available in Topology.
-- Redesign the generated viewer as a dark-first Graph, Kanban, and Documents workspace with shared record previews, workstream effort context, edited-date and drift hints, searchable full-width Markdown reading, document outlines, and Apache-2.0 Material Design Icons controls.
+- Adopt the definitive light-first Graph, Board, and Reader workspace with a visible relationship mesh, selection focus, shared record previews, workstream effort context, GitHub-style Markdown and Mermaid, temporal comparison and cautious drift hints, searchable full-width reading, and embedded Task time evidence.
 
 ## 0.4.0 — 2026-07-18
 
