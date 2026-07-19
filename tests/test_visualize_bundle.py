@@ -25,10 +25,8 @@ class VisualizationTests(unittest.TestCase):
         self.root = Path(self.temporary.name)
         task = self.root / "tasks" / "ship-viewer" / "task.md"
         workstream = self.root / "tasks" / "ship-viewer" / "workstreams" / "ui.md"
-        entry = self.root / "tasks" / "ship-viewer" / "time" / "session.md"
         task.parent.mkdir(parents=True)
         workstream.parent.mkdir(parents=True)
-        entry.parent.mkdir(parents=True)
         task.write_text(
             """---
 type: Task
@@ -39,10 +37,22 @@ status: in-progress
 created: 2026-07-17T20:00:00Z
 timestamp: 2026-07-17T20:00:00Z
 tags: [visualization]
+started: 2026-07-17T20:00:00Z
+effort_minutes: 30
+time:
+  - id: session
+    status: closed
+    actor: agent
+    started: 2026-07-17T20:00:00Z
+    finished: 2026-07-17T20:30:00Z
+    elapsed_minutes: 30
+    effort_minutes: 30
+    method: tracked
 ---
 # Ship viewer
 
 See the [UI workstream](./workstreams/ui.md).
+Review the [recorded session](./task.md#time:session).
 """,
             encoding="utf-8",
         )
@@ -61,24 +71,6 @@ timestamp: 2026-07-17T20:00:00Z
 """,
             encoding="utf-8",
         )
-        entry.write_text(
-            """---
-type: Time Entry
-task: ship-viewer
-entry: session
-status: closed
-actor: agent
-started: 2026-07-17T20:00:00Z
-finished: 2026-07-17T20:30:00Z
-effort_minutes: 30
-method: tracked
-timestamp: 2026-07-17T20:30:00Z
----
-# Time entry
-""",
-            encoding="utf-8",
-        )
-
     def tearDown(self) -> None:
         self.temporary.cleanup()
 
@@ -90,24 +82,23 @@ timestamp: 2026-07-17T20:30:00Z
             {
                 "tasks/ship-viewer/task",
                 "tasks/ship-viewer/workstreams/ui",
-                "tasks/ship-viewer/time/session",
             },
             ids,
         )
         relationships = {
-            (edge["data"]["source"], edge["data"]["target"], edge["data"]["relationship"])
+            (edge["data"]["source"], edge["data"]["target"], edge["data"]["relationship"], edge["data"].get("fragment"))
             for edge in graph["edges"]
         }
         self.assertIn(
-            ("tasks/ship-viewer/workstreams/ui", "tasks/ship-viewer/task", "workstream"),
+            ("tasks/ship-viewer/workstreams/ui", "tasks/ship-viewer/task", "workstream", None),
             relationships,
         )
         self.assertIn(
-            ("tasks/ship-viewer/time/session", "tasks/ship-viewer/task", "time"),
+            ("tasks/ship-viewer/task", "tasks/ship-viewer/task", "time", "time:session"),
             relationships,
         )
         self.assertNotIn(
-            ("tasks/ship-viewer/task", "tasks/ship-viewer/workstreams/ui", "links"),
+            ("tasks/ship-viewer/task", "tasks/ship-viewer/workstreams/ui", "links", None),
             relationships,
             "Structured relationships should replace duplicate generic Markdown edges.",
         )
@@ -132,7 +123,7 @@ timestamp: 2026-07-17T20:30:00Z
         match = re.search(r"window\.OKF_GRAPH=(\{.*\});</script>", generated)
         self.assertIsNotNone(match)
         parsed = json.loads(match.group(1))
-        self.assertEqual(3, len(parsed["nodes"]))
+        self.assertEqual(2, len(parsed["nodes"]))
 
     def test_html_uses_the_pinned_markdown_browser_build_with_a_plain_text_fallback(self) -> None:
         graph = visualize_bundle.build_graph(visualize_bundle.read_records(self.root))
@@ -243,7 +234,7 @@ timestamp: 2026-07-17T20:30:00Z
         self.assertIn('layout:{name:"grid"', generated)
         self.assertIn('.selector(\'node[type = "Task"]\')', generated)
         self.assertIn('.selector(\'node[type = "Workstream"]\')', generated)
-        self.assertIn('.selector(\'node[type = "Time Entry"]\')', generated)
+        self.assertNotIn('.selector(\'node[type = "Time Entry"]\')', generated)
         self.assertIn('width:"data(nodeWidth)"', generated)
         self.assertIn('d.metric=', generated)
 

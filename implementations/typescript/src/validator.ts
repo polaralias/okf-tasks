@@ -224,31 +224,43 @@ function validateTrackerProfile(file: string, profile: RecordValue, errors: stri
 
 function validateTime(taskFile: string, task: RecordValue, errors: string[]): void {
   const timeDir = path.join(path.dirname(taskFile), "time");
-  const files = fs.existsSync(timeDir) ? fs.readdirSync(timeDir).filter((name) => name.endsWith(".md")).map((name) => path.join(timeDir, name)).sort() : [];
+  const legacyFiles = fs.existsSync(timeDir) ? fs.readdirSync(timeDir).filter((name) => name.endsWith(".md")).map((name) => path.join(timeDir, name)).sort() : [];
+  legacyFiles.forEach((file) => errors.push(`${file}: standalone time-entry files are not permitted; embed the entry in task.md time[]`));
+  if (task.time !== undefined && !Array.isArray(task.time)) { errors.push(`${taskFile}: time must be a list`); return; }
+  const rawEntries = Array.isArray(task.time) ? task.time : [];
   const entries: RecordValue[] = [];
   const running = new Map<string, string>();
-  for (const file of files) {
-    let parsed: Parsed; try { parsed = parseDocument(file); } catch { continue; }
-    const entry = parsed.metadata; entries.push(entry);
-    const required = ["type", "task", "entry", "status", "actor", "started", "method", "timestamp"];
+  const ids = new Set<string>();
+  for (let index = 0; index < rawEntries.length; index += 1) {
+    const value = rawEntries[index]; const indexed = `${taskFile}#time[${index}]`;
+    if (!mapping(value)) { errors.push(`${indexed}: time entry must be a mapping`); continue; }
+    const entry = value; entries.push(entry);
+    const required = ["id", "status", "actor", "started", "method"];
     const missing = required.filter((key) => entry[key] === undefined || entry[key] === "");
-    if (missing.length) { errors.push(`${file}: missing required fields: ${missing.join(", ")}`); continue; }
-    if (entry.type !== "Time Entry") errors.push(`${file}: type must be Time Entry`);
-    if (entry.task !== task.task) errors.push(`${file}: parent task mismatch`);
-    if (entry.entry !== path.basename(file, ".md") || !slugPattern.test(String(entry.entry))) errors.push(`${file}: entry slug must match its filename`);
-    if (!['running', 'closed'].includes(String(entry.status))) errors.push(`${file}: time status must be running or closed`);
-    if (!["tracked", "tracked-adjusted", "manual", "estimated-commit-review"].includes(String(entry.method))) errors.push(`${file}: unknown time method`);
-    ["started", "timestamp"].forEach((field) => { if (!rfc3339(entry[field])) errors.push(`${file}: ${field} must be an RFC 3339 datetime`); });
-    ["Summary", "Basis", "Activity"].forEach((name) => { if (!heading(parsed.body, name)) errors.push(`${file}: missing required heading`); });
+    if (missing.length) { errors.push(`${indexed}: missing required fields: ${missing.join(", ")}`); continue; }
+    const label = `${taskFile}#time:${String(entry.id)}`;
+    if (!slugPattern.test(String(entry.id))) errors.push(`${label}: id must be lowercase kebab-case`);
+    if (ids.has(String(entry.id))) errors.push(`${label}: duplicate time entry id`); else ids.add(String(entry.id));
+    if (!["running", "closed"].includes(String(entry.status))) errors.push(`${label}: time status must be running or closed`);
+    if (!["tracked", "tracked-adjusted", "manual", "estimated-commit-review"].includes(String(entry.method))) errors.push(`${label}: unknown time method`);
+    if (!rfc3339(entry.started)) errors.push(`${label}: started must be an RFC 3339 datetime`);
     if (entry.status === "running") {
-      if (entry.method !== "tracked") errors.push(`${file}: running entries must use method tracked`);
-      ["finished", "elapsed_minutes", "effort_minutes"].forEach((field) => { if (field in entry) errors.push(`${file}: running entry must not contain ${field}`); });
+      if (entry.method !== "tracked") errors.push(`${label}: running entries must use method tracked`);
+      ["finished", "elapsed_minutes", "effort_minutes"].forEach((field) => { if (field in entry) errors.push(`${label}: running entry must not contain ${field}`); });
       const key = `${entry.actor}\u0000${entry.workstream ?? ""}`;
-      if (running.has(key)) errors.push(`${file}: duplicate running actor/workstream`); else running.set(key, file);
+      if (running.has(key)) errors.push(`${label}: duplicate running actor/workstream`); else running.set(key, label);
     } else {
-      if (entry.finished === undefined) errors.push(`${file}: closed entry requires finished`);
-      if (entry.effort_minutes === undefined) errors.push(`${file}: closed entry requires effort_minutes`);
-      if (entry.effort_minutes !== undefined && !nonNegativeInteger(entry.effort_minutes)) errors.push(`${file}: effort_minutes must be a non-negative integer`);
+      if (entry.finished === undefined) errors.push(`${label}: closed entry requires finished`);
+      else if (!rfc3339(entry.finished)) errors.push(`${label}: finished must be an RFC 3339 datetime`);
+      if (entry.effort_minutes === undefined) errors.push(`${label}: closed entry requires effort_minutes`);
+      if (entry.effort_minutes !== undefined && !nonNegativeInteger(entry.effort_minutes)) errors.push(`${label}: effort_minutes must be a non-negative integer`);
+      if (entry.elapsed_minutes !== undefined && !nonNegativeInteger(entry.elapsed_minutes)) errors.push(`${label}: elapsed_minutes must be a non-negative integer`);
+      if (["tracked-adjusted", "manual", "estimated-commit-review"].includes(String(entry.method)) && (!entry.basis || !String(entry.basis).trim())) errors.push(`${label}: ${String(entry.method)} entry requires basis`);
+      if (entry.method === "estimated-commit-review") {
+        if (!["low", "medium", "high"].includes(String(entry.confidence))) errors.push(`${label}: commit-review estimate requires low, medium, or high confidence`);
+        if (!Array.isArray(entry.source_commits) || !entry.source_commits.length) errors.push(`${label}: commit-review estimate requires source_commits`);
+        if (!mapping(entry.estimation)) errors.push(`${label}: commit-review estimate requires estimation`);
+      }
     }
   }
   if (!entries.length) {
@@ -258,6 +270,8 @@ function validateTime(taskFile: string, task: RecordValue, errors: string[]): vo
     return;
   }
   const closedEffort = entries.filter((entry) => entry.status === "closed" && Number.isInteger(entry.effort_minutes)).reduce((sum, entry) => sum + Number(entry.effort_minutes), 0);
+  const starts = entries.map((entry) => entry.started).filter((value) => rfc3339(value)).map((value) => new Date(String(value)).getTime());
+  if (starts.length && (!rfc3339(task.started) || new Date(String(task.started)).getTime() !== Math.min(...starts))) errors.push(`${taskFile}: started must equal the first time-entry start`);
   if (task.effort_minutes !== closedEffort) errors.push(`${taskFile}: effort_minutes must equal the closed time-entry sum (${closedEffort})`);
   if (task.status === "done" && entries.some((entry) => entry.status === "running")) errors.push(`${taskFile}: done task has running time entries`);
 }
