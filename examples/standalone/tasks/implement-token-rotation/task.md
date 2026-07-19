@@ -8,6 +8,18 @@ created: 2026-07-17T09:00:00Z
 timestamp: 2026-07-17T10:30:00Z
 started: 2026-07-17T09:00:00Z
 effort_minutes: 75
+time:
+  - id: 20260717t090000z-agent-tracked
+    status: closed
+    actor: agent
+    started: 2026-07-17T09:00:00Z
+    finished: 2026-07-17T10:30:00Z
+    elapsed_minutes: 90
+    effort_minutes: 75
+    method: tracked-adjusted
+    summary: Initial implementation and integration-test preparation.
+    basis: The 90-minute wall-clock interval included a 15-minute unrelated interruption, leaving 75 minutes of active effort.
+    activity: Inspected session storage behavior, drafted the rotation implementation, and prepared integration cases.
 estimate:
   effort_minutes: 120
   method: agent
@@ -58,4 +70,4 @@ Authenticated sessions receive a newly rotated token without interrupting valid 
 ## Evidence
 
 - No implementation evidence yet.
-- Effort: [initial implementation session](./time/20260717t090000z-agent-tracked.md) recorded 75 active minutes within a 90-minute window.
+- Effort: [initial implementation session](./task.md#time:20260717t090000z-agent-tracked) recorded 75 active minutes within a 90-minute window.

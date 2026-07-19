@@ -4,6 +4,8 @@ All notable changes to OKF Tasks are recorded here.
 
 ## Unreleased
 
+- Replace standalone time-entry Markdown concepts with stable, fragment-addressable entries embedded in Task frontmatter; update CLI mutation, validation, schemas, graph payloads, examples, and bundled skills together.
+
 - Add an installable `okf-tasks` console command for the reference lifecycle CLI.
 - Polish the interactive viewer with a light-first persisted theme, labelled controls, working fullscreen, always-readable relationship labels, GitHub-style Markdown and Mermaid rendering, collapsible raw sources, and separate Graph and full-page Documents views.
 - Generate the focused visualization and complete examples browser from one reproducible, checkable script.

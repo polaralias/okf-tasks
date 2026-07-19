@@ -60,22 +60,6 @@ Deliver the workstream outcome.
 
 - Return evidence to the parent task.
 """
-TIME_BODY = """# Time entry
-
-## Summary
-
-Fixture effort.
-
-## Basis
-
-Explicit fixture values.
-
-## Activity
-
-- Conformance work.
-"""
-
-
 def write_document(path: Path, metadata: dict[str, Any], body: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     frontmatter = yaml.safe_dump(metadata, sort_keys=False, allow_unicode=True).rstrip()
@@ -113,9 +97,7 @@ def workstream(task_slug: str = "fixture-task", slug: str = "delivery", **update
 
 def time_entry(slug: str, **updates: Any) -> dict[str, Any]:
     value: dict[str, Any] = {
-        "type": "Time Entry",
-        "task": "fixture-task",
-        "entry": slug,
+        "id": slug,
         "status": "closed",
         "actor": "agent",
         "started": STAMP,
@@ -123,7 +105,7 @@ def time_entry(slug: str, **updates: Any) -> dict[str, Any]:
         "elapsed_minutes": 60,
         "effort_minutes": 60,
         "method": "manual",
-        "timestamp": LATER,
+        "basis": "Explicit fixture values.",
     }
     value.update(updates)
     return value
@@ -189,12 +171,13 @@ def build(root: Path) -> None:
 
     bundle = fixture(root, "valid", "reopened-history", task(status="in-progress", completion_history=[{"finished": STAMP, "reopened": LATER}])); finalize(bundle)
 
-    bundle = fixture(root, "valid", "time-methods", task(started=STAMP, effort_minutes=180))
+    time_methods: list[dict[str, Any]] = []
     for name, method, effort in (("manual-entry", "manual", 30), ("adjusted-entry", "tracked-adjusted", 60), ("commit-review", "estimated-commit-review", 90)):
         meta = time_entry(name, method=method, effort_minutes=effort)
         if method == "estimated-commit-review":
             meta.update(confidence="medium", source_commits=["a" * 40], estimation={"session_gap_minutes": 90, "allowance_minutes": 30, "session_count": 1, "sessions": [{"started": STAMP, "finished": LATER, "effort_minutes": 90}]})
-        write_document(bundle / "fixture-task" / "time" / f"{name}.md", meta, TIME_BODY)
+        time_methods.append(meta)
+    bundle = fixture(root, "valid", "time-methods", task(started=STAMP, effort_minutes=180, time=time_methods))
     finalize(bundle)
 
     bundle = fixture(root, "valid", "unique-external-mappings", task(external=[external_binding()]))
@@ -245,20 +228,25 @@ def build(root: Path) -> None:
         "unknown-time-method": time_entry("bad-entry", method="automatic"),
     }
     for name, entry in time_cases.items():
-        bundle = fixture(root, "invalid", name, task(started=STAMP, effort_minutes=0))
-        write_document(bundle / "fixture-task" / "time" / "bad-entry.md", entry, TIME_BODY); finalize(bundle)
+        bundle = fixture(root, "invalid", name, task(started=STAMP, effort_minutes=0, time=[entry])); finalize(bundle)
 
     bundle = fixture(root, "invalid", "done-running-time", task(status="done", started=STAMP, finished=LATER, effort_minutes=0))
     running = time_entry("running-entry", status="running", method="tracked")
     for field in ("finished", "elapsed_minutes", "effort_minutes"): running.pop(field)
-    write_document(bundle / "fixture-task" / "time" / "running-entry.md", running, TIME_BODY); finalize(bundle)
+    task_file = bundle / "fixture-task" / "task.md"
+    done_task, done_body = cli.read_document(task_file); done_task["time"] = [running]
+    write_document(task_file, done_task, done_body); finalize(bundle)
 
-    bundle = fixture(root, "invalid", "duplicate-running-combination", task(started=STAMP, effort_minutes=0))
+    running_entries: list[dict[str, Any]] = []
     for slug in ("one-entry", "two-entry"):
         running = time_entry(slug, status="running", method="tracked")
         for field in ("finished", "elapsed_minutes", "effort_minutes"): running.pop(field)
-        write_document(bundle / "fixture-task" / "time" / f"{slug}.md", running, TIME_BODY)
-    finalize(bundle)
+        running_entries.append(running)
+    bundle = fixture(root, "invalid", "duplicate-running-combination", task(started=STAMP, effort_minutes=0, time=running_entries)); finalize(bundle)
+
+    bundle = fixture(root, "invalid", "legacy-time-file", task())
+    legacy = {"type": "Time Entry", "task": "fixture-task", "entry": "legacy", "status": "closed", "actor": "agent", "started": STAMP, "finished": LATER, "effort_minutes": 60, "method": "manual", "timestamp": LATER}
+    write_document(bundle / "fixture-task" / "time" / "legacy.md", legacy, "# Legacy time entry\n"); finalize(bundle)
 
     bundle = fixture(root, "invalid", "external-missing-fields", task(external=[{"tracker": "github-main", "system": "github"}])); finalize(bundle)
 

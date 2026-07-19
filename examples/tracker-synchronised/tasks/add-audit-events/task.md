@@ -8,6 +8,41 @@ created: 2026-07-17T09:00:00Z
 timestamp: 2026-07-17T20:20:00Z
 started: 2026-07-17T07:45:00Z
 effort_minutes: 180
+time:
+  - id: 20260717t074500z-agent-commit-review
+    status: closed
+    actor: agent
+    started: 2026-07-17T07:45:00Z
+    finished: 2026-07-17T20:15:00Z
+    elapsed_minutes: 750
+    effort_minutes: 180
+    method: estimated-commit-review
+    confidence: medium
+    source_commits:
+      - 1111111111111111111111111111111111111111
+      - 2222222222222222222222222222222222222222
+      - 3333333333333333333333333333333333333333
+      - 4444444444444444444444444444444444444444
+    estimation:
+      session_gap_minutes: 90
+      allowance_minutes: 30
+      session_count: 2
+      sessions:
+        - started: 2026-07-17T07:45:00Z
+          finished: 2026-07-17T09:15:00Z
+          effort_minutes: 90
+          commits:
+            - 1111111111111111111111111111111111111111
+            - 2222222222222222222222222222222222222222
+        - started: 2026-07-17T18:45:00Z
+          finished: 2026-07-17T20:15:00Z
+          effort_minutes: 90
+          commits:
+            - 3333333333333333333333333333333333333333
+            - 4444444444444444444444444444444444444444
+    summary: Effort backfilled from four task-related commits.
+    basis: Commits separated by no more than 90 minutes were grouped, with a 30-minute allowance per group; the 750-minute evidence window is not treated as active effort.
+    activity: Two plausible work sessions covering implementation, tests, review feedback, and pipeline validation.
 estimate:
   effort_minutes: 240
   method: agent
@@ -73,3 +108,4 @@ Security operators can distinguish successful and failed authentication attempts
 
 - Implementation is active; no completion evidence yet.
 - Effort: commit review found two plausible 90-minute work sessions across a 12.5-hour evidence window.
+- Entry: [commit-review estimate](./task.md#time:20260717t074500z-agent-commit-review).
