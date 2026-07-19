@@ -32,6 +32,8 @@ python scripts/visualize_bundle.py --bundle <bundle> --html <output>.html --merm
 
 For this repository's maintained review set, use `python scripts/generate_local_docs.py --mermaid` and then the same command with `--check`. The Mermaid report must avoid one unbounded chart: preserve the connected-area overview, complete manageable components, area slices with boundary context for large components, key-concept neighbourhoods, and a separate isolate list.
 
+When a repository needs realistic visualization stress data, use `python scripts/generate_complex_examples.py --root <repository>` to create the deterministic task-heavy and architecture-heavy example workspaces, then rerun it with `--check`. Treat those generated Markdown/YAML records and indexes as script-owned fixtures; change the generator rather than editing its output by hand.
+
 ## Boundaries
 
 - Own task records, workstream records, lifecycle state, time entries, effort rollups, evidence, and the generated task index.
