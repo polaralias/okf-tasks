@@ -223,9 +223,6 @@ function validateTrackerProfile(file: string, profile: RecordValue, errors: stri
 }
 
 function validateTime(taskFile: string, task: RecordValue, errors: string[]): void {
-  const timeDir = path.join(path.dirname(taskFile), "time");
-  const legacyFiles = fs.existsSync(timeDir) ? fs.readdirSync(timeDir).filter((name) => name.endsWith(".md")).map((name) => path.join(timeDir, name)).sort() : [];
-  legacyFiles.forEach((file) => errors.push(`${file}: standalone time-entry files are not permitted; embed the entry in task.md time[]`));
   if (task.time !== undefined && !Array.isArray(task.time)) { errors.push(`${taskFile}: time must be a list`); return; }
   const rawEntries = Array.isArray(task.time) ? task.time : [];
   const entries: RecordValue[] = [];

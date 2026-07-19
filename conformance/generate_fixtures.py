@@ -244,10 +244,6 @@ def build(root: Path) -> None:
         running_entries.append(running)
     bundle = fixture(root, "invalid", "duplicate-running-combination", task(started=STAMP, effort_minutes=0, time=running_entries)); finalize(bundle)
 
-    bundle = fixture(root, "invalid", "legacy-time-file", task())
-    legacy = {"type": "Time Entry", "task": "fixture-task", "entry": "legacy", "status": "closed", "actor": "agent", "started": STAMP, "finished": LATER, "effort_minutes": 60, "method": "manual", "timestamp": LATER}
-    write_document(bundle / "fixture-task" / "time" / "legacy.md", legacy, "# Legacy time entry\n"); finalize(bundle)
-
     bundle = fixture(root, "invalid", "external-missing-fields", task(external=[{"tracker": "github-main", "system": "github"}])); finalize(bundle)
 
     bundle = fixture(root, "invalid", "duplicate-external-mapping", task(external=[external_binding()]))
