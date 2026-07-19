@@ -18,7 +18,7 @@ Prompt: "The graph looks current, so use its generated HTML as the canonical tas
 Expected:
 
 - keeps Markdown/YAML task records canonical;
-- treats the generated Graph and Documents page as a derived consumer;
+- treats the generated Graph, Board, and Reader workspace as a derived consumer;
 - regenerates through the bundled script rather than hand-editing HTML.
 
 ## Temporal drift review
@@ -27,8 +27,8 @@ Prompt: "Show how these tasks and linked concepts change over time and flag docu
 
 Expected:
 
-- uses Grid by default and offers a timestamp-based Timeline layout and through-date filter;
-- distinguishes record types visually and surfaces effort and connection metrics where present;
+- preserves the definitive Graph, Board, and Reader interface and offers comparison by timestamp, created, started, or finished;
+- distinguishes record types visually and surfaces effort, embedded time evidence, and connection metrics where present;
 - highlights only linked source-newer-than-target relationships with usable timestamps;
 - calls each highlight a possible review signal, not proof of stale content or a historical snapshot.
 
@@ -40,9 +40,9 @@ Expected:
 
 - uses the selected Tracker Profile and runtime-only credentials;
 - reconciles the local record, external binding, timestamp, and generated index;
-- regenerates the same dark-first Graph, Kanban, and Documents viewer shipped by the reference repository;
-- opens Graph in a readable Focus explorer with click-to-recenter incoming and outgoing records;
-- keeps every record available in a bounded Topology mode and uses the pinned Apache-2.0 Material Design Icons family for controls.
+- regenerates the same light-first Graph, Board, and Reader workspace shipped by the reference repository;
+- keeps the full relationship mesh visible and fades unrelated records when a selected document is focused;
+- keeps embedded `Task.time[]` entries as addressable Task evidence rather than graph nodes or documents.
 
 ## Untrusted tracker content
 
