@@ -119,9 +119,13 @@ The first-class visualizer follows the consumer pattern demonstrated by Google's
 Generate the focused bundle, full examples browser, and relationship review page from the shared workspace template:
 
 ```text
+python scripts/generate_complex_examples.py --root .
+python scripts/generate_complex_examples.py --root . --check
 python scripts/generate_local_docs.py --mermaid
 python scripts/generate_local_docs.py --mermaid --check
 ```
+
+The maintained review set includes two generated stress-test workspaces. `okf-tasks-complex-task-portfolio.html` contains [forty linked Tasks, five coordinating Workstreams, mixed lifecycle states, and embedded time evidence](./examples/complex-task-portfolio/README.md). `okf-tasks-architecture-knowledge-base.html` contains [twenty ADRs plus detailed architecture, service, interface, quality-attribute, and implementation records](./examples/architecture-knowledge-base/README.md). Their Markdown/YAML source remains tracked under those example directories; regenerate it through `generate_complex_examples.py` rather than hand-editing generated records.
 
 Generate a custom interactive HTML graph and a GitHub-rendered Mermaid graph:
 
@@ -133,7 +137,7 @@ python scripts/visualize_bundle.py \
   --mermaid
 ```
 
-Open the HTML file locally as the definitive three-view OKF workspace. Graph presents the complete document relationship mesh and isolates a selected document's neighbourhood without hiding the surrounding repository context. Its right panel turns that neighbourhood into a compact vertical Incoming → Selected → Outgoing focus view with clickable relationship cards, temporal and effort context, and a Reader shortcut instead of a full document rendering. Board provides lifecycle columns or compact rows for Tasks, with nested Workstreams, embedded effort evidence, estimates, tracker context, and exact temporal values. Reader provides a searchable repository tree, full Markdown document surface, contextual ancestry, connections, and heading navigation. Light mode is the default, dark mode persists locally, and timestamp comparison can flag possible drift across existing relationships without claiming that older content is stale. Embedded `Task.time[]` entries contribute evidence and effort to their Task. Small graphs use compact layout bounds and a minimum desktop zoom so they fill the review surface naturally. The generated file embeds pinned Cytoscape, Marked, and DOMPurify builds and loads pinned Mermaid for strict diagram rendering; task and document data are embedded as a sanitized JSON payload.
+Open the HTML file locally as the definitive three-view OKF workspace. Graph presents the complete document relationship mesh and isolates a selected document's neighbourhood without hiding the surrounding repository context. Its right panel turns that neighbourhood into a compact vertical Incoming → Selected → Outgoing focus view with clickable relationship cards, temporal and effort context, and a Reader shortcut instead of a full document rendering. Board provides lifecycle columns or compact rows for Tasks, with nested Workstreams, embedded effort evidence, estimates, tracker context, and exact temporal values. Reader provides a searchable repository tree, full Markdown document surface, contextual ancestry, connections, and heading navigation. Light mode is the default, dark mode persists locally, and timestamp comparison can flag possible drift across existing relationships without claiming that older content is stale. Embedded `Task.time[]` entries contribute evidence and effort to their Task. Small graphs use compact layout bounds and always fit the complete node set into the initial viewport. The generated file embeds pinned Cytoscape, Marked, and DOMPurify builds and loads pinned Mermaid for strict diagram rendering; task and document data are embedded as a sanitized JSON payload.
 
 `--mermaid` without a path writes `<html-name>.mermaid.md` beside the HTML. The report avoids a single unbounded chart: it generates a connected-area overview, complete diagrams for manageable components, area slices with boundary context for large components, focused neighbourhoods for high-connectivity concepts, and a lower-weight list of true isolates.
 

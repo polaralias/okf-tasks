@@ -17,6 +17,8 @@ from visualize_bundle import (
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 PAGES = (
     ("examples/visualization/tasks", "OKF Tasks visualization example", "okf-tasks-visualization.html", generate_html),
+    ("examples/complex-task-portfolio", "OKF Tasks complex task portfolio", "okf-tasks-complex-task-portfolio.html", generate_html),
+    ("examples/architecture-knowledge-base", "OKF architecture knowledge base", "okf-tasks-architecture-knowledge-base.html", generate_html),
     ("examples", "OKF Tasks example bundles", "okf-tasks-examples.html", generate_html),
     ("examples", "OKF Tasks relationship map", "okf-tasks-relationships.html", generate_relationship_html),
 )

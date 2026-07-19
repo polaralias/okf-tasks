@@ -13,6 +13,7 @@ from pathlib import Path
 REPOSITORY = Path(__file__).resolve().parents[1]
 SCRIPT = REPOSITORY / "scripts" / "visualize_bundle.py"
 GENERATE_LOCAL_DOCS = REPOSITORY / "scripts" / "generate_local_docs.py"
+GENERATE_COMPLEX_EXAMPLES = REPOSITORY / "scripts" / "generate_complex_examples.py"
 SPEC = importlib.util.spec_from_file_location("visualize_bundle", SCRIPT)
 assert SPEC and SPEC.loader
 visualize_bundle = importlib.util.module_from_spec(SPEC)
@@ -270,6 +271,26 @@ timestamp: 2026-07-17T20:00:00Z
         self.assertIn('window.addEventListener("resize"', generated)
         self.assertIn("fitGraph();", generated)
 
+    def test_complex_examples_are_current_and_dense(self) -> None:
+        checked = subprocess.run(
+            [sys.executable, str(GENERATE_COMPLEX_EXAMPLES), "--root", str(REPOSITORY), "--check"],
+            cwd=REPOSITORY,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(0, checked.returncode, checked.stdout + checked.stderr)
+        expectations = {
+            "complex-task-portfolio": (50, 45),
+            "architecture-knowledge-base": (57, 55),
+        }
+        for name, (minimum_records, minimum_edges) in expectations.items():
+            source = REPOSITORY / "examples" / name
+            records = visualize_bundle.read_records(source)
+            graph = visualize_bundle.build_graph(records, visualize_bundle.read_documents(source, records))
+            with self.subTest(name=name):
+                self.assertGreaterEqual(len(records), minimum_records)
+                self.assertGreaterEqual(len(graph["edges"]), minimum_edges)
+
     def test_local_documentation_generator_builds_all_workspace_pages(self) -> None:
         output = self.root / "local-docs"
         completed = subprocess.run(
@@ -281,6 +302,8 @@ timestamp: 2026-07-17T20:00:00Z
         self.assertEqual(0, completed.returncode, completed.stderr)
         for name in (
             "okf-tasks-visualization.html",
+            "okf-tasks-complex-task-portfolio.html",
+            "okf-tasks-architecture-knowledge-base.html",
             "okf-tasks-examples.html",
             "okf-tasks-relationships.html",
         ):
@@ -289,7 +312,12 @@ timestamp: 2026-07-17T20:00:00Z
             self.assertIn('data-view="board"', generated)
             self.assertIn('data-view="reader"', generated)
             self.assertNotIn("__GRAPH__", generated)
-        for name in ("okf-tasks-visualization.mermaid.md", "okf-tasks-examples.mermaid.md"):
+        for name in (
+            "okf-tasks-visualization.mermaid.md",
+            "okf-tasks-complex-task-portfolio.mermaid.md",
+            "okf-tasks-architecture-knowledge-base.mermaid.md",
+            "okf-tasks-examples.mermaid.md",
+        ):
             generated = (output / name).read_text(encoding="utf-8")
             self.assertIn("## Connected-area overview", generated)
             self.assertIn(chr(96) * 3 + "mermaid", generated)
@@ -304,6 +332,10 @@ timestamp: 2026-07-17T20:00:00Z
     def test_repository_skill_bundles_the_same_renderer_and_template(self) -> None:
         bundled = REPOSITORY / "skills" / "okf-task-lifecycle" / "scripts" / "visualize_bundle.py"
         self.assertEqual(SCRIPT.read_bytes(), bundled.read_bytes())
+        self.assertEqual(
+            GENERATE_COMPLEX_EXAMPLES.read_bytes(),
+            bundled.with_name("generate_complex_examples.py").read_bytes(),
+        )
         self.assertEqual(
             SCRIPT.with_name("visualizer_template.html").read_bytes(),
             bundled.with_name("visualizer_template.html").read_bytes(),
