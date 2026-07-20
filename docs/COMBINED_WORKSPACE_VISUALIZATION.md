@@ -11,9 +11,11 @@ The report separates the connected repository map from detailed component and ke
 ```mermaid
 flowchart LR
     a0["docs · 57 concepts"]
-    a1["tasks · 51 concepts"]
-    a0 -->|links| a1
+    a1["repository root · 1 concepts"]
+    a2["tasks · 51 concepts"]
+    a0 -->|links| a2
     a1 -->|links| a0
+    a2 -->|links| a0
     classDef default fill:#eef2ff,stroke:#4f46e5,color:#1e1b4b
 ```
 
@@ -80,52 +82,53 @@ flowchart LR
     n54["Reporting Service · current"]:::knowledge
     n55["Tenant Service · current"]:::knowledge
     n56["Workflow Service · current"]:::knowledge
-    n57["Add migration progress centre · in-progress"]:::boundary
-    n58["Add privileged access reviews · validation"]:::boundary
-    n59["Add release health checks · in-progress"]:::boundary
-    n60["Approve architecture readiness · blocked"]:::boundary
-    n61["Approve general availability · ready"]:::boundary
-    n62["Approve production cutover data · ready"]:::boundary
-    n63["Automate dependency updates · blocked"]:::boundary
-    n64["Benchmark critical request paths · ready"]:::boundary
-    n65["Build account creation flow · done"]:::boundary
-    n66["Build change data capture pipeline · validation"]:::boundary
-    n67["Build operational dashboards · validation"]:::boundary
-    n68["Build shared authentication middleware · ready"]:::boundary
-    n69["Complete guided onboarding trials · blocked"]:::boundary
-    n70["Complete release rehearsal · blocked"]:::boundary
-    n71["Complete threat model review · blocked"]:::boundary
-    n72["Create cross-service trace model · done"]:::boundary
-    n73["Create reconciliation reports · in-progress"]:::boundary
-    n74["Define canonical customer schema · done"]:::boundary
-    n75["Define service level objectives · done"]:::boundary
-    n76["Define service ownership · done"]:::boundary
-    n77["Design recoverable form states · ready"]:::boundary
-    n78["Enforce workload identity · in-progress"]:::boundary
-    n79["Establish repository boundaries · done"]:::boundary
-    n80["Exercise rollback automation · ready"]:::boundary
-    n81["Exercise tenant isolation · in-progress"]:::boundary
-    n82["Harden session management · ready"]:::boundary
-    n83["Implement organisation switching · validation"]:::boundary
-    n84["Implement token rotation · done"]:::boundary
-    n85["Instrument authentication failures · proposed"]:::boundary
-    n86["Introduce feature flagging · proposed"]:::boundary
-    n87["Inventory legacy data sources · done"]:::boundary
-    n88["Map onboarding journey · done"]:::boundary
-    n89["Meet accessibility acceptance · proposed"]:::boundary
-    n90["Migrate reference data · ready"]:::boundary
-    n91["Model tenant isolation · done"]:::boundary
-    n92["Prototype the event backbone · validation"]:::boundary
-    n93["Provision development environments · validation"]:::boundary
-    n94["Publish customer experience readiness · ready"]:::boundary
-    n95["Publish platform readiness evidence · ready"]:::boundary
-    n96["Rehearse regional recovery · proposed"]:::boundary
-    n97["Resolve migration exceptions · blocked"]:::boundary
-    n98["Run customer migration rehearsal · proposed"]:::boundary
-    n99["Run failure injection scenarios · proposed"]:::boundary
-    n100["Standardise configuration loading · in-progress"]:::boundary
-    n101["Validate architecture decision coverage · done"]:::boundary
-    n102["Validate security launch controls · ready"]:::boundary
+    n57["Combined delivery and architecture workspace"]:::boundary
+    n58["Add migration progress centre · in-progress"]:::boundary
+    n59["Add privileged access reviews · validation"]:::boundary
+    n60["Add release health checks · in-progress"]:::boundary
+    n61["Approve architecture readiness · blocked"]:::boundary
+    n62["Approve general availability · ready"]:::boundary
+    n63["Approve production cutover data · ready"]:::boundary
+    n64["Automate dependency updates · blocked"]:::boundary
+    n65["Benchmark critical request paths · ready"]:::boundary
+    n66["Build account creation flow · done"]:::boundary
+    n67["Build change data capture pipeline · validation"]:::boundary
+    n68["Build operational dashboards · validation"]:::boundary
+    n69["Build shared authentication middleware · ready"]:::boundary
+    n70["Complete guided onboarding trials · blocked"]:::boundary
+    n71["Complete release rehearsal · blocked"]:::boundary
+    n72["Complete threat model review · blocked"]:::boundary
+    n73["Create cross-service trace model · done"]:::boundary
+    n74["Create reconciliation reports · in-progress"]:::boundary
+    n75["Define canonical customer schema · done"]:::boundary
+    n76["Define service level objectives · done"]:::boundary
+    n77["Define service ownership · done"]:::boundary
+    n78["Design recoverable form states · ready"]:::boundary
+    n79["Enforce workload identity · in-progress"]:::boundary
+    n80["Establish repository boundaries · done"]:::boundary
+    n81["Exercise rollback automation · ready"]:::boundary
+    n82["Exercise tenant isolation · in-progress"]:::boundary
+    n83["Harden session management · ready"]:::boundary
+    n84["Implement organisation switching · validation"]:::boundary
+    n85["Implement token rotation · done"]:::boundary
+    n86["Instrument authentication failures · proposed"]:::boundary
+    n87["Introduce feature flagging · proposed"]:::boundary
+    n88["Inventory legacy data sources · done"]:::boundary
+    n89["Map onboarding journey · done"]:::boundary
+    n90["Meet accessibility acceptance · proposed"]:::boundary
+    n91["Migrate reference data · ready"]:::boundary
+    n92["Model tenant isolation · done"]:::boundary
+    n93["Prototype the event backbone · validation"]:::boundary
+    n94["Provision development environments · validation"]:::boundary
+    n95["Publish customer experience readiness · ready"]:::boundary
+    n96["Publish platform readiness evidence · ready"]:::boundary
+    n97["Rehearse regional recovery · proposed"]:::boundary
+    n98["Resolve migration exceptions · blocked"]:::boundary
+    n99["Run customer migration rehearsal · proposed"]:::boundary
+    n100["Run failure injection scenarios · proposed"]:::boundary
+    n101["Standardise configuration loading · in-progress"]:::boundary
+    n102["Validate architecture decision coverage · done"]:::boundary
+    n103["Validate security launch controls · ready"]:::boundary
     n0 -->|links| n15
     n0 -->|links| n22
     n0 -->|links| n55
@@ -174,22 +177,22 @@ flowchart LR
     n11 -->|links| n25
     n11 -->|links| n56
     n11 -->|links| n54
-    n12 -->|links| n88
-    n12 -->|links| n65
-    n12 -->|links| n83
-    n12 -->|links| n57
-    n12 -->|links| n77
     n12 -->|links| n89
-    n12 -->|links| n69
-    n12 -->|links| n94
-    n13 -->|links| n87
+    n12 -->|links| n66
+    n12 -->|links| n84
+    n12 -->|links| n58
+    n12 -->|links| n78
+    n12 -->|links| n90
+    n12 -->|links| n70
+    n12 -->|links| n95
+    n13 -->|links| n88
+    n13 -->|links| n75
+    n13 -->|links| n67
     n13 -->|links| n74
-    n13 -->|links| n66
-    n13 -->|links| n73
-    n13 -->|links| n90
+    n13 -->|links| n91
+    n13 -->|links| n99
     n13 -->|links| n98
-    n13 -->|links| n97
-    n13 -->|links| n62
+    n13 -->|links| n63
     n14 -->|links| n10
     n15 -->|links| n0
     n15 -->|links| n14
@@ -229,14 +232,14 @@ flowchart LR
     n32 -->|links| n31
     n33 -->|links| n2
     n33 -->|links| n32
-    n34 -->|links| n91
-    n34 -->|links| n84
-    n34 -->|links| n58
-    n34 -->|links| n78
-    n34 -->|links| n82
+    n34 -->|links| n92
     n34 -->|links| n85
-    n34 -->|links| n71
-    n34 -->|links| n102
+    n34 -->|links| n59
+    n34 -->|links| n79
+    n34 -->|links| n83
+    n34 -->|links| n86
+    n34 -->|links| n72
+    n34 -->|links| n103
     n35 -->|links| n56
     n35 -->|links| n49
     n35 -->|links| n27
@@ -255,27 +258,27 @@ flowchart LR
     n40 -->|links| n53
     n40 -->|links| n54
     n40 -->|links| n30
-    n41 -->|links| n75
-    n41 -->|links| n72
-    n41 -->|links| n67
-    n41 -->|links| n59
-    n41 -->|links| n80
-    n41 -->|links| n99
-    n41 -->|links| n70
-    n41 -->|links| n61
-    n42 -->|links| n79
-    n42 -->|links| n76
-    n42 -->|links| n93
-    n42 -->|links| n100
-    n42 -->|links| n68
-    n42 -->|links| n86
-    n42 -->|links| n63
-    n42 -->|links| n95
+    n41 -->|links| n76
+    n41 -->|links| n73
+    n41 -->|links| n68
+    n41 -->|links| n60
+    n41 -->|links| n81
+    n41 -->|links| n100
+    n41 -->|links| n71
+    n41 -->|links| n62
+    n42 -->|links| n80
+    n42 -->|links| n77
+    n42 -->|links| n94
+    n42 -->|links| n101
+    n42 -->|links| n69
+    n42 -->|links| n87
+    n42 -->|links| n64
+    n42 -->|links| n96
     n43 -->|links| n10
     n43 -->|links| n14
     n43 -->|links| n42
-    n43 -->|links| n79
-    n43 -->|links| n101
+    n43 -->|links| n80
+    n43 -->|links| n102
     n44 -->|links| n11
     n44 -->|links| n16
     n45 -->|links| n8
@@ -302,127 +305,150 @@ flowchart LR
     n55 -->|links| n37
     n56 -->|links| n8
     n56 -->|links| n35
-    n57 -->|links| n83
-    n57 -->|links| n88
-    n57 -->|links| n12
+    n57 -->|links| n43
+    n57 -->|links| n10
+    n57 -->|links| n42
     n58 -->|links| n84
-    n58 -->|links| n34
-    n59 -->|links| n67
-    n59 -->|links| n75
-    n59 -->|links| n41
-    n60 -->|links| n96
-    n60 -->|links| n9
-    n60 -->|links| n29
-    n61 -->|links| n70
-    n61 -->|links| n80
-    n61 -->|links| n41
-    n62 -->|links| n97
-    n62 -->|links| n90
-    n62 -->|links| n13
-    n63 -->|links| n86
-    n63 -->|links| n100
-    n63 -->|links| n42
-    n64 -->|links| n81
-    n64 -->|links| n3
-    n64 -->|links| n23
-    n65 -->|links| n88
-    n65 -->|links| n12
-    n66 -->|links| n74
-    n66 -->|links| n13
-    n67 -->|links| n72
-    n67 -->|links| n41
-    n68 -->|links| n100
-    n68 -->|links| n76
-    n68 -->|links| n42
-    n69 -->|links| n89
-    n69 -->|links| n57
-    n69 -->|links| n12
-    n70 -->|links| n99
-    n70 -->|links| n59
-    n70 -->|links| n41
-    n71 -->|links| n85
-    n71 -->|links| n78
-    n71 -->|links| n34
-    n72 -->|links| n75
-    n72 -->|links| n41
-    n73 -->|links| n66
-    n73 -->|links| n87
-    n73 -->|links| n13
-    n74 -->|links| n87
+    n58 -->|links| n89
+    n58 -->|links| n12
+    n59 -->|links| n85
+    n59 -->|links| n34
+    n60 -->|links| n68
+    n60 -->|links| n76
+    n60 -->|links| n41
+    n61 -->|links| n97
+    n61 -->|links| n9
+    n61 -->|links| n29
+    n62 -->|links| n71
+    n62 -->|links| n81
+    n62 -->|links| n41
+    n63 -->|links| n98
+    n63 -->|links| n91
+    n63 -->|links| n13
+    n64 -->|links| n87
+    n64 -->|links| n101
+    n64 -->|links| n42
+    n65 -->|links| n82
+    n65 -->|links| n3
+    n65 -->|links| n23
+    n66 -->|links| n89
+    n66 -->|links| n12
+    n67 -->|links| n75
+    n67 -->|links| n13
+    n68 -->|links| n73
+    n68 -->|links| n41
+    n69 -->|links| n101
+    n69 -->|links| n77
+    n69 -->|links| n42
+    n70 -->|links| n90
+    n70 -->|links| n58
+    n70 -->|links| n12
+    n71 -->|links| n100
+    n71 -->|links| n60
+    n71 -->|links| n41
+    n72 -->|links| n86
+    n72 -->|links| n79
+    n72 -->|links| n34
+    n73 -->|links| n76
+    n73 -->|links| n41
+    n74 -->|links| n67
+    n74 -->|links| n88
     n74 -->|links| n13
-    n75 -->|links| n94
-    n75 -->|links| n41
-    n76 -->|links| n79
-    n76 -->|links| n42
-    n77 -->|links| n57
-    n77 -->|links| n65
-    n77 -->|links| n12
+    n75 -->|links| n88
+    n75 -->|links| n13
+    n76 -->|links| n95
+    n76 -->|links| n41
+    n77 -->|links| n80
+    n77 -->|links| n42
     n78 -->|links| n58
-    n78 -->|links| n91
-    n78 -->|links| n34
-    n79 -->|links| n42
-    n80 -->|links| n59
-    n80 -->|links| n72
-    n80 -->|links| n41
-    n81 -->|links| n92
-    n81 -->|links| n11
-    n81 -->|links| n20
-    n82 -->|links| n78
-    n82 -->|links| n84
-    n82 -->|links| n34
-    n83 -->|links| n65
-    n83 -->|links| n12
-    n84 -->|links| n91
-    n84 -->|links| n34
-    n85 -->|links| n82
-    n85 -->|links| n58
+    n78 -->|links| n66
+    n78 -->|links| n12
+    n79 -->|links| n59
+    n79 -->|links| n92
+    n79 -->|links| n34
+    n80 -->|links| n42
+    n81 -->|links| n60
+    n81 -->|links| n73
+    n81 -->|links| n41
+    n82 -->|links| n93
+    n82 -->|links| n11
+    n82 -->|links| n20
+    n83 -->|links| n79
+    n83 -->|links| n85
+    n83 -->|links| n34
+    n84 -->|links| n66
+    n84 -->|links| n12
+    n85 -->|links| n92
     n85 -->|links| n34
-    n86 -->|links| n68
-    n86 -->|links| n93
-    n86 -->|links| n42
-    n87 -->|links| n102
-    n87 -->|links| n13
-    n88 -->|links| n62
-    n88 -->|links| n12
-    n89 -->|links| n77
-    n89 -->|links| n83
+    n86 -->|links| n83
+    n86 -->|links| n59
+    n86 -->|links| n34
+    n87 -->|links| n69
+    n87 -->|links| n94
+    n87 -->|links| n42
+    n88 -->|links| n103
+    n88 -->|links| n13
+    n89 -->|links| n63
     n89 -->|links| n12
-    n90 -->|links| n73
-    n90 -->|links| n74
-    n90 -->|links| n13
-    n91 -->|links| n95
-    n91 -->|links| n34
-    n92 -->|links| n101
-    n92 -->|links| n7
-    n92 -->|links| n17
-    n93 -->|links| n76
-    n93 -->|links| n42
-    n94 -->|links| n69
+    n90 -->|links| n78
+    n90 -->|links| n84
+    n90 -->|links| n12
+    n91 -->|links| n74
+    n91 -->|links| n75
+    n91 -->|links| n13
+    n92 -->|links| n96
+    n92 -->|links| n34
+    n93 -->|links| n102
+    n93 -->|links| n7
+    n93 -->|links| n17
     n94 -->|links| n77
-    n94 -->|links| n12
-    n95 -->|links| n63
-    n95 -->|links| n68
-    n95 -->|links| n42
+    n94 -->|links| n42
+    n95 -->|links| n70
+    n95 -->|links| n78
+    n95 -->|links| n12
     n96 -->|links| n64
-    n96 -->|links| n8
-    n96 -->|links| n26
-    n97 -->|links| n98
-    n97 -->|links| n73
-    n97 -->|links| n13
-    n98 -->|links| n90
-    n98 -->|links| n66
+    n96 -->|links| n69
+    n96 -->|links| n42
+    n97 -->|links| n65
+    n97 -->|links| n8
+    n97 -->|links| n26
+    n98 -->|links| n99
+    n98 -->|links| n74
     n98 -->|links| n13
-    n99 -->|links| n80
+    n99 -->|links| n91
     n99 -->|links| n67
-    n99 -->|links| n41
-    n100 -->|links| n93
-    n100 -->|links| n79
-    n100 -->|links| n42
-    n101 -->|links| n10
-    n101 -->|links| n14
-    n102 -->|links| n71
-    n102 -->|links| n82
-    n102 -->|links| n34
+    n99 -->|links| n13
+    n100 -->|links| n81
+    n100 -->|links| n68
+    n100 -->|links| n41
+    n101 -->|links| n94
+    n101 -->|links| n80
+    n101 -->|links| n42
+    n102 -->|links| n10
+    n102 -->|links| n14
+    n103 -->|links| n72
+    n103 -->|links| n83
+    n103 -->|links| n34
+    classDef task fill:#dbeafe,stroke:#2563eb,color:#172554
+    classDef workstream fill:#ede9fe,stroke:#7c3aed,color:#2e1065
+    classDef tracker fill:#ffedd5,stroke:#ea580c,color:#431407
+    classDef knowledge fill:#dcfce7,stroke:#16a34a,color:#052e16
+    classDef boundary fill:#f8fafc,stroke:#64748b,color:#0f172a,stroke-dasharray:4 3
+```
+
+### repository root
+
+```mermaid
+flowchart LR
+    n0["System Context · current"]:::boundary
+    n1["Platform Foundations delivery plan · current"]:::boundary
+    n2["Programme Delivery And Architecture Map · current"]:::boundary
+    n3["Combined delivery and architecture workspace"]:::knowledge
+    n2 -->|links| n0
+    n2 -->|links| n1
+    n3 -->|links| n2
+    n3 -->|links| n0
+    n3 -->|links| n1
     classDef task fill:#dbeafe,stroke:#2563eb,color:#172554
     classDef workstream fill:#ede9fe,stroke:#7c3aed,color:#2e1065
     classDef tracker fill:#ffedd5,stroke:#ea580c,color:#431407
@@ -721,44 +747,47 @@ flowchart LR
 flowchart LR
     n0["Platform Foundations delivery plan · current"]:::knowledge
     n1["Programme Delivery And Architecture Map · current"]:::boundary
-    n2["Automate dependency updates · blocked"]:::boundary
-    n3["Build shared authentication middleware · ready"]:::boundary
-    n4["Define service ownership · done"]:::boundary
-    n5["Establish repository boundaries · done"]:::boundary
-    n6["Introduce feature flagging · proposed"]:::boundary
-    n7["Provision development environments · validation"]:::boundary
-    n8["Publish platform readiness evidence · ready"]:::boundary
-    n9["Standardise configuration loading · in-progress"]:::boundary
+    n2["Combined delivery and architecture workspace"]:::boundary
+    n3["Automate dependency updates · blocked"]:::boundary
+    n4["Build shared authentication middleware · ready"]:::boundary
+    n5["Define service ownership · done"]:::boundary
+    n6["Establish repository boundaries · done"]:::boundary
+    n7["Introduce feature flagging · proposed"]:::boundary
+    n8["Provision development environments · validation"]:::boundary
+    n9["Publish platform readiness evidence · ready"]:::boundary
+    n10["Standardise configuration loading · in-progress"]:::boundary
+    n0 -->|links| n6
     n0 -->|links| n5
+    n0 -->|links| n8
+    n0 -->|links| n10
     n0 -->|links| n4
     n0 -->|links| n7
-    n0 -->|links| n9
     n0 -->|links| n3
-    n0 -->|links| n6
-    n0 -->|links| n2
-    n0 -->|links| n8
+    n0 -->|links| n9
     n1 -->|links| n0
-    n1 -->|links| n5
-    n2 -->|links| n6
-    n2 -->|links| n9
+    n1 -->|links| n6
+    n2 -->|links| n1
     n2 -->|links| n0
-    n3 -->|links| n9
-    n3 -->|links| n4
+    n3 -->|links| n7
+    n3 -->|links| n10
     n3 -->|links| n0
+    n4 -->|links| n10
     n4 -->|links| n5
     n4 -->|links| n0
+    n5 -->|links| n6
     n5 -->|links| n0
-    n6 -->|links| n3
-    n6 -->|links| n7
     n6 -->|links| n0
     n7 -->|links| n4
+    n7 -->|links| n8
     n7 -->|links| n0
-    n8 -->|links| n2
-    n8 -->|links| n3
+    n8 -->|links| n5
     n8 -->|links| n0
-    n9 -->|links| n7
-    n9 -->|links| n5
+    n9 -->|links| n3
+    n9 -->|links| n4
     n9 -->|links| n0
+    n10 -->|links| n8
+    n10 -->|links| n6
+    n10 -->|links| n0
     classDef task fill:#dbeafe,stroke:#2563eb,color:#172554
     classDef workstream fill:#ede9fe,stroke:#7c3aed,color:#2e1065
     classDef tracker fill:#ffedd5,stroke:#ea580c,color:#431407
@@ -970,7 +999,8 @@ flowchart LR
     n5["Audit Service · current"]:::boundary
     n6["Identity Service · current"]:::boundary
     n7["Migration Service · current"]:::boundary
-    n8["Validate architecture decision coverage · done"]:::boundary
+    n8["Combined delivery and architecture workspace"]:::boundary
+    n9["Validate architecture decision coverage · done"]:::boundary
     n0 -->|links| n1
     n0 -->|links| n2
     n0 -->|links| n6
@@ -979,11 +1009,13 @@ flowchart LR
     n3 -->|links| n0
     n4 -->|links| n0
     n4 -->|links| n1
-    n4 -->|links| n8
+    n4 -->|links| n9
     n5 -->|links| n0
     n6 -->|links| n0
+    n8 -->|links| n4
     n8 -->|links| n0
-    n8 -->|links| n1
+    n9 -->|links| n0
+    n9 -->|links| n1
     classDef task fill:#dbeafe,stroke:#2563eb,color:#172554
     classDef workstream fill:#ede9fe,stroke:#7c3aed,color:#2e1065
     classDef tracker fill:#ffedd5,stroke:#ea580c,color:#431407

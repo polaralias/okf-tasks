@@ -19,7 +19,7 @@ This creates the ignored local review artefacts:
 
 The combined stress-test workspace is also committed as a durable review example:
 
-- [`examples/visualization/combined-workspace.html`](../examples/visualization/combined-workspace.html), the native interactive export of 108 connected records;
+- [`examples/visualization/combined-workspace.html`](../examples/visualization/combined-workspace.html), the native interactive export of 109 connected records;
 - [`docs/COMBINED_WORKSPACE_VISUALIZATION.md`](./COMBINED_WORKSPACE_VISUALIZATION.md), its GitHub-rendered overview and focussed diagrams.
 
 These two files intentionally sit outside both `local-docs/` and the source bundle, preventing a derived Mermaid report from being read back as source content. Regenerate or freshness-check them from the repository root:
@@ -59,6 +59,18 @@ python scripts/visualize_bundle.py \
 
 With `--html`, a pathless `--mermaid` writes `<html-name>.mermaid.md` beside the interactive workspace. Pass `--mermaid <path>` when the report belongs elsewhere. `--markdown <path>` remains an explicit-path synonym for checked documentation workflows.
 
+Use `--exclude <bundle-relative-path-or-glob>` repeatedly to create a deliberately scoped view. For a persistent default, add `.okf-visualization-ignore` at the selected bundle root with one path or glob per line and optional `#` comments. Directory-name entries ending in `/` match at every depth, while a leading `**/` also includes the bundle root. A practical dependency policy is:
+
+```text
+node_modules/
+.venv/
+**/.pytest_cache/**
+```
+
+`--exclude-from <file>` selects another policy file. Absolute paths and `..` traversal are rejected. The same exclusions apply to Graph and Reader, and the generated payload retains the normalised policy plus the resolved omitted Markdown paths. This is view policy only: repository validation still checks every governed durable concept and cannot be made green by hiding an orphan or broken link.
+
+Reader may display untyped Markdown, but only typed concepts become graph nodes. Promote a durable `README.md` that provides canonical orientation or project context with `type`, `title`, `description`, RFC 3339 `timestamp`, `navigation`, and useful relative links. Leave generated, vendored, transient, or deliberately out-of-scope READMEs untyped or exclude them; filename alone does not make a file governed knowledge.
+
 The Mermaid report scales by separating concerns: an area-level map shows how connected repository regions relate; manageable connected components render in full; large components split into area diagrams with dashed boundary context; the highest-connectivity concepts receive focussed neighbourhood diagrams; and true isolates are listed rather than drawn with equal weight. Every connected node and edge remains represented without forcing the repository into one oversized diagram.
 
 ## Freshness and authority
@@ -72,14 +84,16 @@ The viewer is a derived consumer. The source Markdown/YAML bundle remains author
 - Graph, Board, and Reader are first-class tabs over one embedded bundle.
 - Graph presents the complete document mesh. Compact document chips use class-coloured borders, Architecture Decisions have a distinct class, folder trails remain visible beneath them, and selecting a chip fades unrelated documents while revealing labels on its direct relationships.
 - The type key is interactive: selecting Tasks, Workstreams, ADRs/decisions, trackers, or knowledge documents highlights that class without removing surrounding context. The reading-role selector similarly highlights `entry-point`, `foundational`, `supporting`, or `reference` concepts.
-- Opening or changing the graph selection centres the selected record in the relationship panel. Compact controls immediately above and below it indicate and navigate to incoming and outgoing relationships, so a long neighbourhood never displaces the current focus.
+- At overview scale, entry points, foundational records, and highly connected landmarks keep readable labels. Ordinary low-connectivity records become class-coloured marks until hover or zoom restores their labels, preventing a large repository from shrinking every title into noise.
+- The connected map expands horizontally on a wide canvas. Disconnected documents are arranged as a compact reveal-on-hover shelf to its right; they remain selectable and available in Reader without stretching the overview bounds into a long line or controlling the map's readable scale.
+- Opening or changing the graph selection reflows its visible neighbourhood into a close, non-overlapping circular focus. Modest camera padding favours readable labels while retaining every direct node, and the relationship panel centres the selected record. Compact controls immediately above and below it indicate and navigate to incoming and outgoing relationships, so a long neighbourhood never displaces the current focus.
 - `navigation.role` and sparse `navigation.order` values are optional retrieval metadata for prominence and first-reading order. They do not replace relationship links, Task dependencies, or Task `priority`; use `priority` only for execution urgency.
 - The Graph panel presents those direct relationships vertically as Incoming → Selected → Outgoing. Connected cards recenter the graph; the selected summary includes concise temporal and effort context plus a Reader shortcut, without duplicating the full Markdown document.
 - The temporal selector compares Last meaningful change, Created, Started, or Finished. Drift review highlights relationships whose source has a newer selected value than its target. Treat every highlight as a review prompt only; timestamp order cannot prove semantic drift.
 - Board groups Tasks into lifecycle columns or compact rows, nests their Workstreams, and displays estimates, recorded effort, embedded-time evidence, tracker context, link counts, and the selected temporal value.
 - Embedded `Task.time[]` entries remain individually addressable through `#time:<id>` fragments and appear within their Task's evidence surfaces.
 - Board selections use the detailed record pane with identity, status, description, temporal fields, Workstream and time evidence, connections, rendered Markdown, and collapsed raw source.
-- The document browser includes every Markdown file below the selected source tree, including files that are not OKF records.
+- The document browser includes every non-excluded Markdown file below the selected source tree, including files that are not OKF records.
 - The viewer opens in light mode on first use and persists a later light or dark choice locally.
 - Every button exposes a hover label as well as an accessible name, including graph controls whose icons are otherwise ambiguous.
 - Reader renders the selected file at near-full width with a persistent searchable tree on the left and ancestry, connection, metadata, and heading context on the right.
@@ -89,7 +103,7 @@ The viewer is a derived consumer. The source Markdown/YAML bundle remains author
 
 The viewer enables Marked's GitHub-flavoured Markdown mode for autolinks, tables, strikethrough, and task lists. It preserves sanitised HTML disclosure elements such as `<details>` and `<summary>`, and converts fenced `mermaid` blocks into diagrams.
 
-All rendered HTML passes through DOMPurify. Mermaid runs with `securityLevel: strict`. If Marked or DOMPurify cannot load, the viewer displays the Markdown source as plain text rather than leaving the inspector empty. If Mermaid cannot load, its fenced source remains readable.
+All rendered HTML passes through DOMPurify. Mermaid runs with `securityLevel: strict`. The generated standalone file embeds its pinned rendering runtimes and data, so opening or navigating it locally does not contact a CDN or another remote service. On Windows, writing an HTML output also clears inherited `Zone.Identifier` metadata from that generated file; this prevents a browser warning left by an earlier email or web download without weakening security for unrelated files. If a bundled renderer cannot initialise, the viewer displays Markdown or Mermaid source rather than leaving the inspector empty.
 
 The generated HTML currently loads pinned browser builds from jsDelivr:
 

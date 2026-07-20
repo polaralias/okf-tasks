@@ -1,3 +1,12 @@
+---
+type: Knowledge Document
+title: Architecture knowledge graph example
+description: Entry point for a detailed architecture and decision graph.
+timestamp: 2026-07-19T12:00:00Z
+navigation:
+  role: entry-point
+  order: 10
+---
 # Architecture knowledge graph example
 
 This generated dummy workspace stress-tests an architecture-heavy graph with detailed architecture documents, twenty ADRs, service designs, interface contracts, quality attributes, and a small linked implementation backlog.
