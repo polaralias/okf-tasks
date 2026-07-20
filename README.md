@@ -8,6 +8,8 @@ OKF Tasks is an independent profile of the [Open Knowledge Format (OKF) v0.1](ht
 
 It defines how tasks, workstreams, lifecycle state, evidence, relationships, and external tracker mappings can be represented as human- and agent-readable Markdown with YAML frontmatter. A task bundle works on its own or alongside an existing repository knowledge system.
 
+Frontmatter is portable structured metadata, not a rich-text surface. Keep every string value as plaintext: use bare URLs or repository-relative references where a link is required, and place emphasis, labelled Markdown links, code formatting, lists, or other presentation in the Markdown body. The validators enforce this recursively, including for custom and otherwise unknown fields.
+
 This project is not affiliated with or endorsed by Google Cloud.
 
 ## What is included

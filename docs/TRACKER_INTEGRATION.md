@@ -40,6 +40,8 @@ Credentials were supplied only through runtime environment variables: `GITHUB_TO
 
 GitHub and GitLab both preserved a foreign `human-review` label while updating the OKF-owned `okf:` subset. Linear's discovered `Todo` state mapped uniquely back to `ready`. GitHub, GitLab, and ClickUp correctly refused ambiguous reverse mappings where several OKF states collapse into a provider's open state.
 
+GitHub validation also distinguishes rich issue bodies from structured fields. GitHub Flavoured Markdown renders emphasis and labelled links in issue bodies and Markdown files, while organisation Issue Fields are typed metadata; GitHub documents text fields as free-form text whose bare URLs are automatically detected and made clickable. OKF therefore keeps all frontmatter string values presentation-free for portable title, label, custom-field, and provider synchronisation. Bare URLs and repository references are valid; Markdown or HTML formatting belongs in the body.
+
 The live scopes did not expose writable arbitrary custom fields suitable for a safe create/read-back test. ClickUp returned zero accessible List custom fields; the GitHub, GitLab, and Linear test surfaces likewise did not provide a writable arbitrary issue-field transport. Stable custom-field identifiers and outbound value construction remain covered by the machine test suite.
 
 ## Verification evidence
