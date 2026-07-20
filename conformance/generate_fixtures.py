@@ -209,6 +209,10 @@ def build(root: Path) -> None:
         "invalid-completion-history": (task(completion_history=[{"finished": STAMP}]), None),
         "invalid-portable-field": (task(fields={"risk": {"type": "number", "value": "high"}}), None),
         "invalid-navigation-role": (task(navigation={"role": "urgent", "order": -1}), None),
+        "invalid-frontmatter-formatting": (task(
+            title="**Formatted task**",
+            producer_extension={"note": "Use *emphasis* and [labelled links](https://example.com)"},
+        ), None),
     }
     for name, (metadata, body) in negatives.items():
         bundle = fixture(root, "invalid", name, metadata, body); finalize(bundle)

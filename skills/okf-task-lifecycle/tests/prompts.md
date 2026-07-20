@@ -21,6 +21,8 @@ Expected:
 
 - advances the record `timestamp` in the same edit;
 - preserves unknown frontmatter fields;
+- keeps every frontmatter string plaintext, including unknown nested values, while allowing bare URLs and repository-relative references;
+- rejects or removes Markdown and HTML presentation markup from frontmatter and places rich formatting in the document body;
 - regenerates the index and derived visualisation;
 - reports `timestamp` as Last meaningful change, distinct from created, started, and finished.
 

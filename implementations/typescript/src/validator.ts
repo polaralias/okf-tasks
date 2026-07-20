@@ -17,6 +17,33 @@ const linkGraphExcludedDirectories = new Set([".git", ".venv", "build", "dist", 
 type RecordValue = Record<string, unknown>;
 type Parsed = { metadata: RecordValue; body: string };
 
+function frontmatterStrings(value: unknown, field = "$"): Array<[string, string]> {
+  if (typeof value === "string") return [[field, value]];
+  if (Array.isArray(value)) return value.flatMap((child, index) => frontmatterStrings(child, `${field}[${index}]`));
+  if (value && typeof value === "object") return Object.entries(value as RecordValue).flatMap(([key, child]) =>
+    frontmatterStrings(child, field === "$" ? key : `${field}.${key}`));
+  return [];
+}
+
+function frontmatterPresentation(value: string): string | undefined {
+  const checks: Array<[string, RegExp]> = [
+    ["Markdown link or image", /!?\[[^\]\n]+\]\([^)\n]+\)/],
+    ["Markdown reference link", /\[[^\]\n]+\]\[[^\]\n]*\]/],
+    ["Markdown code", /`+[^`\n]+`+/],
+    ["Markdown emphasis", /(?:\*\*[^*\n]+\*\*|__[^_\n]+__|~~[^~\n]+~~|(^|[^\w/])\*[^*\n]+\*($|[^\w/])|(^|[^\w/])_[^_\n]+_($|[^\w/]))/],
+    ["Markdown block formatting", /^\s{0,3}(?:#{1,6}|>|[-+*]|\d+[.)])\s+/m],
+    ["HTML tag", /<\/?[A-Za-z][^>\n]*>/],
+  ];
+  return checks.find(([, pattern]) => pattern.test(value))?.[0];
+}
+
+function validatePlaintextFrontmatter(file: string, metadata: RecordValue, errors: string[]): void {
+  for (const [field, value] of frontmatterStrings(metadata)) {
+    const presentation = frontmatterPresentation(value);
+    if (presentation) errors.push(`${file}: frontmatter string values must be plaintext; ${field} contains ${presentation}`);
+  }
+}
+
 const secretPatterns: Array<[string, RegExp]> = [
   ["private key", /-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----/],
   ["GitHub token", /\bgh[pousr]_[A-Za-z0-9_]{20,}\b/],
@@ -336,9 +363,11 @@ export function validateBundle(bundle: string): string[] {
   const errors: string[] = [];
   if (!fs.existsSync(bundle)) return [`${bundle}: bundle does not exist`];
   for (const file of markdownFiles(bundle)) {
-    if (["index.md", "log.md"].includes(path.basename(file))) continue;
+    if (path.basename(file) === "log.md") continue;
     try {
       const metadata = parseDocument(file).metadata;
+      validatePlaintextFrontmatter(file, metadata, errors);
+      if (path.basename(file) === "index.md") continue;
       if (!metadata.type) errors.push(`${file}: non-reserved Markdown concept requires a non-empty type`);
       if (metadata.navigation !== undefined) {
         const navigation = metadata.navigation;

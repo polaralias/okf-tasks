@@ -89,6 +89,21 @@ class ConformanceFixtureTests(unittest.TestCase):
             cwd=REPOSITORY,
         )
 
+    def test_frontmatter_plaintext_detection_is_recursive_and_allows_bare_urls(self) -> None:
+        metadata = {
+            "title": "Plain title",
+            "resource": "https://example.com/a_path?q=one_two",
+            "related": "../docs/architecture_file.md#overview",
+            "extension": {"values": ["**bold**", "*italic*", "[label](https://example.com)", "<em>html</em>"]},
+        }
+        errors: list[str] = []
+
+        okf_tasks.validate_plaintext_frontmatter(Path("task.md"), metadata, errors)
+
+        self.assertEqual(4, len(errors), errors)
+        self.assertTrue(all("extension.values" in error for error in errors))
+        self.assertFalse(any("resource" in error or "related" in error for error in errors))
+
     def test_transition_matrix_is_exhaustive(self) -> None:
         matrix = json.loads((REPOSITORY / "conformance" / "transitions.json").read_text(encoding="utf-8"))
         self.assertEqual(list(okf_tasks.STATUSES), matrix["statuses"])

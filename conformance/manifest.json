@@ -25,6 +25,7 @@
     {"id": "invalid-completion-history", "path": "generated/invalid/invalid-completion-history/tasks", "valid": false, "error": "completion_history[0]"},
     {"id": "invalid-portable-field", "path": "generated/invalid/invalid-portable-field/tasks", "valid": false, "error": "fields.risk.value is incompatible"},
     {"id": "invalid-navigation-role", "path": "generated/invalid/invalid-navigation-role/tasks", "valid": false, "error": "navigation.role must be"},
+    {"id": "invalid-frontmatter-formatting", "path": "generated/invalid/invalid-frontmatter-formatting/tasks", "valid": false, "error": "frontmatter string values must be plaintext"},
     {"id": "invalid-workstream-parent", "path": "generated/invalid/workstream-parent-mismatch/tasks", "valid": false, "error": "parent task mismatch"},
     {"id": "invalid-workstream-created", "path": "generated/invalid/workstream-missing-created/tasks", "valid": false, "error": "missing required fields: created"},
     {"id": "invalid-done-active-workstream", "path": "generated/invalid/done-active-workstream/tasks", "valid": false, "error": "done task has active workstreams"},
