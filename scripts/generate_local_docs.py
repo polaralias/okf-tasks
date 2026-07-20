@@ -8,6 +8,8 @@ from visualize_bundle import (
     generate_html,
     generate_markdown,
     generate_relationship_html,
+    excluded_markdown_paths,
+    load_exclusions,
     read_documents,
     read_records,
     write_or_check,
@@ -40,8 +42,13 @@ def main() -> int:
     output = Path(args.output_dir).resolve() if args.output_dir else root / "local-docs"
     for source_name, title, filename, renderer in PAGES:
         source = root / source_name
-        records = read_records(source)
-        graph = build_graph(records, read_documents(source, records))
+        exclusions = load_exclusions(source)
+        records = read_records(source, exclusions)
+        graph = build_graph(
+            records,
+            read_documents(source, records, exclusions),
+            {"patterns": exclusions, "paths": excluded_markdown_paths(source, exclusions)},
+        )
         write_or_check(output / filename, renderer(graph, title), args.check)
         if args.mermaid and renderer is generate_html:
             mermaid_name = f"{Path(filename).stem}.mermaid.md"

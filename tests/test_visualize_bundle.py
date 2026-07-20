@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import re
 import subprocess
 import sys
@@ -77,6 +78,18 @@ timestamp: 2026-07-17T20:00:00Z
 
     def tearDown(self) -> None:
         self.temporary.cleanup()
+
+    @unittest.skipUnless(os.name == "nt", "Windows alternate data streams only")
+    def test_generated_html_clears_windows_download_zone(self) -> None:
+        output = self.root / "visualization.html"
+        output.write_text("downloaded", encoding="utf-8")
+        zone = Path(f"{output}:Zone.Identifier")
+        zone.write_text("[ZoneTransfer]\nZoneId=3\n", encoding="utf-8")
+
+        visualize_bundle.write_or_check(output, "generated", False)
+
+        self.assertFalse(zone.exists())
+        self.assertEqual("generated\n", output.read_text(encoding="utf-8"))
 
     def graph(self, include_documents: bool = False) -> dict[str, object]:
         records = visualize_bundle.read_records(self.root)
@@ -160,6 +173,36 @@ timestamp: 2026-07-17T20:00:00Z
         self.assertIn('cy.on("tap","node.main"', generated)
         self.assertIn('id="fit-btn"', generated)
 
+    def test_standalone_workspace_embeds_all_runtimes_without_remote_requests(self) -> None:
+        generated = self.generated()
+        self.assertNotIn('src="http://', generated)
+        self.assertNotIn('src="https://', generated)
+        self.assertNotIn("cdn.jsdelivr.net/npm/mermaid", generated)
+        self.assertIn('securityLevel:"strict"', generated)
+        self.assertNotIn("__MERMAID_RUNTIME__", generated)
+
+    def test_dense_overview_preserves_landmarks_and_reflows_selected_neighbourhood(self) -> None:
+        generated = self.generated()
+        self.assertIn("function updateGraphOverviewDetail()", generated)
+        self.assertIn('node.toggleClass("overview-compact",overview&&(node.data("deg")===0||(compact&&!prominent)))', generated)
+        self.assertIn('node.data("deg")>=4', generated)
+        self.assertIn("function focusGraphNeighborhood(path)", generated)
+        self.assertIn('name:"concentric"', generated)
+        self.assertIn("minNodeSpacing:10,spacingFactor:.44", generated)
+        self.assertIn("graphViewportFor(focus.union(crumbs),44,1.6)", generated)
+        self.assertIn("function arrangeOverviewIsolates(connected,isolates,metrics)", generated)
+        self.assertIn("function widenOverviewConnected(connected)", generated)
+        self.assertIn("function widenOverviewComposition(nodes)", generated)
+        self.assertIn("Math.min(720000,200000+count*26000)", generated)
+        self.assertIn("idealEdgeLength:compact?64+count*4:125", generated)
+        self.assertIn("Math.min(1.45,Math.max(1,1.05/", generated)
+        self.assertIn("Math.min(1.8,canvasAspect*.68)", generated)
+        self.assertIn('cy.fit(cy.elements("node.main,edge")', generated)
+        self.assertIn("separateOverlappingNodes(focusNodes", generated)
+        template = SCRIPT.with_name("visualizer_template.html").read_text(encoding="utf-8")
+        graph_config = template.split("cy=cytoscape({", 1)[1].split("// layout runs", 1)[0]
+        self.assertNotIn("wheelSensitivity", graph_config)
+
     def test_graph_filters_types_and_reading_prominence_without_hiding_context(self) -> None:
         generated = self.generated()
         self.assertIn('id="reading-filter"', generated)
@@ -213,6 +256,91 @@ timestamp: 2026-07-17T20:00:00Z
         self.assertIn('securityLevel:"strict"', generated)
         self.assertIn("DOMPurify.sanitize", generated)
 
+    def test_typed_readme_is_a_linked_knowledge_record(self) -> None:
+        readme = self.root / "README.md"
+        readme.write_text(
+            """---
+type: Knowledge Document
+title: Repository guide
+description: Start here for delivery context.
+timestamp: 2026-07-19T12:00:00Z
+navigation:
+  role: entry-point
+  order: 10
+---
+# Repository guide
+
+Continue with the [viewer task](./tasks/ship-viewer/task.md).
+""",
+            encoding="utf-8",
+        )
+        graph = self.graph(include_documents=True)
+        ids = {node["data"]["id"] for node in graph["nodes"]}
+        self.assertIn("README", ids)
+        self.assertIn(
+            ("README", "tasks/ship-viewer/task", "links"),
+            {
+                (edge["data"]["source"], edge["data"]["target"], edge["data"]["relationship"])
+                for edge in graph["edges"]
+            },
+        )
+
+    def test_explicit_exclusions_remove_records_and_reader_documents_with_provenance(self) -> None:
+        omitted = self.root / "notes" / "scratch.md"
+        omitted.parent.mkdir()
+        omitted.write_text(
+            "---\ntype: Knowledge Document\ntitle: Scratch\ntimestamp: 2026-07-19T12:00:00Z\n---\n# Scratch\n",
+            encoding="utf-8",
+        )
+        policy = self.root / visualize_bundle.DEFAULT_EXCLUSION_FILE
+        policy.write_text("# Deliberately outside this view\nnotes/**\n", encoding="utf-8")
+        exclusions = visualize_bundle.load_exclusions(self.root)
+        records = visualize_bundle.read_records(self.root, exclusions)
+        documents = visualize_bundle.read_documents(self.root, records, exclusions)
+        paths = visualize_bundle.excluded_markdown_paths(self.root, exclusions)
+        graph = visualize_bundle.build_graph(
+            records,
+            documents,
+            {"patterns": exclusions, "paths": paths},
+        )
+        self.assertNotIn("notes/scratch", {node["data"]["id"] for node in graph["nodes"]})
+        self.assertNotIn("notes/scratch.md", {document["path"] for document in graph["documents"]})
+        self.assertEqual(["notes/scratch.md"], graph["exclusions"]["paths"])
+        generated = visualize_bundle.generate_html(graph, "Example")
+        self.assertIn("RAW.exclusions?.paths?.length", generated)
+        self.assertIn("RAW.exclusions.paths.length} excluded", generated)
+
+    def test_rejects_exclusions_outside_the_bundle(self) -> None:
+        with self.assertRaisesRegex(ValueError, "relative to the bundle root"):
+            visualize_bundle.normalise_exclusion("C:/outside/*.md")
+        with self.assertRaisesRegex(ValueError, "cannot traverse"):
+            visualize_bundle.normalise_exclusion("../outside/*.md")
+
+    def test_directory_exclusions_match_dependencies_at_every_depth(self) -> None:
+        omitted = (
+            self.root / "node_modules" / "top" / "README.md",
+            self.root / "lambdas" / "worker" / "node_modules" / "nested" / "README.md",
+            self.root / "triggers" / "hook" / ".venv" / "site-packages" / "README.md",
+            self.root / ".pytest_cache" / "README.md",
+        )
+        for path in omitted:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("# Dependency documentation\n", encoding="utf-8")
+        policy = self.root / visualize_bundle.DEFAULT_EXCLUSION_FILE
+        policy.write_text(
+            "node_modules/\n.venv/\n**/.pytest_cache/**\n",
+            encoding="utf-8",
+        )
+        exclusions = visualize_bundle.load_exclusions(self.root)
+        self.assertEqual(
+            ["node_modules/", ".venv/", "**/.pytest_cache/**"],
+            exclusions,
+        )
+        self.assertEqual(
+            {path.relative_to(self.root).as_posix() for path in omitted},
+            set(visualize_bundle.excluded_markdown_paths(self.root, exclusions)),
+        )
+
     def test_adds_temporal_comparison_and_evidence_cautious_drift_indicators(self) -> None:
         generated = self.generated()
         self.assertIn('id="temporal-field"', generated)
@@ -244,7 +372,15 @@ timestamp: 2026-07-17T20:00:00Z
         manifest = json.loads((REPOSITORY / "conformance" / "visualization-manifest.json").read_text(encoding="utf-8"))
         case_ids = {case["id"] for case in manifest["cases"]}
         self.assertEqual(
-            {"scalable-mermaid-report", "dynamic-small-graph-framing", "paired-derived-output", "prominence-and-type-filtering"},
+            {
+                "scalable-mermaid-report",
+                "dynamic-small-graph-framing",
+                "paired-derived-output",
+                "prominence-and-type-filtering",
+                "explicit-view-exclusions",
+                "offline-semantic-graph",
+                "typed-readme-knowledge",
+            },
             case_ids,
         )
 
@@ -282,7 +418,7 @@ timestamp: 2026-07-17T20:00:00Z
         generated = self.generated()
         self.assertIn("function graphLayoutMetrics(count)", generated)
         self.assertIn("startRadius:compact?Math.min(190,80+count*14):340", generated)
-        self.assertIn("cy.fit(cy.elements(),metrics.padding);", generated)
+        self.assertIn('cy.fit(cy.elements("node.main,edge"),metrics.padding);', generated)
         self.assertNotIn("minimumZoom", generated)
         self.assertIn('window.addEventListener("resize"', generated)
         self.assertIn("fitGraph();", generated)
@@ -358,6 +494,14 @@ timestamp: 2026-07-17T20:00:00Z
         self.assertEqual(
             SCRIPT.with_name("visualizer_template.html").read_bytes(),
             bundled.with_name("visualizer_template.html").read_bytes(),
+        )
+        self.assertEqual(
+            (SCRIPT.parent / "vendor" / "mermaid-11.10.1.min.js").read_bytes(),
+            (bundled.parent / "vendor" / "mermaid-11.10.1.min.js").read_bytes(),
+        )
+        self.assertEqual(
+            (SCRIPT.parent / "vendor" / "mermaid-11.10.1.LICENSE").read_bytes(),
+            (bundled.parent / "vendor" / "mermaid-11.10.1.LICENSE").read_bytes(),
         )
 
 
