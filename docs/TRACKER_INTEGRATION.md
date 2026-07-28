@@ -1,3 +1,18 @@
+---
+type: "Repository Knowledge"
+title: "Tracker integration setup and live evidence"
+description: "Documents Tracker integration setup and live evidence for the okf-tasks repository."
+timestamp: 2026-07-28T21:55:36Z
+authority: canonical
+verification: untested
+owner: polaralias
+tags:
+  - okf-tasks
+  - repository-knowledge
+navigation:
+  role: supporting
+  order: 100
+---
 # Tracker integration setup and live evidence
 
 This document records how OKF Tasks establishes a first-class tracker connection and the live verification performed for the provider layer included in the foundational v0.1 release. It intentionally contains no credentials or credential references.
@@ -51,3 +66,7 @@ The live scopes did not expose writable arbitrary custom fields suitable for a s
 - Generated fixtures were current.
 - Release metadata was consistent for v0.1.0.
 - Live credentials were cleared after use and no test credential was persisted in either repository.
+
+## Repository knowledge
+
+- [Documentation map](knowledge/documentation-map.md) — RKE-managed reading order and relationship hub.

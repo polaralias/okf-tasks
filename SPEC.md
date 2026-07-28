@@ -1,3 +1,18 @@
+---
+type: "Specification"
+title: "OKF Tasks Profile"
+description: "Documents OKF Tasks Profile for the okf-tasks repository."
+timestamp: 2026-07-28T21:55:36Z
+authority: canonical
+verification: untested
+owner: polaralias
+tags:
+  - okf-tasks
+  - specification
+navigation:
+  role: foundational
+  order: 20
+---
 # OKF Tasks Profile
 
 Version 0.1
@@ -479,3 +494,7 @@ Authenticated sessions receive a newly rotated token without interrupting valid 
 
 - No implementation evidence yet.
 ```
+
+## Repository knowledge
+
+- [Documentation map](docs/knowledge/documentation-map.md) — RKE-managed reading order and relationship hub.

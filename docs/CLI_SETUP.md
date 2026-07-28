@@ -1,3 +1,18 @@
+---
+type: "Repository Knowledge"
+title: "CLI setup"
+description: "Documents CLI setup for the okf-tasks repository."
+timestamp: 2026-07-28T21:55:36Z
+authority: canonical
+verification: untested
+owner: polaralias
+tags:
+  - okf-tasks
+  - repository-knowledge
+navigation:
+  role: supporting
+  order: 100
+---
 # CLI setup
 
 The `okf-tasks` repository is the authoritative distribution for the reference CLI. Its Python and TypeScript validators remain independent; the console command uses the Python implementation bundled in `skills/okf-task-lifecycle/scripts/okf_tasks.py`.
@@ -26,3 +41,7 @@ python <skill-directory>/scripts/okf_tasks.py --help
 The fallback requires Python 3.10 or newer and PyYAML. It is a portable execution path, not a second authority: specification, fixtures, schemas, CLI behaviour, and both skill copies must remain in parity.
 
 For strict graph-aware creation, use repeatable `create --depends-on <task-concept-path>` and `create --related <repository-relative-markdown-path>` arguments. Related-document targets must already exist inside the repository; the CLI writes a portable relative Markdown link from the new task.
+
+## Repository knowledge
+
+- [Documentation map](knowledge/documentation-map.md) — RKE-managed reading order and relationship hub.

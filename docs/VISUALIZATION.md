@@ -1,3 +1,18 @@
+---
+type: "Repository Knowledge"
+title: "OKF Tasks visualisation example"
+description: "Documents OKF Tasks visualisation example for the okf-tasks repository."
+timestamp: 2026-07-28T21:55:36Z
+authority: canonical
+verification: untested
+owner: polaralias
+tags:
+  - okf-tasks
+  - repository-knowledge
+navigation:
+  role: supporting
+  order: 100
+---
 # OKF Tasks visualisation example
 
 > Generated from repository-local OKF records. The Markdown/YAML bundle remains canonical.
@@ -71,3 +86,7 @@ These records are listed instead of receiving equal visual weight in the connect
 - Dashed neutral nodes: neighbouring context repeated from another area or key-concept view
 - Time references: edges to addressable `Task.time[]` fragments
 - Arrows: structured relationships or repository-local Markdown links
+
+## Repository knowledge
+
+- [Documentation map](knowledge/documentation-map.md) — RKE-managed reading order and relationship hub.

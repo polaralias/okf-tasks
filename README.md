@@ -1,3 +1,18 @@
+---
+type: "Repository Guide"
+title: "OKF Tasks"
+description: "Documents OKF Tasks for the okf-tasks repository."
+timestamp: 2026-07-28T21:55:36Z
+authority: canonical
+verification: untested
+owner: polaralias
+tags:
+  - okf-tasks
+  - repository-guide
+navigation:
+  role: entry-point
+  order: 10
+---
 <p align="center">
   <img src="OKF%20Tasks%20Banner.png" alt="OKF Tasks banner" width="960" />
 </p>
@@ -178,3 +193,7 @@ Version 0.1 establishes portable reading prominence and first-reading order alon
 ## Licence
 
 Apache License 2.0. See [`LICENSE`](./LICENSE).
+
+## Repository knowledge
+
+- [Documentation map](docs/knowledge/documentation-map.md) — RKE-managed reading order and relationship hub.

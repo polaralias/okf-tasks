@@ -1,3 +1,18 @@
+---
+type: "Governance"
+title: "Governance"
+description: "Documents Governance for the okf-tasks repository."
+timestamp: 2026-07-28T21:55:36Z
+authority: canonical
+verification: untested
+owner: polaralias
+tags:
+  - okf-tasks
+  - governance
+navigation:
+  role: foundational
+  order: 20
+---
 # Governance
 
 OKF Tasks is maintained by James Whelan (`@polaralias`). The maintainer accepts releases and has final responsibility for the profile's published meaning.
@@ -33,3 +48,7 @@ A release is eligible when:
 ## Security and conduct
 
 Security-sensitive reports should use GitHub's private vulnerability reporting when enabled rather than a public issue. Contributors are expected to engage constructively, focus criticism on artefacts and decisions, and respect the maintainer's enforcement of repository boundaries.
+
+## Repository knowledge
+
+- [Documentation map](docs/knowledge/documentation-map.md) — RKE-managed reading order and relationship hub.

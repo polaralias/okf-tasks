@@ -1,3 +1,18 @@
+---
+type: "Release History"
+title: "Changelog"
+description: "Documents Changelog for the okf-tasks repository."
+timestamp: 2026-07-28T21:55:36Z
+authority: evidence
+verification: verified-limited
+owner: polaralias
+tags:
+  - okf-tasks
+  - release-history
+navigation:
+  role: reference
+  order: 200
+---
 # Changelog
 
 All notable changes to OKF Tasks are recorded here.
@@ -21,3 +36,7 @@ All notable changes to OKF Tasks are recorded here.
 - Make commit backfill reruns explicitly idempotent and ignore editable-install `egg-info` metadata.
 - Discover ClickUp Workspace and Space identities separately, resolve custom task IDs with the required Workspace query, and clarify invalid-ID errors.
 - Allow tracker creation and push without a Git remote when the rendered body has no repository-local links; provide actionable remote options when links require repository context.
+
+## Repository knowledge
+
+- [Documentation map](docs/knowledge/documentation-map.md) — RKE-managed reading order and relationship hub.
