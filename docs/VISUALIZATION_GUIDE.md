@@ -1,3 +1,18 @@
+---
+type: "Repository Knowledge"
+title: "Interactive visualisation guide"
+description: "Documents Interactive visualisation guide for the okf-tasks repository."
+timestamp: 2026-07-28T21:55:36Z
+authority: canonical
+verification: untested
+owner: polaralias
+tags:
+  - okf-tasks
+  - repository-knowledge
+navigation:
+  role: supporting
+  order: 100
+---
 # Interactive visualisation guide
 
 The OKF Tasks viewer is a derived, read-only consumer. Markdown/YAML files remain canonical.
@@ -117,3 +132,7 @@ Internet access is therefore needed for the interactive libraries when opening a
 ## Temporal interpretation limits
 
 The viewer operates on the current bundle. Selecting a temporal field compares the current values attached to records; it does not reconstruct the body or frontmatter that existed at an earlier time. Historical facts require retained superseded/versioned concepts or repository history. Plain Markdown documents without OKF temporal metadata remain available in Reader but cannot participate in timestamp drift comparison.
+
+## Repository knowledge
+
+- [Documentation map](knowledge/documentation-map.md) — RKE-managed reading order and relationship hub.
