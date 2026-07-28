@@ -167,6 +167,27 @@ def build(root: Path) -> None:
 
     bundle = fixture(root, "valid", "broken-relationships-warning", task(parent="missing-parent/task", depends_on=["missing-dependency/task"])); finalize(bundle)
 
+    skeleton_body = """# Fixture task
+
+## Outcome
+
+Describe the observable result and how a reviewer will recognise it.
+
+## Scope
+
+- In scope:
+- Out of scope:
+
+## Acceptance
+
+- [ ] Add evidence-backed completion criteria.
+
+## Evidence
+
+- Add validation, integration, deployment, and live-verification evidence separately.
+"""
+    bundle = fixture(root, "valid", "unedited-skeleton-warning", task(), skeleton_body); finalize(bundle)
+
     bundle = fixture(root, "valid", "unknown-concept", task())
     write_document(bundle / "fixture-task" / "coordination.md", {"type": "Coordination Note", "timestamp": STAMP, "extension": "retained"}, "# Coordination\n\nThis note is connected to the [task](./task.md).\n"); finalize(bundle)
 

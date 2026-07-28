@@ -5,6 +5,7 @@
     {"id": "valid-full-task", "path": "generated/valid/full-task/tasks", "valid": true},
     {"id": "valid-workstream", "path": "generated/valid/workstream/tasks", "valid": true},
     {"id": "valid-broken-relationships", "path": "generated/valid/broken-relationships-warning/tasks", "valid": true, "warning": "unresolved parent target"},
+    {"id": "valid-unedited-skeleton", "path": "generated/valid/unedited-skeleton-warning/tasks", "valid": true, "warning": "unedited task skeleton"},
     {"id": "valid-unknown-concept", "path": "generated/valid/unknown-concept/tasks", "valid": true},
     {"id": "valid-excluded-volatile-concepts", "path": "generated/valid/excluded-volatile-concepts/tasks", "valid": true},
     {"id": "valid-reopened-history", "path": "generated/valid/reopened-history/tasks", "valid": true},
