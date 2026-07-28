@@ -15,3 +15,9 @@ All notable changes to OKF Tasks are recorded here.
 - Add a reproducible Visualisation consumer with Graph, Board, Reader, Mermaid, temporal comparison, cautious drift hints, embedded Task time evidence, reading prominence, and first-reading order.
 - Publish standalone, knowledge-linked, tracker-synchronised, task-heavy, architecture-heavy, and combined examples.
 - Publish the `okf-task-lifecycle` skill, Python producer/validator, independent TypeScript validator, normative fixtures, governance, and automated release gates.
+- Stabilise CLI help and version output as `okf-tasks`, clarify ambiguous command and effort-estimation options, and report commit matches against the selected range.
+- Add validation coverage counts, visible warning totals, `--strict` warning gates, and warnings for recognisable unedited task skeleton text.
+- Require resolved dependencies during task creation unless partial-bundle mode is explicit, and keep concise descriptions separate from detailed Outcome prompts.
+- Make commit backfill reruns explicitly idempotent and ignore editable-install `egg-info` metadata.
+- Discover ClickUp Workspace and Space identities separately, resolve custom task IDs with the required Workspace query, and clarify invalid-ID errors.
+- Allow tracker creation and push without a Git remote when the rendered body has no repository-local links; provide actionable remote options when links require repository context.

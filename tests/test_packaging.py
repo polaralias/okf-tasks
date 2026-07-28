@@ -14,6 +14,10 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class PackagingTests(unittest.TestCase):
+    def test_editable_install_metadata_is_gitignored(self) -> None:
+        ignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
+        self.assertIn("*.egg-info/", ignore)
+
     def test_installed_distribution_exposes_the_okf_tasks_command(self) -> None:
         configuration = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
         self.assertEqual("okf_tasks:main", configuration["project"]["scripts"]["okf-tasks"])
@@ -58,7 +62,8 @@ class PackagingTests(unittest.TestCase):
                 env=environment,
             )
             self.assertEqual(0, version.returncode, version.stderr)
-            self.assertEqual("okf-tasks 0.1.0", version.stdout.strip())
+            expected_version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+            self.assertEqual(f"okf-tasks {expected_version}", version.stdout.strip())
 
 
 if __name__ == "__main__":

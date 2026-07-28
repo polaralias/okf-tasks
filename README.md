@@ -49,9 +49,9 @@ okf-tasks stop-time --root . --task first-task --actor agent
 okf-tasks validate --root .
 ```
 
-When the repository already contains governed concepts, connect a new task as part of creation with repeatable `--depends-on <task-concept-path>` and `--related <repository-relative-markdown-path>` arguments. `--related` validates that the target exists inside the repository and writes the correct source-relative Markdown link.
+When the repository already contains governed concepts, connect a new task as part of creation with repeatable `--depends-on <task-concept-path>` and `--related <repository-relative-markdown-path>` arguments. Both validate local targets. Use `--allow-unresolved-dependencies` only when deliberately representing a partial bundle.
 
-Validation also audits the repository's governed Tasks, Workstreams, and typed durable OKF knowledge documents as one resolved local link graph. Incoming links count, while runbooks, handoffs, temporary material, generated output, and Tracker Profiles are excluded.
+The description is the concise navigation/tracker summary; complete the separate `## Outcome` body section with the detailed observable result. Validation also audits the repository's governed Tasks, Workstreams, and typed durable OKF knowledge documents as one resolved local link graph. It reports task, workstream, link, and warning counts. Use `validate --strict` in CI to fail on unresolved relationships or unedited skeleton text. Incoming links count, while runbooks, handoffs, temporary material, generated output, and Tracker Profiles are excluded.
 
 The default bundle location is `tasks/`. Use `--bundle <path>` to select another repository-relative bundle root.
 
@@ -104,9 +104,9 @@ okf-tasks tracker sync --root . --task first-task --direction push
 okf-tasks tracker sync --root . --task first-task --direction pull
 ```
 
-Creation and push perform the same deterministic egress and repository-link checks as `prepare-export`. A remote revision change stops push until it is explicitly resolved. Provider writes are read back before the binding base advances.
+ClickUp imports accept either raw IDs or custom IDs such as `AI-952`; discovery records the owning Workspace separately from its Space so the adapter can request custom-ID resolution correctly. Creation and push perform the same deterministic egress and repository-link checks as `prepare-export`. A repository remote is required only when the body contains repository-local links; the error names `--remote-url` and `--repository-provider` when explicit context is needed. A remote revision change stops push until it is explicitly resolved. Provider writes are read back before the binding base advances.
 
-Prepare a task body for an external tracker without leaking secrets or local paths:
+Prepare any Markdown document for external publication without leaking secrets or local paths (this is document publication, not task-payload serialization):
 
 ```text
 okf-tasks prepare-export --root . --source tasks/first-task/task.md --output .okf-exports/first-task.md
