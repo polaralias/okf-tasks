@@ -36,6 +36,7 @@ All notable changes to OKF Tasks are recorded here.
 - Make commit backfill reruns explicitly idempotent and ignore editable-install `egg-info` metadata.
 - Discover ClickUp Workspace and Space identities separately, resolve custom task IDs with the required Workspace query, and clarify invalid-ID errors.
 - Allow tracker creation and push without a Git remote when the rendered body has no repository-local links; provide actionable remote options when links require repository context.
+- Keep CLI output printable on limited Windows console encodings by escaping characters the active stream cannot represent.
 
 ## Repository knowledge
 
