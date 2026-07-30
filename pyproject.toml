@@ -15,9 +15,14 @@ okf-tasks = "okf_tasks:main"
 
 [tool.setuptools]
 py-modules = ["okf_tasks"]
+packages = ["okf_tasks_assets"]
 
 [tool.setuptools.package-dir]
 "" = "skills/okf-task-lifecycle/scripts"
+okf_tasks_assets = "skills/okf-task-lifecycle/assets"
+
+[tool.setuptools.package-data]
+okf_tasks_assets = ["*.template"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

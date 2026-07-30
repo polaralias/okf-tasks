@@ -64,6 +64,58 @@ class PackagingTests(unittest.TestCase):
             self.assertEqual(0, version.returncode, version.stderr)
             expected_version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
             self.assertEqual(f"okf-tasks {expected_version}", version.stdout.strip())
+            repository = Path(directory) / "repository"
+            repository.mkdir()
+            created = subprocess.run(
+                [
+                    str(launchers[0]),
+                    "create",
+                    "--root",
+                    str(repository),
+                    "--slug",
+                    "packaged-task",
+                    "--title",
+                    "Packaged task",
+                    "--description",
+                    "Exercise the templates installed with the wheel.",
+                ],
+                capture_output=True,
+                text=True,
+                env=environment,
+            )
+            self.assertEqual(0, created.returncode, created.stderr)
+            self.assertTrue((repository / "tasks" / "packaged-task" / "task.md").is_file())
+            workstream = subprocess.run(
+                [
+                    str(launchers[0]),
+                    "add-workstream",
+                    "--root",
+                    str(repository),
+                    "--task",
+                    "packaged-task",
+                    "--slug",
+                    "implementation",
+                    "--title",
+                    "Implementation",
+                    "--description",
+                    "Implement the packaged task.",
+                    "--owner",
+                    "test-agent",
+                ],
+                capture_output=True,
+                text=True,
+                env=environment,
+            )
+            self.assertEqual(0, workstream.returncode, workstream.stderr)
+            self.assertTrue(
+                (
+                    repository
+                    / "tasks"
+                    / "packaged-task"
+                    / "workstreams"
+                    / "implementation.md"
+                ).is_file()
+            )
 
 
 if __name__ == "__main__":
