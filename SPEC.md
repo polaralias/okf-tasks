@@ -405,6 +405,12 @@ Indexes MAY be generated and SHOULD NOT be edited by hand when marked as generat
 
 ## 11. Visualisation
 
+A Reader SHOULD provide local document bookmarks and browser Back/Forward navigation, preserve reading position when changing selection, and offer a distinct comparison document with independent reading position. Bookmarks MUST resolve only to documents included in the generated view; missing, excluded or unknown paths MUST NOT trigger source discovery, network loading or record mutation. Comparison and context panels SHOULD adapt to smaller screens without causing page-wide horizontal overflow. These controls remain derived navigation and MUST NOT modify task or knowledge truth.
+
+Selected document identity SHOULD remain consistent when switching Graph, Board and Reader views. A selected included document SHOULD become the Reader primary document on entry, preserving prior reading position and a distinct comparison selection. View transitions MUST NOT expand included-document membership or mutate records.
+
+A selected relationship view SHOULD distinguish incoming and outgoing links, initially show a bounded subset, report hidden counts, and allow explicit expansion and collapse without losing selection. Expansion SHOULD remain associated with the selected document and direction during page navigation. Link labels MUST retain producer meaning; presentation MUST NOT turn document links into confirmed runtime dependencies. Directional scroll controls SHOULD respect reduced-motion preferences.
+
 Visualisation is a first-class, read-only OKF Tasks consumer. Markdown/YAML records remain authoritative; generated HTML and Mermaid output MUST NOT become a second task database.
 
 When a repository declares or maintains visualisation output for a bundle, a conforming producer MUST regenerate it after meaningful Task, Workstream, relationship, time, or renderer changes and MUST verify freshness before reporting the governed work complete. The reference producer emits the interactive Graph, Board, and Reader workspace plus a scalable Mermaid report.

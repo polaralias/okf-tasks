@@ -4,8 +4,8 @@ description: Create and maintain OKF Tasks bundles containing portable repositor
 license: Apache-2.0. license.txt has complete terms
 metadata:
   author: Polaralias
-  version: 0.1.0
-  updated: '2026-07-20'
+  version: 0.1.3
+  updated: '2026-10-14'
 ---
 
 # OKF task lifecycle
@@ -41,6 +41,8 @@ For this repository's maintained review set, use `python scripts/generate_local_
 When a repository needs realistic visualisation stress data, use `python scripts/generate_complex_examples.py --root <repository>` to create the deterministic task-heavy, architecture-heavy, and combined delivery/architecture workspaces, then rerun it with `--check`. The examples demonstrate Task execution priority separately from cross-concept reading prominence. Treat those generated Markdown/YAML records and indexes as script-owned fixtures; change the generator rather than editing its output by hand.
 
 ## Boundaries
+
+Reader offers included-document local bookmarks and browser history, a distinct comparison pane with its own reading position, and context collapse on narrower screens. Copy a local link only for local use: never publish a machine-local file URL. Missing or excluded bookmark targets remain unavailable; navigation cannot discover a new source or change task/knowledge records. Preserve the independent authoritative validator and regenerate/check all maintained HTML/Mermaid outputs after viewer changes.
 
 - Own task records, workstream records, lifecycle state, time entries, effort rollups, evidence, and the generated task index.
 - Discover and link the repository's established requirements, architecture, decisions, runbooks, and other canonical sources.
@@ -228,3 +230,7 @@ Report:
 - Do not rely on prompt instructions or regex-only sanitisation as the prompt-injection boundary.
 - Do not export a secret, `file:` URI, full local path, unresolved repository link, or credential-bearing remote URL.
 - Do not echo a detected secret in diagnostics.
+
+Selected relationship lanes initially show four links per direction, reveal four more on demand, display hidden counts and offer collapse. Expansion is retained per included document and direction; original link meaning and record validation remain authoritative. Directional scrolling respects reduced motion.
+
+Graph and Board selection becomes Reader selection when switching views, restricted to included documents. Preserve reading position before leaving Reader and keep a distinct comparison unless selection makes it the primary document.

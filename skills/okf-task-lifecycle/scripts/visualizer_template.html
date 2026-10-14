@@ -31,7 +31,7 @@
 }
 *{box-sizing:border-box}
 html,body{height:100%}
-body{margin:0;overflow:hidden;background:var(--paper);color:var(--ink);font:400 13px/1.5 var(--ui)}
+body{margin:0;overflow:hidden;display:flex;flex-direction:column;background:var(--paper);color:var(--ink);font:400 13px/1.5 var(--ui)}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
 input,select{font:inherit;color:inherit}
 [hidden]{display:none!important}
@@ -55,8 +55,10 @@ svg.glyph{display:inline-block;vertical-align:-2px;flex:none}
 .tbtn{display:grid;place-items:center;width:30px;height:30px;border:1px solid var(--line-strong);border-radius:15px;color:var(--muted)}
 .tbtn:hover{color:var(--ink);background:var(--surface-2)}
 
+@media(max-width:600px){.topbar{height:auto;min-height:54px;flex-shrink:0;flex-wrap:wrap;gap:8px;padding:9px 12px}.wordmark{max-width:100%}.wordmark b{max-width:210px;overflow:hidden;text-overflow:ellipsis}.top-right{width:100%;margin-left:0}.search{min-width:0;flex:1}.search input{min-width:0}.rcontrols label{display:flex;flex-direction:column;max-width:100%;min-width:0}.rcontrols select{width:100%}}
+
 /* ── stage ───────────────────────────────── */
-.stage{position:relative;height:calc(100% - 54px)}
+.stage{position:relative;flex:1;min-height:0;min-width:0;overflow:hidden}
 .view{height:100%;min-height:0;display:flex;flex-direction:column}
 .tools{display:flex;align-items:center;gap:14px;padding:9px 18px;border-bottom:1px solid var(--line);background:var(--surface)}
 .seg{display:flex;padding:2px;border:1px solid var(--line-strong);border-radius:7px;background:var(--paper)}
@@ -131,6 +133,10 @@ svg.glyph{display:inline-block;vertical-align:-2px;flex:none}
 
 /* ── reader ──────────────────────────────── */
 .reader{flex:1;display:grid;grid-template-columns:270px minmax(0,1fr) 280px;min-height:0}
+.rcontrols{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--surface)}
+.rcontrols label{font-size:11px;color:var(--muted)}.rcontrols select{max-width:260px;min-width:0}.rreading{display:grid;grid-template-columns:minmax(0,1fr);min-height:0;min-width:0}.rreading.comparing{grid-template-columns:repeat(2,minmax(0,1fr))}.rcmp{overflow:auto;min-width:0;border-left:1px solid var(--line)}.reader[data-context="closed"]{grid-template-columns:270px minmax(0,1fr)}.reader[data-context="closed"] .rcontext{display:none}
+@media(max-width:950px){.reader,.reader[data-context="closed"]{grid-template-columns:200px minmax(0,1fr)}.reader .rcontext{display:none}.reader[data-context="open"]{grid-template-columns:160px minmax(0,1fr) 220px}.reader[data-context="open"] .rcontext{display:block}}
+@media(max-width:600px){.reader,.reader[data-context="closed"],.reader[data-context="open"]{display:flex;flex-direction:column;overflow:auto}.rtree{max-height:180px;flex-shrink:0}.rreading.comparing{grid-template-columns:minmax(0,1fr)}.rreading,.rmain,.rcmp{overflow:visible;min-height:180px}.rcmp{border-left:0;border-top:1px solid var(--line)}.rcontrols select{max-width:100%}.reader[data-context="open"] .rcontext{overflow:visible}}
 .rtree{overflow:auto;border-right:1px solid var(--line);background:var(--surface);padding:14px 10px 40px}
 .rtree .bh{padding:12px 8px 5px;color:var(--faint);font:700 9.5px var(--ui);letter-spacing:.13em;text-transform:uppercase}
 .rtree .fh{padding:7px 8px 2px;color:var(--faint);font:600 9.5px var(--mono)}
@@ -141,6 +147,7 @@ svg.glyph{display:inline-block;vertical-align:-2px;flex:none}
 .rmain{overflow:auto;min-width:0}
 .rhead{position:sticky;top:0;z-index:3;padding:16px clamp(20px,4vw,52px) 12px;border-bottom:1px solid var(--line);background:var(--paper)}
 .rhead h2{margin:0 0 3px;font:700 17px var(--serif);letter-spacing:-.01em}
+.rhead h2,.rhead .p{overflow-wrap:anywhere}
 .rhead .p{color:var(--faint);font:400 10px var(--mono)}
 .rbody{max-width:760px;margin:0 auto;padding:30px clamp(22px,4vw,52px) 90px}
 .rempty{display:grid;place-items:center;height:100%;color:var(--faint)}
@@ -341,14 +348,18 @@ button.anc-row:hover .lbl{color:var(--ink)}
 
   <!-- READER -->
   <section class="view" id="view-reader" hidden>
-    <div class="reader">
+    <div class="rcontrols"><button id="reader-compare-toggle" aria-pressed="false">Compare</button><label for="reader-compare-path">Compare document <select id="reader-compare-path"></select></label><button id="reader-context-toggle" aria-controls="rcontext" aria-expanded="true">Hide context</button><button id="reader-copy-link">Copy local link</button><span id="reader-feedback" role="status"></span></div>
+    <div class="reader" id="reader-workspace">
       <nav class="rtree" id="rtree"></nav>
+      <div class="rreading" id="reader-reading">
       <div class="rmain" id="rmain">
         <div class="rempty" id="rempty">Select a document from the tree.</div>
         <div id="rdoc" hidden>
           <div class="rhead"><h2 id="rtitle"></h2><div class="p" id="rpath"></div></div>
           <div class="markdown rbody" id="rbody"></div>
         </div>
+      </div>
+      <article class="rcmp" id="reader-comparison" hidden aria-label="Comparison document"><div class="rhead"><h2 id="reader-comparison-title"></h2><div class="p" id="reader-comparison-path"></div></div><div class="markdown rbody" id="reader-comparison-body"></div></article>
       </div>
       <aside class="rcontext" id="rcontext"></aside>
     </div>
@@ -523,7 +534,8 @@ const outgoingOf=path=>edges.filter(e=>e.src===path);
 const linksCount=recId=>{const d=docByRecord[recId];if(!d)return 0;return edges.filter(e=>(e.src===d.path||e.tgt===d.path)&&e.kind!=="contains").length};
 
 /* ── state ─────────────────────────────── */
-const state={view:"graph",layout:"columns",sort:"status",q:"",selected:null,doneOpen:false,readerPath:"",temporalField:"timestamp",drift:false,graphKind:"",readingRole:""};
+const state={view:"graph",layout:"columns",sort:"status",q:"",selected:null,doneOpen:false,readerPath:"",readerComparison:"",readerContext:null,temporalField:"timestamp",drift:false,graphKind:"",readingRole:""};
+const readerPositions=new Map();let readerHydrating=false,readerLastHash="";
 let savedTheme;try{savedTheme=localStorage.getItem("okf-proto-theme")}catch{}
 document.documentElement.dataset.theme=savedTheme||"light";
 
@@ -1053,8 +1065,10 @@ function buildTree(){
   }
 }
 function openReader(path){
-  const doc=docByPath[path];if(!doc)return;
+  if(!Object.hasOwn(docByPath,path))return;const doc=docByPath[path];
+  if(!readerHydrating&&state.view==="reader")rememberReader();
   state.readerPath=path;
+  state.selected=doc.record_id?{id:doc.record_id}:{path:doc.path};refreshMarks();
   hidePane(); // navigation to the reader hides the slide-over; context panel takes over
   switchView("reader");
   $("rempty").hidden=true;$("rdoc").hidden=false;
@@ -1063,7 +1077,41 @@ function openReader(path){
   renderMd($("rbody"),doc.body,doc.path);
   buildTree();
   renderContext(doc);
+  renderReaderComparison();
+  requestAnimationFrame(()=>{$("rmain").scrollTop=readerPositions.get("primary:"+path)||0;restoreReaderViewport();});
+  readerAddress();
 }
+function readerViewportKey(){return "workspace:"+JSON.stringify([state.readerPath,state.readerComparison]);}
+function rememberReader(){if(state.readerPath)readerPositions.set("primary:"+state.readerPath,$("rmain").scrollTop);if(state.readerComparison)readerPositions.set("comparison:"+state.readerComparison,$("reader-comparison").scrollTop);readerPositions.set(readerViewportKey(),$("reader-workspace").scrollTop);}
+function restoreReaderViewport(){$("reader-workspace").scrollTop=readerPositions.get(readerViewportKey())||0;}
+function readerContextLayout(){const open=state.readerContext??innerWidth>950;$("reader-workspace").dataset.context=open?"open":"closed";$("reader-context-toggle").setAttribute("aria-expanded",String(open));$("reader-context-toggle").textContent=open?"Hide context":"Show context";}
+function readerAddress(replace=false){
+  if(readerHydrating)return;const params=new URLSearchParams();params.set("view",state.view);if(state.readerPath)params.set("document",state.readerPath);if(state.readerComparison)params.set("compare",state.readerComparison);
+  const hash="#"+params.toString();readerLastHash=hash;if(hash===location.hash)return;history[replace?"replaceState":"pushState"](null,"",hash);
+}
+function renderReaderComparison(){
+  const choices=$("reader-compare-path");choices.replaceChildren();const none=document.createElement("option");none.value="";none.textContent="Choose a document";choices.append(none);
+  for(const doc of docs){if(doc.path===state.readerPath)continue;const option=document.createElement("option");option.value=doc.path;option.textContent=doc.title+" · "+doc.path;option.selected=doc.path===state.readerComparison;choices.append(option);}
+  if(state.readerComparison===state.readerPath||!Object.hasOwn(docByPath,state.readerComparison))state.readerComparison="";
+  $("reader-compare-toggle").disabled=!state.readerPath;choices.disabled=!state.readerPath;
+  const doc=docByPath[state.readerComparison],active=Boolean(doc);$("reader-comparison").hidden=!active;$("reader-reading").classList.toggle("comparing",active);$("reader-compare-toggle").setAttribute("aria-pressed",String(active));
+  if(doc){$("reader-comparison-title").textContent=doc.title;$("reader-comparison-path").textContent=doc.path;renderMd($("reader-comparison-body"),doc.body,doc.path);requestAnimationFrame(()=>{$("reader-comparison").scrollTop=readerPositions.get("comparison:"+doc.path)||0;});}
+  else $("reader-comparison-body").replaceChildren();
+  readerContextLayout();requestAnimationFrame(restoreReaderViewport);
+}
+function readerLocation(){
+  if(location.hash===readerLastHash)return;readerLastHash=location.hash;
+  const params=new URLSearchParams(location.hash.slice(1)),path=params.get("document"),comparison=params.get("compare"),view=params.get("view");readerHydrating=true;
+  try{if(path&&!Object.hasOwn(docByPath,path)){$("reader-feedback").textContent="Linked document is not included in this export.";return;}
+    rememberReader();state.readerComparison=comparison&&Object.hasOwn(docByPath,comparison)?comparison:"";if(path)openReader(path);if(["graph","board","reader"].includes(view))switchView(view);if(comparison&&!state.readerComparison)$("reader-feedback").textContent="Comparison document is not included in this export.";
+  }finally{readerHydrating=false;}
+}
+$("reader-compare-path").onchange=event=>{rememberReader();state.readerComparison=event.target.value;renderReaderComparison();readerAddress();};
+$("reader-compare-toggle").onclick=()=>{rememberReader();state.readerComparison=state.readerComparison?"":docs.find(doc=>doc.path!==state.readerPath)?.path||"";renderReaderComparison();readerAddress();};
+$("reader-context-toggle").onclick=()=>{state.readerContext=!(state.readerContext??innerWidth>950);readerContextLayout();};
+window.addEventListener("resize",readerContextLayout);
+$("reader-copy-link").onclick=async()=>{readerAddress(true);try{await navigator.clipboard.writeText(location.href);$("reader-feedback").textContent="Local link copied.";}catch{$("reader-feedback").textContent="Copy the local link from the address bar.";}};
+window.addEventListener("popstate",readerLocation);window.addEventListener("hashchange",readerLocation);
 function ancRow(glyphHtml,label,sub,go){
   const r=document.createElement(go?"button":"div");r.className="anc-row";
   r.innerHTML=`<span class="ln"></span>${glyphHtml}<span class="lbl">${label}</span>${sub?`<span class="sub">${esc(sub)}</span>`:""}`;
@@ -1168,11 +1216,26 @@ function graphFocusCard(doc,edge,direction){
   button.onclick=()=>select(rec?{id:rec.id}:{path:doc.path});
   return button;
 }
-function graphFocusLane(title,items,direction){
+const graphFocusExpansion=new Map();
+function graphFocusLane(title,items,direction,path){
   const lane=document.createElement("section");lane.className="graph-focus-lane";
+  lane.dataset.direction=direction;
   lane.innerHTML=`<header class="graph-focus-lane-head"><strong>${esc(title)}</strong><span>${items.length} ${items.length===1?"link":"links"}</span></header><div class="graph-focus-cards"></div>`;
   const cards=lane.querySelector(".graph-focus-cards");
-  for(const item of items)cards.append(graphFocusCard(item.doc,item.edge,direction));
+  const key=JSON.stringify([path,direction]);let visible=Math.min(items.length,Math.max(4,graphFocusExpansion.get(key)||4));
+  const more=document.createElement("button"),collapse=document.createElement("button"),coverage=document.createElement("p");
+  more.type=collapse.type="button";more.className=collapse.className="dbtn sec";
+  coverage.setAttribute("role","status");collapse.textContent=`Collapse ${direction} links`;
+  function update(){
+    cards.replaceChildren();for(const item of items.slice(0,visible))cards.append(graphFocusCard(item.doc,item.edge,direction));
+    const omitted=items.length-visible;coverage.textContent=`${visible} of ${items.length} ${direction} links shown${omitted?` · ${omitted} hidden`:""}`;
+    more.hidden=!omitted;more.textContent=`Show ${Math.min(4,omitted)} more ${direction} links`;
+    collapse.hidden=visible<=4;graphFocusExpansion.set(key,visible);
+  }
+  more.onclick=()=>{const host=$("detail-scroll"),position=host.scrollTop;visible=Math.min(items.length,visible+4);update();host.scrollTop=position;if(more.hidden)collapse.focus();};
+  collapse.onclick=()=>{const host=$("detail-scroll"),position=host.scrollTop;visible=Math.min(items.length,4);update();host.scrollTop=position;more.focus();};
+  update();
+  if(items.length>4)lane.append(coverage,more,collapse);
   if(!items.length){const empty=document.createElement("div");empty.className="graph-focus-empty";empty.textContent=`No ${direction} relationships`;cards.append(empty)}
   return lane;
 }
@@ -1180,7 +1243,7 @@ function graphScrollCue(direction,count,target){
   const cue=document.createElement("button");cue.type="button";cue.className="graph-focus-scroll-cue";
   const label=`Scroll ${direction} for ${count} ${direction==="up"?"incoming":"outgoing"} ${count===1?"link":"links"}`;
   cue.setAttribute("aria-label",label);cue.innerHTML=`<span class="arrow" aria-hidden="true">${direction==="up"?"↑":"↓"}</span><span>${esc(label)}</span>`;
-  cue.onclick=()=>target.scrollIntoView({behavior:"smooth",block:direction==="up"?"start":"end"});
+  cue.onclick=()=>target.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:direction==="up"?"start":"end"});
   return cue;
 }
 function centerGraphFocus(host,anchor){
@@ -1199,7 +1262,7 @@ function renderGraphFocus(host){
   top.innerHTML=`<span class="label">Relationship focus</span><span class="count">${incoming.length+outgoing.length} direct</span><button class="x" aria-label="Close relationship focus">✕</button>`;
   top.querySelector(".x").onclick=clearSel;shell.append(top);
   const flow=document.createElement("div");flow.className="graph-focus-flow";
-  const incomingLane=graphFocusLane("Incoming",incoming,"incoming"),outgoingLane=graphFocusLane("Outgoing",outgoing,"outgoing");
+  const incomingLane=graphFocusLane("Incoming",incoming,"incoming",path),outgoingLane=graphFocusLane("Outgoing",outgoing,"outgoing",path);
   flow.append(incomingLane);
   const anchor=document.createElement("article");anchor.className="graph-focus-anchor";
   const changed=rec?.frontmatter?.timestamp,effort=rec?.type==="Task"?effortOf(rec):rec?.type==="Workstream"?wsEffort(rec):0;
@@ -1311,6 +1374,8 @@ function renderDocDetail(host,doc){
 
 /* ── view switching / wiring ───────────── */
 function switchView(v){
+  if(state.view==="reader"&&v!=="reader")rememberReader();
+  if(v==="reader"){const path=selKeyPath();if(path&&Object.hasOwn(docByPath,path)&&path!==state.readerPath){openReader(path);return;}}
   state.view=v;
   document.querySelectorAll(".view-tab").forEach(t=>t.setAttribute("aria-selected",String(t.dataset.view===v)));
   $("view-graph").hidden=v!=="graph";
@@ -1320,6 +1385,7 @@ function switchView(v){
   if(v==="board")buildBoard();
   if(v==="reader"){hidePane();buildTree();if(state.readerPath)renderContext(docByPath[state.readerPath]);else $("rcontext").replaceChildren()}
   else if(state.selected)renderDetail();
+  if(v!=="reader")readerAddress();
 }
 document.querySelectorAll(".view-tab").forEach(t=>t.onclick=()=>switchView(t.dataset.view));
 $("layout-seg").querySelectorAll("button").forEach(b=>b.onclick=()=>{
@@ -1355,7 +1421,7 @@ $("theme-btn").onclick=()=>{
 $("wm-name").textContent="OKF · "+(RAW.name||"workspace");
 $("wm-sub").textContent=`${records.length} records · ${docs.length} documents${RAW.exclusions?.paths?.length?` · ${RAW.exclusions.paths.length} excluded`:""}`;
 $("drift-count").textContent=driftEdgeKeys().size;
-switchView("graph");
+const bootView=new URLSearchParams(location.hash.slice(1)).get("view");readerHydrating=true;switchView(["reader","board"].includes(bootView)?bootView:"graph");readerHydrating=false;if(location.hash)readerLocation();else readerAddress(true);
 window.__okf={get cy(){return cy},select,clearSel,openReader,state,edges};
 })();
 </script>
