@@ -63,7 +63,7 @@ Deliver the workstream outcome.
 def write_document(path: Path, metadata: dict[str, Any], body: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     frontmatter = yaml.safe_dump(metadata, sort_keys=False, allow_unicode=True).rstrip()
-    path.write_text(f"---\n{frontmatter}\n---\n\n{body}", encoding="utf-8")
+    path.write_text(f"---\n{frontmatter}\n---\n\n{body}", encoding="utf-8", newline="\n")
 
 
 def task(slug: str = "fixture-task", **updates: Any) -> dict[str, Any]:
@@ -148,7 +148,7 @@ def fixture(root: Path, category: str, name: str, task_meta: dict[str, Any], bod
 
 
 def finalize(bundle: Path) -> None:
-    (bundle / "index.md").write_text(cli.generated_index(bundle), encoding="utf-8")
+    (bundle / "index.md").write_text(cli.generated_index(bundle), encoding="utf-8", newline="\n")
 
 
 def build(root: Path) -> None:
@@ -299,14 +299,14 @@ Describe the observable result and how a reviewer will recognise it.
     finalize(bundle)
 
     bundle = fixture(root, "invalid", "stale-index", task())
-    (bundle / "index.md").write_text("# Stale task index\n", encoding="utf-8")
+    (bundle / "index.md").write_text("# Stale task index\n", encoding="utf-8", newline="\n")
 
     fixture(root, "invalid", "missing-index", task())
 
     bundle = root / "invalid" / "malformed-yaml" / "tasks"
     path = bundle / "fixture-task" / "task.md"; path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("---\ntype: [broken\n---\n# Broken\n", encoding="utf-8")
-    (bundle / "index.md").write_text("# Task index\n", encoding="utf-8")
+    path.write_text("---\ntype: [broken\n---\n# Broken\n", encoding="utf-8", newline="\n")
+    (bundle / "index.md").write_text("# Task index\n", encoding="utf-8", newline="\n")
 
     # External artifact preparation: portable links and deterministic egress failures.
     export_cases = {
@@ -332,12 +332,12 @@ Describe the observable result and how a reviewer will recognise it.
             TASK_BODY.format(title="Fixture task") + f"\n## Related knowledge\n\n{content}\n",
         )
         (repository / "docs").mkdir(parents=True, exist_ok=True)
-        (repository / "docs" / "guide.md").write_text("# Guide\n\n## Safe use\n\nSafe guidance.\n", encoding="utf-8")
+        (repository / "docs" / "guide.md").write_text("# Guide\n\n## Safe use\n\nSafe guidance.\n", encoding="utf-8", newline="\n")
 
     bundle = root / "invalid" / "missing-frontmatter" / "tasks"
     path = bundle / "fixture-task" / "task.md"; path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("# Missing frontmatter\n", encoding="utf-8")
-    (bundle / "index.md").write_text("# Task index\n", encoding="utf-8")
+    path.write_text("# Missing frontmatter\n", encoding="utf-8", newline="\n")
+    (bundle / "index.md").write_text("# Task index\n", encoding="utf-8", newline="\n")
 
     bundle = fixture(root, "invalid", "disconnected-durable-links", task())
     write_document(bundle / "second-task" / "task.md", task("second-task", title="Second task"), TASK_BODY.format(title="Second task"))
