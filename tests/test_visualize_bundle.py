@@ -219,8 +219,8 @@ timestamp: 2026-07-17T20:00:00Z
         generated = self.generated()
         self.assertIn("function renderGraphFocus(host)", generated)
         self.assertIn('className="graph-focus-flow"', generated)
-        self.assertIn('graphFocusLane("Incoming",incoming,"incoming")', generated)
-        self.assertIn('graphFocusLane("Outgoing",outgoing,"outgoing")', generated)
+        self.assertTrue('graphFocusLane("Incoming",incoming,"incoming",path)' in generated)
+        self.assertTrue('graphFocusLane("Outgoing",outgoing,"outgoing",path)' in generated)
         self.assertIn('if(state.view==="graph"){renderGraphFocus(host)', generated)
         focus = generated.split("function renderGraphFocus(host)", 1)[1].split(
             "function renderRecordDetail", 1
@@ -380,6 +380,7 @@ Continue with the [viewer task](./tasks/ship-viewer/task.md).
                 "explicit-view-exclusions",
                 "offline-semantic-graph",
                 "typed-readme-knowledge",
+                "reader-workspace-navigation",
             },
             case_ids,
         )

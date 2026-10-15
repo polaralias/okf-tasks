@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import YAML from "yaml";
+import { createHash } from "node:crypto";
 
 export const statuses = ["proposed", "ready", "in-progress", "blocked", "validation", "done", "superseded", "deferred"] as const;
 const statusSet = new Set<string>(statuses);
@@ -82,6 +83,28 @@ function linkGraphRoot(bundle: string): string {
     ? path.dirname(path.dirname(resolved)) : path.dirname(resolved);
 }
 
+function isSnapshotResource(file: string, root: string): boolean {
+  if (fs.lstatSync(file).isSymbolicLink() || fs.statSync(file).size > 2 * 1024 * 1024) return false;
+  for (let folder = path.dirname(file); folder !== root; folder = path.dirname(folder)) {
+    const distance = path.relative(root, folder);
+    if (distance === ".." || distance.startsWith(`..${path.sep}`) || path.isAbsolute(distance)) break;
+    const manifest = path.join(folder, "OKF_UPSTREAM.json");
+    try {
+      const stat = fs.lstatSync(manifest);
+      if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 2 * 1024 * 1024) continue;
+      const snapshot = JSON.parse(fs.readFileSync(manifest, "utf8")) as RecordValue;
+      if (snapshot.schema !== 1 || snapshot.producer !== "OKF Tasks" || !/^[a-f0-9]{40}$/.test(String(snapshot.source_commit ?? ""))) continue;
+      const entries = snapshot.resources;
+      if (!entries || typeof entries !== "object" || Array.isArray(entries) || Object.keys(entries).length > 2000) continue;
+      const identity = (entries as RecordValue)[path.relative(folder, file).split(path.sep).join("/")];
+      if (!identity || typeof identity !== "object") continue;
+      const digest = (identity as RecordValue).package_sha256;
+      if (typeof digest === "string" && /^[a-f0-9]{64}$/.test(digest)) return createHash("sha256").update(fs.readFileSync(file)).digest("hex") === digest;
+    } catch { /* Invalid manifests grant no graph exemption. */ }
+  }
+  return false;
+}
+
 function durableLinkGraphErrors(bundle: string): string[] {
   const root = linkGraphRoot(bundle);
   const concepts = new Map<string, Parsed>();
@@ -89,6 +112,9 @@ function durableLinkGraphErrors(bundle: string): string[] {
     if (["index.md", "log.md"].includes(path.basename(file))) continue;
     const relativeParts = path.relative(root, file).split(path.sep).slice(0, -1).map((part) => part.toLowerCase());
     if (relativeParts.some((part) => linkGraphExcludedDirectories.has(part))) continue;
+    const bundleDistance = path.relative(path.resolve(bundle), path.resolve(file));
+    const outsideBundle = bundleDistance === ".." || bundleDistance.startsWith(`..${path.sep}`) || path.isAbsolute(bundleDistance);
+    if (outsideBundle && isSnapshotResource(file, root)) continue;
     try {
       const parsed = parseDocument(file); const type = String(parsed.metadata.type ?? "").trim().toLowerCase();
       if (type && !linkGraphExcludedTypes.has(type) && !linkGraphExcludedTypeMarkers.some((marker) => type.includes(marker))) concepts.set(path.resolve(file), parsed);

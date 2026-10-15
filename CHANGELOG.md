@@ -15,6 +15,12 @@ navigation:
 ---
 # Changelog
 
+## 0.1.1 — unreleased candidate
+
+- Recognise exact nested OKF producer snapshot resources during strict repository graph validation. Changed and unlisted documents, traversal attempts and active Task records remain governed.
+- Keep conformance generation byte-stable on Windows and enforce full-history secret scanning with separated verification/publish permissions.
+- Producer skill 0.1.5 retains independent EWF integration and valid Codex product metadata.
+
 All notable changes to OKF Tasks are recorded here.
 
 ## 0.1.0 — 2026-07-19

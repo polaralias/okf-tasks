@@ -8,7 +8,7 @@ Check compatibility first:
 okf-tasks --version
 ```
 
-The result must be `okf-tasks 0.1.0`. From a trusted checkout of the matching repository version, install the console command with:
+The result must be `okf-tasks 0.1.1`. From a trusted checkout of the matching repository version, install the console command with:
 
 ```text
 python -m pip install -e .

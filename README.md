@@ -197,3 +197,9 @@ Apache License 2.0. See [`LICENSE`](./LICENSE).
 ## Repository knowledge
 
 - [Documentation map](docs/knowledge/documentation-map.md) — RKE-managed reading order and relationship hub.
+
+Reader navigation supports local document bookmarks, Back/Forward, a separate comparison document and retained reading positions. Comparison panes stack on small screens and context can be collapsed. Bookmarks resolve only included documents and never modify the authoritative bundle; a copied file URL is for local use and must not be published.
+
+Relationship focus starts with four incoming and four outgoing links. Show more reveals four at a time; hidden counts and collapse keep dense selections readable. Expansion is remembered per document during page navigation. These document links retain their original meaning and do not establish runtime dependencies.
+
+Switching from Graph or Board to Reader opens the selected included document, preserving its previous reading position and a distinct comparison.

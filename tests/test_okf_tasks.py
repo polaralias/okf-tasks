@@ -29,6 +29,17 @@ def arguments(**values: object) -> argparse.Namespace:
 
 
 class ConformanceFixtureTests(unittest.TestCase):
+    def test_generated_fixture_bytes_use_lf_on_every_host(self) -> None:
+        spec = importlib.util.spec_from_file_location("fixture_generator", REPOSITORY / "conformance" / "generate_fixtures.py")
+        assert spec and spec.loader
+        generator = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(generator)
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "task.md"
+            generator.write_document(output, generator.task(), "# Fixture\n")
+            self.assertNotIn(b"\r\n", output.read_bytes())
+            self.assertTrue(output.read_bytes().endswith(b"# Fixture\n"))
+
     def test_cli_version_matches_release(self) -> None:
         self.assertEqual((REPOSITORY / "VERSION").read_text(encoding="utf-8").strip(), okf_tasks.CLI_VERSION)
 

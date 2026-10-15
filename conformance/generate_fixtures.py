@@ -7,6 +7,8 @@ import argparse
 import copy
 import filecmp
 import importlib.util
+import hashlib
+import json
 import shutil
 import tempfile
 from pathlib import Path
@@ -63,7 +65,7 @@ Deliver the workstream outcome.
 def write_document(path: Path, metadata: dict[str, Any], body: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     frontmatter = yaml.safe_dump(metadata, sort_keys=False, allow_unicode=True).rstrip()
-    path.write_text(f"---\n{frontmatter}\n---\n\n{body}", encoding="utf-8")
+    path.write_text(f"---\n{frontmatter}\n---\n\n{body}", encoding="utf-8", newline="\n")
 
 
 def task(slug: str = "fixture-task", **updates: Any) -> dict[str, Any]:
@@ -148,7 +150,7 @@ def fixture(root: Path, category: str, name: str, task_meta: dict[str, Any], bod
 
 
 def finalize(bundle: Path) -> None:
-    (bundle / "index.md").write_text(cli.generated_index(bundle), encoding="utf-8")
+    (bundle / "index.md").write_text(cli.generated_index(bundle), encoding="utf-8", newline="\n")
 
 
 def build(root: Path) -> None:
@@ -299,14 +301,14 @@ Describe the observable result and how a reviewer will recognise it.
     finalize(bundle)
 
     bundle = fixture(root, "invalid", "stale-index", task())
-    (bundle / "index.md").write_text("# Stale task index\n", encoding="utf-8")
+    (bundle / "index.md").write_text("# Stale task index\n", encoding="utf-8", newline="\n")
 
     fixture(root, "invalid", "missing-index", task())
 
     bundle = root / "invalid" / "malformed-yaml" / "tasks"
     path = bundle / "fixture-task" / "task.md"; path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("---\ntype: [broken\n---\n# Broken\n", encoding="utf-8")
-    (bundle / "index.md").write_text("# Task index\n", encoding="utf-8")
+    path.write_text("---\ntype: [broken\n---\n# Broken\n", encoding="utf-8", newline="\n")
+    (bundle / "index.md").write_text("# Task index\n", encoding="utf-8", newline="\n")
 
     # External artifact preparation: portable links and deterministic egress failures.
     export_cases = {
@@ -332,16 +334,42 @@ Describe the observable result and how a reviewer will recognise it.
             TASK_BODY.format(title="Fixture task") + f"\n## Related knowledge\n\n{content}\n",
         )
         (repository / "docs").mkdir(parents=True, exist_ok=True)
-        (repository / "docs" / "guide.md").write_text("# Guide\n\n## Safe use\n\nSafe guidance.\n", encoding="utf-8")
+        (repository / "docs" / "guide.md").write_text("# Guide\n\n## Safe use\n\nSafe guidance.\n", encoding="utf-8", newline="\n")
 
     bundle = root / "invalid" / "missing-frontmatter" / "tasks"
     path = bundle / "fixture-task" / "task.md"; path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("# Missing frontmatter\n", encoding="utf-8")
-    (bundle / "index.md").write_text("# Task index\n", encoding="utf-8")
+    path.write_text("# Missing frontmatter\n", encoding="utf-8", newline="\n")
+    (bundle / "index.md").write_text("# Task index\n", encoding="utf-8", newline="\n")
 
     bundle = fixture(root, "invalid", "disconnected-durable-links", task())
     write_document(bundle / "second-task" / "task.md", task("second-task", title="Second task"), TASK_BODY.format(title="Second task"))
     finalize(bundle)
+
+
+    # Vendored snapshot membership is exact, nested and non-authoritative.
+    for category, name, kind in [("valid", "vendored-snapshot", "exact"),
+                                 ("invalid", "changed-vendored-snapshot", "changed"),
+                                 ("invalid", "unlisted-vendored-concept", "unlisted"),
+                                 ("invalid", "escaping-vendor-manifest", "escape"),
+                                 ("invalid", "active-task-vendor-manifest", "owned")]:
+        bundle = fixture(root, category, name, task())
+        finalize(bundle)
+        package = bundle.parent / "third-party"
+        document = package / "example.md"
+        write_document(document, {"type": "Reference", "title": "Vendored example"}, "# Example\n")
+        if kind == "owned":
+            document.unlink()
+            package.rmdir()
+            package = bundle / "second-task"
+            document = package / "task.md"
+            write_document(document, task("second-task"), TASK_BODY.format(title="Second task"))
+        checksum = hashlib.sha256(document.read_bytes()).hexdigest()
+        key = "../third-party/example.md" if kind == "escape" else document.relative_to(package).as_posix()
+        resources = {} if kind == "unlisted" else {key: {"package_sha256": checksum}}
+        manifest = {"schema": 1, "producer": "OKF Tasks", "source_commit": "a" * 40, "resources": resources}
+        (package / "OKF_UPSTREAM.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8", newline="\n")
+        if kind == "changed":
+            document.write_bytes(document.read_bytes() + b"Changed after snapshot.\n")
 
 
 def same_tree(left: Path, right: Path) -> bool:
