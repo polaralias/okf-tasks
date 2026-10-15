@@ -358,6 +358,8 @@ Describe the observable result and how a reviewer will recognise it.
         document = package / "example.md"
         write_document(document, {"type": "Reference", "title": "Vendored example"}, "# Example\n")
         if kind == "owned":
+            document.unlink()
+            package.rmdir()
             package = bundle / "second-task"
             document = package / "task.md"
             write_document(document, task("second-task"), TASK_BODY.format(title="Second task"))
