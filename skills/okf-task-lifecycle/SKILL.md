@@ -4,8 +4,8 @@ description: Create and maintain OKF Tasks bundles containing portable repositor
 license: Apache-2.0. license.txt has complete terms
 metadata:
   author: Polaralias
-  version: 0.1.3
-  updated: '2026-10-14'
+  version: 0.1.4
+  updated: '2026-10-15'
 ---
 
 # OKF task lifecycle

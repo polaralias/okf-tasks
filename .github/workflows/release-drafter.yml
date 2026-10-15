@@ -2,39 +2,47 @@ name: Release Drafter
 
 on:
   push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
-    types:
-      - opened
-      - reopened
-      - synchronize
-      - closed
-      - labeled
-      - unlabeled
+    branches: [main]
+  workflow_dispatch:
 
+# Release Drafter writes a GitHub release draft. It is intentionally limited to
+# trusted pushes to main and manual runs on main; pull requests are read by CI
+# and must never execute with this workflow's write token.
 permissions:
   contents: write
   pull-requests: read
 
+concurrency:
+  group: release-drafter-main
+  cancel-in-progress: false
+
 jobs:
   update-release-draft:
+    if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: read
     steps:
-      - name: Check out repository
+      - name: Check out trusted main
         uses: actions/checkout@v6
         with:
+          ref: main
           fetch-depth: 0
+          persist-credentials: false
 
-      - name: Read repo version
+      - name: Read and validate repository version
         id: repo-version
         shell: bash
         run: |
           set -euo pipefail
-          version="$(cat VERSION)"
-          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+          version="$(<VERSION)"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "VERSION must contain a stable X.Y.Z semver" >&2
+            exit 1
+          fi
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
 
       - name: Update release draft
         uses: release-drafter/release-drafter@v7
