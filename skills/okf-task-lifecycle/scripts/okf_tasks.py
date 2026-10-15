@@ -76,8 +76,8 @@ ESTIMATE_CONFIDENCE = {"low", "medium", "high"}
 ESTIMATE_METHODS = {"agent", "manual", "historical"}
 LIVE_TIME_STATUSES = {"ready", "in-progress", "blocked", "validation"}
 PROFILE_VERSION = "0.1"
-PROFILE_URL = "https://github.com/polaralias/okf-tasks/blob/v0.1.0/SPEC.md"
-CLI_VERSION = "0.1.0"
+PROFILE_URL = "https://github.com/polaralias/okf-tasks/blob/v0.1.1/SPEC.md"
+CLI_VERSION = "0.1.1"
 BUNDLE_PLACEMENTS = {"root": "tasks", "docs": "docs/tasks"}
 MARKDOWN_LINK_PATTERN = re.compile(r"(?P<image>!)?(?P<label>\[[^\]\n]*\])\((?P<target>[^)\s]+)(?P<suffix>[^)]*)\)")
 CLICKUP_CUSTOM_TASK_ID_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9_-]*-\d+$")
@@ -2316,7 +2316,7 @@ def bundle_coverage(bundle: Path) -> tuple[int, int, int]:
             metadata, body = read_document(path)
         except SystemExit:
             continue
-        if not link_graph_concept(path, metadata, root):
+        if not link_graph_concept(path, metadata, root, bundle):
             continue
         link_count += sum(1 for match in MARKDOWN_LINK_PATTERN.finditer(body) if not match.group("image"))
         if metadata.get("type") == "Task" and isinstance(metadata.get("parent"), str):
@@ -2340,7 +2340,35 @@ def link_graph_root(bundle: Path) -> Path:
     return resolved.parent
 
 
-def link_graph_concept(path: Path, metadata: dict[str, Any], root: Path) -> bool:
+def vendored_graph_resource(path: Path, root: Path) -> bool:
+    """Recognise exact nested snapshot bytes, never a blanket directory exemption."""
+    if path.is_symlink() or not path.is_file() or path.stat().st_size > 2 * 1024 * 1024:
+        return False
+    for package in path.parents:
+        if package == root or not package.is_relative_to(root):
+            break
+        manifest = package / "OKF_UPSTREAM.json"
+        try:
+            if manifest.is_symlink() or not manifest.is_file() or manifest.stat().st_size > 2 * 1024 * 1024:
+                continue
+            snapshot = json.loads(manifest.read_text(encoding="utf-8"))
+            if not isinstance(snapshot, dict) or snapshot.get("schema") != 1 or snapshot.get("producer") != "OKF Tasks":
+                continue
+            if not re.fullmatch(r"[a-f0-9]{40}", str(snapshot.get("source_commit", ""))):
+                continue
+            resources = snapshot.get("resources")
+            if not isinstance(resources, dict) or len(resources) > 2000:
+                continue
+            identity = resources.get(path.relative_to(package).as_posix())
+            expected = identity.get("package_sha256") if isinstance(identity, dict) else None
+            if isinstance(expected, str) and re.fullmatch(r"[a-f0-9]{64}", expected):
+                return hashlib.sha256(path.read_bytes()).hexdigest() == expected
+        except (OSError, ValueError, TypeError):
+            continue
+    return False
+
+
+def link_graph_concept(path: Path, metadata: dict[str, Any], root: Path, bundle: Path | None = None) -> bool:
     try:
         relative = path.resolve().relative_to(root.resolve())
     except ValueError:
@@ -2348,6 +2376,8 @@ def link_graph_concept(path: Path, metadata: dict[str, Any], root: Path) -> bool
     if path.name in {"index.md", "log.md"}:
         return False
     if any(part.lower() in LINK_GRAPH_EXCLUDED_DIRECTORIES for part in relative.parts[:-1]):
+        return False
+    if (bundle is None or not path.resolve().is_relative_to(bundle.resolve())) and vendored_graph_resource(path, root):
         return False
     concept_type = str(metadata.get("type", "")).strip().lower()
     return (
@@ -2366,7 +2396,7 @@ def durable_link_graph_errors(bundle: Path, root: Path | None = None) -> list[st
             metadata, body = read_document(path)
         except SystemExit:
             continue
-        if link_graph_concept(path, metadata, root):
+        if link_graph_concept(path, metadata, root, bundle):
             concepts[path.resolve()] = (metadata, body)
     if len(concepts) < 2:
         return []

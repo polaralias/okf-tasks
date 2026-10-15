@@ -7,6 +7,8 @@ import argparse
 import copy
 import filecmp
 import importlib.util
+import hashlib
+import json
 import shutil
 import tempfile
 from pathlib import Path
@@ -342,6 +344,30 @@ Describe the observable result and how a reviewer will recognise it.
     bundle = fixture(root, "invalid", "disconnected-durable-links", task())
     write_document(bundle / "second-task" / "task.md", task("second-task", title="Second task"), TASK_BODY.format(title="Second task"))
     finalize(bundle)
+
+
+    # Vendored snapshot membership is exact, nested and non-authoritative.
+    for category, name, kind in [("valid", "vendored-snapshot", "exact"),
+                                 ("invalid", "changed-vendored-snapshot", "changed"),
+                                 ("invalid", "unlisted-vendored-concept", "unlisted"),
+                                 ("invalid", "escaping-vendor-manifest", "escape"),
+                                 ("invalid", "active-task-vendor-manifest", "owned")]:
+        bundle = fixture(root, category, name, task())
+        finalize(bundle)
+        package = bundle.parent / "third-party"
+        document = package / "example.md"
+        write_document(document, {"type": "Reference", "title": "Vendored example"}, "# Example\n")
+        if kind == "owned":
+            package = bundle / "second-task"
+            document = package / "task.md"
+            write_document(document, task("second-task"), TASK_BODY.format(title="Second task"))
+        checksum = hashlib.sha256(document.read_bytes()).hexdigest()
+        key = "../third-party/example.md" if kind == "escape" else document.relative_to(package).as_posix()
+        resources = {} if kind == "unlisted" else {key: {"package_sha256": checksum}}
+        manifest = {"schema": 1, "producer": "OKF Tasks", "source_commit": "a" * 40, "resources": resources}
+        (package / "OKF_UPSTREAM.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8", newline="\n")
+        if kind == "changed":
+            document.write_bytes(document.read_bytes() + b"Changed after snapshot.\n")
 
 
 def same_tree(left: Path, right: Path) -> bool:

@@ -24,7 +24,7 @@ It does not standardise product requirements, architecture, sprint membership, c
 
 An OKF Tasks bundle MUST conform to [OKF v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/ee67a5ca27044ebe7c38385f5b6cffc2305a9c1a/okf/SPEC.md). Requirements in this profile are additional constraints. The commit-pinned link identifies the exact upstream text used by this version.
 
-The published identity of this profile version is `https://github.com/polaralias/okf-tasks/blob/v0.1.0/SPEC.md`. Producers SHOULD include that identity in the bundle root index as described in section 10.
+The immutable release identity of this candidate, once tagged and published, is `https://github.com/polaralias/okf-tasks/blob/v0.1.1/SPEC.md`. Producers SHOULD include that identity in the bundle root index as described in section 10.
 
 Each non-reserved Markdown file in the bundle MUST be an OKF concept with parseable YAML frontmatter and a non-empty `type`. Producers MAY add fields. Consumers MUST preserve unknown fields when round-tripping a record and MUST tolerate unknown task-adjacent concept types.
 
@@ -260,6 +260,9 @@ A producer maintaining a repository with more than one governed durable concept 
 
 Reserved indexes and logs, Tracker Profiles, generated output, vendor content, runbooks, handoffs, session records, and explicitly temporary or scratch material are outside this strict graph. Producers MUST NOT add semantically weak links solely to connect excluded or unrelated volatile files. A broken, external, or out-of-scope link remains useful evidence but does not connect the strict local graph. Consumers that can see only a partial bundle MAY report connectivity as unevaluated; repository-aware validators MUST report orphan concepts and disconnected components as errors.
 
+
+For strict repository graph membership, the reference validators recognise a nested producer snapshot through `OKF_UPSTREAM.json` schema 1 with producer `OKF Tasks`, a full lowercase Git `source_commit`, and per-resource `package_sha256` identities. Only an enumerated regular Markdown resource whose exact bytes match its hash is vendored; changed, unlisted or malformed identities remain governed. The manifest cannot exempt records in the active Task bundle or act as a repository-root blanket exclusion. Relative resource keys cannot escape the snapshot package. This declaration affects graph membership only, not Task conformance, authorisation, execution, external access or the truth of its contents.
+
 A durable repository `README.md` that acts as canonical navigation, project context, or an enduring knowledge entry point SHOULD carry parseable YAML frontmatter with a non-empty knowledge `type`, `title`, `description`, RFC 3339 `timestamp`, and appropriate `navigation` metadata. It then participates in the same resolved graph as other typed knowledge concepts and SHOULD link to the concepts it introduces. Generated, vendored, transient, or deliberately out-of-scope READMEs need not be promoted merely because of their filename.
 
 Knowledge links MAY leave the task bundle or repository. Generic consumers MUST treat an out-of-bundle target as an external, untyped resource and MUST NOT automatically fetch or traverse it without an explicit policy. Broken knowledge links do not by themselves make the task bundle structurally non-conformant.
@@ -373,7 +376,7 @@ The bundle-root `index.md` SHOULD declare the following fields using the OKF roo
 ```yaml
 okf_version: "0.1"
 okf_tasks_version: "0.5"
-okf_tasks_profile: https://github.com/polaralias/okf-tasks/blob/v0.1.0/SPEC.md
+okf_tasks_profile: https://github.com/polaralias/okf-tasks/blob/v0.1.1/SPEC.md
 ```
 
 Its body MUST contain a top-level heading and SHOULD group task links under status headings. Each entry SHOULD include the task description.
