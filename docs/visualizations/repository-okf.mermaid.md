@@ -2,7 +2,7 @@
 
 > Generated from repository-local OKF records. The Markdown/YAML bundle remains canonical.
 
-Source: `okf-tasks`
+Source: `.`
 
 The report separates the connected repository map from detailed component and key-concept views so large bundles remain reviewable.
 
@@ -68,17 +68,18 @@ flowchart LR
     a55["conformance/invalid/bad-time-rollup · 1 concepts"]
     a56["conformance/valid/minimal · 1 concepts"]
     a57["docs · 8 concepts"]
-    a58["examples · 121 concepts"]
+    a58["examples · 122 concepts"]
     a59["examples/architecture-knowledge-base · 6 concepts"]
     a60["examples/combined-delivery-architecture · 51 concepts"]
     a61["examples/complex-task-portfolio · 45 concepts"]
     a62["examples/knowledge-linked · 1 concepts"]
-    a63["examples/project-docs/docs · 1 concepts"]
-    a64["examples/standalone · 1 concepts"]
-    a65["examples/tracker-synchronised · 2 concepts"]
-    a66["examples/visualization · 5 concepts"]
-    a67["repository root · 4 concepts"]
-    a68["tasks · 1 concepts"]
+    a63["examples/many-to-many-clickup · 2 concepts"]
+    a64["examples/project-docs/docs · 1 concepts"]
+    a65["examples/standalone · 1 concepts"]
+    a66["examples/tracker-synchronised · 2 concepts"]
+    a67["examples/visualization · 5 concepts"]
+    a68["repository root · 4 concepts"]
+    a69["tasks · 1 concepts"]
     a57 -->|links| a0
     a57 -->|links| a1
     a57 -->|links| a2
@@ -141,12 +142,12 @@ flowchart LR
     a57 -->|links| a60
     a57 -->|links| a61
     a57 -->|links| a62
-    a57 -->|links| a63
     a57 -->|links| a64
     a57 -->|links| a65
     a57 -->|links| a66
     a57 -->|links| a67
     a57 -->|links| a68
+    a57 -->|links| a69
     a58 -->|links| a59
     a58 -->|links| a60
     a58 -->|links| a61
@@ -155,12 +156,14 @@ flowchart LR
     a58 -->|links| a64
     a58 -->|links| a65
     a58 -->|links| a66
+    a58 -->|links| a67
     a59 -->|links| a58
     a60 -->|links| a58
     a61 -->|links| a58
-    a67 -->|links| a57
-    a67 -->|links| a58
+    a63 -->|links| a58
     a68 -->|links| a57
+    a68 -->|links| a58
+    a69 -->|links| a57
     classDef default fill:#eef2ff,stroke:#4f46e5,color:#1e1b4b
 ```
 
@@ -1342,7 +1345,6 @@ flowchart LR
     n71 -->|links| n72
     n74 -->|workstream| n73
     n77 -->|links| n80
-    n78 -->|links| n80
     n79 -->|links| n0
     n79 -->|links| n1
     n79 -->|links| n2
@@ -1680,7 +1682,6 @@ flowchart LR
     n81 -->|links| n79
     n81 -->|links| n321
     n82 -->|links| n80
-    n83 -->|links| n80
     n84 -->|links| n78
     n84 -->|links| n80
     n85 -->|links| n98
@@ -2591,16 +2592,19 @@ flowchart LR
     n208["Validate security launch controls · ready"]:::boundary
     n209["Knowledge-linked bundle"]:::knowledge
     n210["Document the session rotation policy · validation"]:::boundary
-    n211["Migrate checkout traffic · ready"]:::boundary
-    n212["Project documentation placement"]:::knowledge
-    n213["Standalone bundle"]:::knowledge
-    n214["Implement token rotation · ready"]:::boundary
-    n215["Tracker-synchronised bundle"]:::knowledge
-    n216["Add authentication audit events · in-progress"]:::boundary
-    n217["Visualisation example"]:::knowledge
-    n218["Publish the visualisation guide · proposed"]:::boundary
-    n219["Release OKF Tasks · in-progress"]:::boundary
-    n220["OKF Tasks"]:::boundary
+    n211["Many-to-many ClickUp contributions"]:::knowledge
+    n212["Implement API · ready"]:::boundary
+    n213["Test API · proposed"]:::boundary
+    n214["Migrate checkout traffic · ready"]:::boundary
+    n215["Project documentation placement"]:::knowledge
+    n216["Standalone bundle"]:::knowledge
+    n217["Implement token rotation · ready"]:::boundary
+    n218["Tracker-synchronised bundle"]:::knowledge
+    n219["Add authentication audit events · in-progress"]:::boundary
+    n220["Visualisation example"]:::knowledge
+    n221["Publish the visualisation guide · proposed"]:::boundary
+    n222["Release OKF Tasks · in-progress"]:::boundary
+    n223["OKF Tasks"]:::boundary
     n0 -->|links| n1
     n0 -->|links| n2
     n0 -->|links| n3
@@ -2811,9 +2815,6 @@ flowchart LR
     n0 -->|links| n208
     n0 -->|links| n209
     n0 -->|links| n210
-    n0 -->|links| n211
-    n0 -->|links| n212
-    n0 -->|links| n213
     n0 -->|links| n214
     n0 -->|links| n215
     n0 -->|links| n216
@@ -2821,6 +2822,9 @@ flowchart LR
     n0 -->|links| n218
     n0 -->|links| n219
     n0 -->|links| n220
+    n0 -->|links| n221
+    n0 -->|links| n222
+    n0 -->|links| n223
     n1 -->|links| n14
     n1 -->|links| n21
     n1 -->|links| n50
@@ -3421,18 +3425,23 @@ flowchart LR
     n208 -->|links| n165
     n209 -->|links| n210
     n210 -->|time:20260717t100000z-james-manual| n210
+    n211 -->|links| n212
+    n211 -->|links| n213
     n212 -->|links| n211
-    n213 -->|links| n214
-    n214 -->|time:20260717t090000z-agent-tracked| n214
-    n215 -->|links| n216
-    n216 -->|time:20260717t074500z-agent-commit-review| n216
-    n217 -->|links| n219
-    n217 -->|links| n218
+    n213 -->|links| n211
+    n215 -->|links| n214
+    n216 -->|links| n217
+    n217 -->|time:20260717t090000z-agent-tracked| n217
     n218 -->|links| n219
-    n219 -->|time:visualization-session| n219
-    n220 -->|links| n168
-    n220 -->|links| n52
-    n220 -->|links| n116
+    n219 -->|time:20260717t074500z-agent-commit-review| n219
+    n220 -->|links| n222
+    n220 -->|links| n221
+    n221 -->|links| n222
+    n222 -->|time:visualization-session| n222
+    n223 -->|links| n211
+    n223 -->|links| n168
+    n223 -->|links| n52
+    n223 -->|links| n116
     classDef task fill:#dbeafe,stroke:#2563eb,color:#172554
     classDef workstream fill:#ede9fe,stroke:#7c3aed,color:#2e1065
     classDef tracker fill:#ffedd5,stroke:#ea580c,color:#431407
@@ -4179,6 +4188,24 @@ flowchart LR
     classDef boundary fill:#f8fafc,stroke:#64748b,color:#0f172a,stroke-dasharray:4 3
 ```
 
+### examples/many-to-many-clickup
+
+```mermaid
+flowchart LR
+    n0["Many-to-many ClickUp contributions"]:::boundary
+    n1["Implement API · ready"]:::task
+    n2["Test API · proposed"]:::task
+    n0 -->|links| n1
+    n0 -->|links| n2
+    n1 -->|links| n0
+    n2 -->|links| n0
+    classDef task fill:#dbeafe,stroke:#2563eb,color:#172554
+    classDef workstream fill:#ede9fe,stroke:#7c3aed,color:#2e1065
+    classDef tracker fill:#ffedd5,stroke:#ea580c,color:#431407
+    classDef knowledge fill:#dcfce7,stroke:#16a34a,color:#052e16
+    classDef boundary fill:#f8fafc,stroke:#64748b,color:#0f172a,stroke-dasharray:4 3
+```
+
 ### examples/project-docs/docs
 
 ```mermaid
@@ -4279,12 +4306,12 @@ flowchart LR
     n8["Architecture knowledge graph example"]:::boundary
     n9["Combined delivery and architecture workspace"]:::boundary
     n10["Complex task portfolio example"]:::boundary
-    n11["Governance"]:::knowledge
-    n12["OKF Tasks"]:::knowledge
-    n13["OKF Tasks Profile"]:::knowledge
+    n11["Many-to-many ClickUp contributions"]:::boundary
+    n12["Governance"]:::knowledge
+    n13["OKF Tasks"]:::knowledge
+    n14["OKF Tasks Profile"]:::knowledge
     n0 -->|links| n4
     n1 -->|links| n4
-    n2 -->|links| n4
     n3 -->|links| n0
     n3 -->|links| n1
     n3 -->|links| n2
@@ -4295,36 +4322,36 @@ flowchart LR
     n3 -->|links| n8
     n3 -->|links| n9
     n3 -->|links| n10
-    n3 -->|links| n11
     n3 -->|links| n12
     n3 -->|links| n13
-    n4 -->|links| n12
+    n3 -->|links| n14
+    n4 -->|links| n13
     n4 -->|links| n3
-    n4 -->|links| n11
+    n4 -->|links| n12
     n4 -->|links| n0
     n4 -->|links| n1
     n4 -->|links| n2
     n4 -->|links| n5
     n4 -->|links| n6
     n4 -->|links| n7
-    n4 -->|links| n13
+    n4 -->|links| n14
     n5 -->|links| n4
-    n6 -->|links| n4
     n7 -->|links| n2
     n7 -->|links| n4
-    n11 -->|links| n4
-    n12 -->|links| n13
-    n12 -->|links| n6
-    n12 -->|links| n7
-    n12 -->|links| n5
-    n12 -->|links| n1
-    n12 -->|links| n10
-    n12 -->|links| n8
-    n12 -->|links| n9
-    n12 -->|links| n2
-    n12 -->|links| n11
     n12 -->|links| n4
+    n13 -->|links| n14
+    n13 -->|links| n6
+    n13 -->|links| n7
+    n13 -->|links| n5
+    n13 -->|links| n1
+    n13 -->|links| n11
+    n13 -->|links| n10
+    n13 -->|links| n8
+    n13 -->|links| n9
+    n13 -->|links| n2
+    n13 -->|links| n12
     n13 -->|links| n4
+    n14 -->|links| n4
     classDef task fill:#dbeafe,stroke:#2563eb,color:#172554
     classDef workstream fill:#ede9fe,stroke:#7c3aed,color:#2e1065
     classDef tracker fill:#ffedd5,stroke:#ea580c,color:#431407
@@ -4694,7 +4721,6 @@ flowchart LR
     n71 -->|links| n72
     n74 -->|workstream| n73
     n77 -->|links| n80
-    n78 -->|links| n80
     n79 -->|links| n0
     n79 -->|links| n1
     n79 -->|links| n2
@@ -5032,7 +5058,6 @@ flowchart LR
     n81 -->|links| n79
     n81 -->|links| n321
     n82 -->|links| n80
-    n83 -->|links| n80
     n84 -->|links| n78
     n84 -->|links| n80
     n85 -->|links| n98
@@ -5747,7 +5772,6 @@ flowchart LR
     n12["Adopt RKE OKF knowledge format · done"]:::boundary
     n0 -->|links| n4
     n1 -->|links| n4
-    n2 -->|links| n4
     n3 -->|links| n0
     n3 -->|links| n1
     n3 -->|links| n2
@@ -5776,7 +5800,6 @@ flowchart LR
     n5 -->|links| n3
     n5 -->|links| n12
     n6 -->|links| n4
-    n7 -->|links| n4
     n8 -->|links| n2
     n8 -->|links| n4
     n9 -->|links| n4
@@ -6041,6 +6064,49 @@ flowchart LR
     classDef knowledge fill:#dcfce7,stroke:#16a34a,color:#052e16
     classDef boundary fill:#f8fafc,stroke:#64748b,color:#0f172a,stroke-dasharray:4 3
 ```
+
+## Unconnected concepts
+
+These records are listed instead of receiving equal visual weight in the connected graph.
+
+- **Fixture task** — `conformance/generated/invalid/active-task-vendor-manifest/tasks/fixture-task/task` (Task)
+- **Fixture task** — `conformance/generated/invalid/active-task-vendor-manifest/tasks/second-task/task` (Task)
+- **Fixture task** — `conformance/generated/invalid/changed-vendored-snapshot/tasks/fixture-task/task` (Task)
+- **Vendored example** — `conformance/generated/invalid/changed-vendored-snapshot/third-party/example` (Reference)
+- **Fixture task** — `conformance/generated/invalid/duplicate-external-edge/tasks/fixture-task/task` (Task)
+- **conformance/generated/invalid/duplicate-external-edge/tasks/trackers/github-main** — `conformance/generated/invalid/duplicate-external-edge/tasks/trackers/github-main` (Tracker Profile)
+- **Fixture task** — `conformance/generated/invalid/escaping-vendor-manifest/tasks/fixture-task/task` (Task)
+- **Vendored example** — `conformance/generated/invalid/escaping-vendor-manifest/third-party/example` (Reference)
+- **Fixture task** — `conformance/generated/invalid/inconsistent-contributor-profiles/tasks/fixture-task/task` (Task)
+- **Fixture task** — `conformance/generated/invalid/inconsistent-contributor-profiles/tasks/second-task/task` (Task)
+- **conformance/generated/invalid/inconsistent-contributor-profiles/tasks/trackers/github-alias** — `conformance/generated/invalid/inconsistent-contributor-profiles/tasks/trackers/github-alias` (Tracker Profile)
+- **conformance/generated/invalid/inconsistent-contributor-profiles/tasks/trackers/github-main** — `conformance/generated/invalid/inconsistent-contributor-profiles/tasks/trackers/github-main` (Tracker Profile)
+- **Fixture task** — `conformance/generated/invalid/invalid-external-relationship/tasks/fixture-task/task` (Task)
+- **conformance/generated/invalid/invalid-external-relationship/tasks/trackers/github-main** — `conformance/generated/invalid/invalid-external-relationship/tasks/trackers/github-main` (Tracker Profile)
+- **Fixture task** — `conformance/generated/invalid/invalid-pull-source/tasks/fixture-task/task` (Task)
+- **conformance/generated/invalid/invalid-pull-source/tasks/trackers/github-main** — `conformance/generated/invalid/invalid-pull-source/tasks/trackers/github-main` (Tracker Profile)
+- **Fixture task** — `conformance/generated/invalid/mixed-external-writers/tasks/fixture-task/task` (Task)
+- **Fixture task** — `conformance/generated/invalid/mixed-external-writers/tasks/second-task/task` (Task)
+- **conformance/generated/invalid/mixed-external-writers/tasks/trackers/github-alias** — `conformance/generated/invalid/mixed-external-writers/tasks/trackers/github-alias` (Tracker Profile)
+- **conformance/generated/invalid/mixed-external-writers/tasks/trackers/github-main** — `conformance/generated/invalid/mixed-external-writers/tasks/trackers/github-main` (Tracker Profile)
+- **Fixture task** — `conformance/generated/invalid/multiple-pull-sources/tasks/fixture-task/task` (Task)
+- **conformance/generated/invalid/multiple-pull-sources/tasks/trackers/github-main** — `conformance/generated/invalid/multiple-pull-sources/tasks/trackers/github-main` (Tracker Profile)
+- **Fixture task** — `conformance/generated/invalid/typed-pull-source/tasks/fixture-task/task` (Task)
+- **conformance/generated/invalid/typed-pull-source/tasks/trackers/github-main** — `conformance/generated/invalid/typed-pull-source/tasks/trackers/github-main` (Tracker Profile)
+- **Fixture task** — `conformance/generated/invalid/unlisted-vendored-concept/tasks/fixture-task/task` (Task)
+- **Vendored example** — `conformance/generated/invalid/unlisted-vendored-concept/third-party/example` (Reference)
+- **Fixture task** — `conformance/generated/valid/many-to-many-contributions/tasks/fixture-task/task` (Task)
+- **Fixture task** — `conformance/generated/valid/many-to-many-contributions/tasks/second-task/task` (Task)
+- **conformance/generated/valid/many-to-many-contributions/tasks/trackers/github-main** — `conformance/generated/valid/many-to-many-contributions/tasks/trackers/github-main` (Tracker Profile)
+- **Fixture task** — `conformance/generated/valid/mirror-with-reference/tasks/fixture-task/task` (Task)
+- **Fixture task** — `conformance/generated/valid/mirror-with-reference/tasks/second-task/task` (Task)
+- **conformance/generated/valid/mirror-with-reference/tasks/trackers/github-main** — `conformance/generated/valid/mirror-with-reference/tasks/trackers/github-main` (Tracker Profile)
+- **Fixture task** — `conformance/generated/valid/shared-references/tasks/fixture-task/task` (Task)
+- **Fixture task** — `conformance/generated/valid/shared-references/tasks/second-task/task` (Task)
+- **conformance/generated/valid/shared-references/tasks/trackers/github-main** — `conformance/generated/valid/shared-references/tasks/trackers/github-main` (Tracker Profile)
+- **Fixture task** — `conformance/generated/valid/vendored-snapshot/tasks/fixture-task/task` (Task)
+- **Vendored example** — `conformance/generated/valid/vendored-snapshot/third-party/example` (Reference)
+- **examples/many-to-many-clickup/tasks/trackers/clickup-delivery** — `examples/many-to-many-clickup/tasks/trackers/clickup-delivery` (Tracker Profile)
 
 ## Legend
 

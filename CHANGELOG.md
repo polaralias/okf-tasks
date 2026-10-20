@@ -15,6 +15,20 @@ navigation:
 ---
 # Changelog
 
+## 0.2.0 — Many-to-many tracker relationships
+
+- Connect several local Tasks to shared remote records, including several remotes within one profile, with explicit reference, mirror and contribution semantics.
+- Publish one combined contribution section while preserving independent local execution state and human-authored remote content; retain manual shared status.
+- Select individual bindings, inspect/unlink or explicitly convert relationships, reject conflicting writers, and expose partial bulk outcomes.
+- Preserve shared ownership and retry state, validate remote identity/scope, enforce direction/authority and verify contribution read-back.
+- Upgrade all writers before using shared records: validators before 0.2 reject these relationships.
+
+## 0.1.1 — unreleased candidate
+
+- Recognise exact nested OKF producer snapshot resources during strict repository graph validation. Changed and unlisted documents, traversal attempts and active Task records remain governed.
+- Keep conformance generation byte-stable on Windows and enforce full-history secret scanning with separated verification/publish permissions.
+- Producer skill 0.1.5 retains independent EWF integration and valid Codex product metadata.
+
 All notable changes to OKF Tasks are recorded here.
 
 ## 0.1.0 — 2026-07-19

@@ -4,21 +4,29 @@ on:
   push:
     tags: ["v*"]
 
-permissions:
-  contents: write
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  publish:
+  verify:
+    name: verify-release
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
     steps:
       - name: Check out tagged source
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Verify tag and repository version
         shell: bash
         run: |
           set -euo pipefail
-          test "${GITHUB_REF_NAME}" = "v$(cat VERSION)"
+          version="$(<VERSION)"
+          test "$GITHUB_REF_NAME" = "v$version"
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -26,30 +34,57 @@ jobs:
           python-version: "3.13"
 
       - name: Install Python dependencies
-        run: python -m pip install PyYAML "setuptools>=77"
+        run: python -m pip install --disable-pip-version-check PyYAML "setuptools>=77"
 
-      - name: Set up Node
-        uses: actions/setup-node@v6
-        with:
-          node-version: "24"
-          cache: npm
-
-      - name: Run release bar
+      - name: Run Python release checks
         run: |
           python -m unittest discover -s tests -v
           python conformance/generate_fixtures.py --check
-          npm ci
-          npm test
           python scripts/check_release.py
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          package-manager-cache: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: "11.24.0"
+          run_install: false
+
+      - name: Import tracked npm lockfile for pnpm
+        shell: bash
+        run: pnpm import
+
+      - name: Run Node.js release checks
+        run: |
+          pnpm install --frozen-lockfile --ignore-scripts
+          pnpm exec tsc --noEmit -p implementations/typescript/tsconfig.json
+          pnpm run build
+          pnpm exec node --test implementations/typescript/dist/test/*.test.js
+          pnpm audit --audit-level high
+
+  publish:
+    name: publish-release
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      # This job deliberately has no checkout or source execution. The only
+      # write-capable operation is the GitHub release update after verification.
       - name: Publish or complete GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         shell: bash
         run: |
           set -euo pipefail
-          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
-            gh release edit "${GITHUB_REF_NAME}" --draft=false
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release edit "$GITHUB_REF_NAME" --draft=false
           else
-            gh release create "${GITHUB_REF_NAME}" --generate-notes --title "${GITHUB_REF_NAME}"
+            gh release create "$GITHUB_REF_NAME" --generate-notes --title "$GITHUB_REF_NAME"
           fi

@@ -2,7 +2,7 @@
 type: "Repository Knowledge"
 title: "Tracker integration setup and live evidence"
 description: "Documents Tracker integration setup and live evidence for the okf-tasks repository."
-timestamp: 2026-07-28T21:55:36Z
+timestamp: 2026-10-19T16:30:00Z
 authority: canonical
 verification: untested
 owner: polaralias
@@ -70,3 +70,32 @@ The live scopes did not expose writable arbitrary custom fields suitable for a s
 ## Repository knowledge
 
 - [Documentation map](knowledge/documentation-map.md) — RKE-managed reading order and relationship hub.
+
+## Many-to-many contributions — profile 0.2
+
+Connections and field ownership are distinct. `reference` records observations only; `mirror` retains the existing replication contract; `contribution` publishes independently managed work to one combined remote progress section. Omitted relationships remain mirrors. A local task may have several remotes in one profile, and several local tasks may contribute to the same remote. The local-task/remote pair remains unique, including across aliases. Shared writers must use one profile; mirror and contribution writers cannot coexist for one remote.
+
+Migration is explicit and local:
+
+```text
+okf-tasks inspect-external --root . --task implement-api
+okf-tasks unlink-external --root . --task implement-api --remote-id <raw-task-id> --relationship contribution
+okf-tasks link-external --root . --task test-api --id <raw-task-id> --key AI-952 --url https://app.clickup.com/t/<raw-task-id> --relationship contribution
+okf-tasks tracker sync --root . --task implement-api --direction push --remote-id <raw-task-id>
+```
+
+Select the intended profile with `--tracker` when there is no saved/sole default. A bulk sync uses `--all-bindings`; it returns a result per binding and a nonzero exit if any target fails. Successful targets retain their verified success state. No rollback of completed provider requests is implied.
+
+Contribution summaries contain local slugs, titles and lifecycle statuses in deterministic order. They do not publish private local bodies or acceptance sections. Shared remote status remains manual. Pull records observations without completing, reopening or rewriting contributors. Reference or contribution imports start `proposed` unless an explicit local status is supplied. A mirror pull with several possible mirror sources requires one binding `sync.pull_source: true`.
+
+The publisher preserves human text outside its owned section and refuses edited, duplicated, malformed or foreign ownership markers. It checks the exact outgoing description for secrets and nonportable links, validates identity and current scope, rechecks the remote revision immediately before writing, and verifies the complete description afterward. Field conflicts in the owned section cannot be bypassed with `--force`. A timeout retains pending evidence without advancing success; retry can recognise the exact attempted section. Providers do not offer a common atomic conditional-update contract: human edits between the final read and write remain a provider-level race. Local locks coordinate cooperating commands only; remote/distributed atomicity is not claimed.
+
+Task external entries are canonical membership. Keep `<bundle>/.tracker-sync/` JSON ownership/base records with the bundle when moving or distributing it. State is keyed by the complete provider identity and stores a random owner, section hash, membership fingerprint, remote revision, timestamps, and optional pending hash. Missing state refuses to adopt an existing summary. Do not put credentials in these records. A `.tracker.lock` is a transient exclusive lock: recover it only after verifying the owning process has stopped.
+
+`unlink-external` removes only the local relationship, or converts it when `--relationship` is supplied. A remaining contributor's next push recomputes membership; removing the final contributor retains the last remote summary for explicit human removal. No local or remote task is deleted. Cross-repository aggregation, automatic status roll-up, webhooks and remote task restructuring are outside this version.
+
+The adapter enforces configured direction and repository push authority. Whole-record mirror transport refuses mixed field authorities rather than silently overriding them. Mirrors retain conservative whole-record revision conflict detection; contribution conflicts are scoped to the managed description section.
+
+Upgrade all consuming validators and writers before introducing shared records. Older validators reject the cardinality, and older writers lack contribution ownership semantics. The 0.2 schema/specification identity supersedes 0.1 for these records; it does not make an old installed writer safe.
+
+Verification for this change uses local provider mocks and independent conformance validators. The historical live tests above do not establish live many-to-many behaviour.

@@ -2,7 +2,7 @@
 type: "Repository Guide"
 title: "OKF Tasks"
 description: "Documents OKF Tasks for the okf-tasks repository."
-timestamp: 2026-07-28T21:55:36Z
+timestamp: 2026-10-19T16:30:00Z
 authority: canonical
 verification: untested
 owner: polaralias
@@ -29,7 +29,7 @@ This project is not affiliated with or endorsed by Google Cloud.
 
 ## What is included
 
-- [`SPEC.md`](./SPEC.md) — the OKF Tasks v0.1 profile.
+- [`SPEC.md`](./SPEC.md) — the OKF Tasks v0.2 profile.
 - [`schemas/`](./schemas/) — versioned JSON Schemas for task, workstream, embedded time-entry, and Tracker Profile frontmatter.
 - [`skills/okf-task-lifecycle/`](./skills/okf-task-lifecycle/) — a portable agent skill and deterministic CLI.
 - [`examples/`](./examples/) — standalone, knowledge-linked, and tracker-synchronised bundles.
@@ -121,6 +121,16 @@ okf-tasks tracker sync --root . --task first-task --direction pull
 
 ClickUp imports accept either raw IDs or custom IDs such as `AI-952`; discovery records the owning Workspace separately from its Space so the adapter can request custom-ID resolution correctly. Creation and push perform the same deterministic egress and repository-link checks as `prepare-export`. A repository remote is required only when the body contains repository-local links; the error names `--remote-url` and `--repository-provider` when explicit context is needed. A remote revision change stops push until it is explicitly resolved. Provider writes are read back before the binding base advances.
 
+Use explicit contribution relationships when independent local tasks share a ClickUp task:
+
+```text
+okf-tasks link-external --root . --task implement-api --id <raw-task-id> --key AI-952 --url https://app.clickup.com/t/<raw-task-id> --relationship contribution
+okf-tasks link-external --root . --task test-api --id <raw-task-id> --key AI-952 --url https://app.clickup.com/t/<raw-task-id> --relationship contribution
+okf-tasks tracker sync --root . --task implement-api --direction push --remote-id <raw-task-id>
+```
+
+The push publishes both contributors in one owned description section. Local tasks remain independent; remote title, status, tags and human text remain intact. Pull observes remote changes without replacing local task fields. Several remotes in the same profile require `--remote-id` or deliberate `--all-bindings`. Use `inspect-external` and `unlink-external` to inspect or remove local associations. Existing links default to mirrors; convert an existing mirror with `unlink-external --relationship contribution` before sharing it. See the [many-to-many ClickUp example](examples/many-to-many-clickup/README.md) and [tracker integration](docs/TRACKER_INTEGRATION.md) for migration, state portability and limits. Upgrade all writers to 0.2.0 before using shared records.
+
 Prepare any Markdown document for external publication without leaking secrets or local paths (this is document publication, not task-payload serialization):
 
 ```text
@@ -188,7 +198,7 @@ python scripts/check_release.py
 
 ## Status
 
-Version 0.1 establishes portable reading prominence and first-reading order alongside embedded addressable time entries, first-class provider setup, and scoped external bindings. Normative changes require fixtures and agreement between the Python and TypeScript implementations; see [`GOVERNANCE.md`](./GOVERNANCE.md).
+Version 0.2 adds explicit many-to-many contribution relationships. Version 0.1 established portable reading prominence and first-reading order alongside embedded addressable time entries, first-class provider setup, and scoped external bindings. Normative changes require fixtures and agreement between the Python and TypeScript implementations; see [`GOVERNANCE.md`](./GOVERNANCE.md).
 
 ## Licence
 
@@ -197,3 +207,9 @@ Apache License 2.0. See [`LICENSE`](./LICENSE).
 ## Repository knowledge
 
 - [Documentation map](docs/knowledge/documentation-map.md) — RKE-managed reading order and relationship hub.
+
+Reader navigation supports local document bookmarks, Back/Forward, a separate comparison document and retained reading positions. Comparison panes stack on small screens and context can be collapsed. Bookmarks resolve only included documents and never modify the authoritative bundle; a copied file URL is for local use and must not be published.
+
+Relationship focus starts with four incoming and four outgoing links. Show more reveals four at a time; hidden counts and collapse keep dense selections readable. Expansion is remembered per document during page navigation. These document links retain their original meaning and do not establish runtime dependencies.
+
+Switching from Graph or Board to Reader opens the selected included document, preserving its previous reading position and a distinct comparison.

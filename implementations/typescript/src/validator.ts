@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import YAML from "yaml";
+import { createHash } from "node:crypto";
 
 export const statuses = ["proposed", "ready", "in-progress", "blocked", "validation", "done", "superseded", "deferred"] as const;
 const statusSet = new Set<string>(statuses);
@@ -82,6 +83,28 @@ function linkGraphRoot(bundle: string): string {
     ? path.dirname(path.dirname(resolved)) : path.dirname(resolved);
 }
 
+function isSnapshotResource(file: string, root: string): boolean {
+  if (fs.lstatSync(file).isSymbolicLink() || fs.statSync(file).size > 2 * 1024 * 1024) return false;
+  for (let folder = path.dirname(file); folder !== root; folder = path.dirname(folder)) {
+    const distance = path.relative(root, folder);
+    if (distance === ".." || distance.startsWith(`..${path.sep}`) || path.isAbsolute(distance)) break;
+    const manifest = path.join(folder, "OKF_UPSTREAM.json");
+    try {
+      const stat = fs.lstatSync(manifest);
+      if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 2 * 1024 * 1024) continue;
+      const snapshot = JSON.parse(fs.readFileSync(manifest, "utf8")) as RecordValue;
+      if (snapshot.schema !== 1 || snapshot.producer !== "OKF Tasks" || !/^[a-f0-9]{40}$/.test(String(snapshot.source_commit ?? ""))) continue;
+      const entries = snapshot.resources;
+      if (!entries || typeof entries !== "object" || Array.isArray(entries) || Object.keys(entries).length > 2000) continue;
+      const identity = (entries as RecordValue)[path.relative(folder, file).split(path.sep).join("/")];
+      if (!identity || typeof identity !== "object") continue;
+      const digest = (identity as RecordValue).package_sha256;
+      if (typeof digest === "string" && /^[a-f0-9]{64}$/.test(digest)) return createHash("sha256").update(fs.readFileSync(file)).digest("hex") === digest;
+    } catch { /* Invalid manifests grant no graph exemption. */ }
+  }
+  return false;
+}
+
 function durableLinkGraphErrors(bundle: string): string[] {
   const root = linkGraphRoot(bundle);
   const concepts = new Map<string, Parsed>();
@@ -89,6 +112,9 @@ function durableLinkGraphErrors(bundle: string): string[] {
     if (["index.md", "log.md"].includes(path.basename(file))) continue;
     const relativeParts = path.relative(root, file).split(path.sep).slice(0, -1).map((part) => part.toLowerCase());
     if (relativeParts.some((part) => linkGraphExcludedDirectories.has(part))) continue;
+    const bundleDistance = path.relative(path.resolve(bundle), path.resolve(file));
+    const outsideBundle = bundleDistance === ".." || bundleDistance.startsWith(`..${path.sep}`) || path.isAbsolute(bundleDistance);
+    if (outsideBundle && isSnapshotResource(file, root)) continue;
     try {
       const parsed = parseDocument(file); const type = String(parsed.metadata.type ?? "").trim().toLowerCase();
       if (type && !linkGraphExcludedTypes.has(type) && !linkGraphExcludedTypeMarkers.some((marker) => type.includes(marker))) concepts.set(path.resolve(file), parsed);
@@ -388,7 +414,7 @@ export function validateBundle(bundle: string): string[] {
   const defaults = [...profiles.values()].filter((profile) => profile.default === true).map((profile) => String(profile.tracker));
   if (defaults.length > 1) errors.push(`${trackerDir}: only one default Tracker Profile is allowed; found ${defaults.join(", ")}`);
   const taskFiles = fs.readdirSync(bundle, { withFileTypes: true }).filter((entry) => entry.isDirectory() && fs.existsSync(path.join(bundle, entry.name, "task.md"))).map((entry) => path.join(bundle, entry.name, "task.md")).sort();
-  const external = new Map<string, string>();
+  const external = new Map<string, { file: string; relationship: string; tracker: string; scope: string }[]>();
   const branches = new Map<string, string>();
   for (const file of taskFiles) {
     let parsed: Parsed; try { parsed = parseDocument(file); } catch { continue; }
@@ -406,9 +432,27 @@ export function validateBundle(bundle: string): string[] {
       else task.completion_history.forEach((event, index) => { if (!mapping(event) || !rfc3339(event.finished) || !rfc3339(event.reopened)) errors.push(`${file}: completion_history[${index}] requires finished and reopened RFC 3339 datetimes`); });
     }
     validateEstimate(file, task, errors); validatePortableFields(file, task, errors); validateSync(file, task, errors); validateTime(file, task, errors);
+    const localEdges = new Set<string>();
+    let pullSources = 0;
     if (Array.isArray(task.external)) task.external.forEach((item) => {
       if (!mapping(item) || !item.system || !item.host || !item.kind || item.id === undefined) return;
-      const key = `${item.system}|${item.host}|${item.kind}|${item.id}`; if (external.has(key)) errors.push(`${file}: external mapping ${key} also used by ${external.get(key)}`); else external.set(key, file);
+      const key = JSON.stringify([String(item.system), String(item.host), String(item.kind), String(item.id)]);
+      if (localEdges.has(key)) errors.push(`${file}: duplicate external relationship`);
+      localEdges.add(key);
+      const relationship = item.relationship === undefined ? "mirror" : item.relationship;
+      if (typeof relationship !== "string" || !["mirror", "reference", "contribution"].includes(relationship)) errors.push(`${file}: unsupported external relationship`);
+      if (mapping(item.sync) && item.sync.pull_source !== undefined) {
+        if (typeof item.sync.pull_source !== "boolean" || relationship !== "mirror") errors.push(`${file}: pull_source requires a boolean on a mirror`);
+        if (item.sync.pull_source === true) pullSources++;
+      }
+      const group = external.get(key) || [];
+      const writers = group.filter((edge) => edge.relationship !== "reference");
+      if (relationship !== "reference") {
+        if (writers.length && (relationship === "mirror" || writers.some((edge) => edge.relationship === "mirror"))) errors.push(`${file}: competing mirror/contribution writers`);
+        if (writers.some((edge) => edge.tracker !== String(item.tracker) || edge.scope !== String(mapping(item.scope) ? item.scope.id : ""))) errors.push(`${file}: inconsistent writer profile or scope`);
+      }
+      group.push({file, relationship: String(relationship), tracker: String(item.tracker), scope: String(mapping(item.scope) ? item.scope.id : "")});
+      external.set(key, group);
       const profile = profiles.get(String(item.tracker));
       if (!profile) errors.push(`${file}: external tracker profile ${String(item.tracker)} does not exist`);
       else {
@@ -416,6 +460,7 @@ export function validateBundle(bundle: string): string[] {
         if (mapping(item.scope) && mapping(profile.scope) && item.scope.id !== profile.scope.id) errors.push(`${file}: external binding scope must match its Tracker Profile`);
       }
     });
+    if (pullSources > 1) errors.push(`${file}: only one mirror pull_source is permitted`);
     const workstreamDir = path.join(path.dirname(file), "workstreams");
     const workstreamFiles = fs.existsSync(workstreamDir) ? fs.readdirSync(workstreamDir).filter((name) => name.endsWith(".md")).map((name) => path.join(workstreamDir, name)).sort() : [];
     for (const workstreamFile of workstreamFiles) {
